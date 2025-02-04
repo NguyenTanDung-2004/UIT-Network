@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.UserService.exception.EnumException;
@@ -29,6 +30,9 @@ public class UserService {
 
     @Autowired
     JWTService jwtService;
+
+    @Autowired
+    KafkaTemplate<String, String> kafkaTemplate;
 
     public ResponseEntity login(RequestLogin requestLogin) {
         // find user by email
@@ -65,5 +69,25 @@ public class UserService {
             }
         }
         return null;
+    }
+
+    public ResponseEntity sendCodeViaEmail(String email) {
+        // find user by email
+        User user = getUser(email, "email");
+        if (user == null) {
+            throw new UserException(EnumException.USER_NOT_FOUND);
+        }
+
+        // push event to kafka
+        // type:email||mailType:forgot-password||to:" + email
+        this.kafkaTemplate.send("user-notification", "email||forgot-password||" + email);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SEND_CODE_FORGOT_PASSWORD_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
 }

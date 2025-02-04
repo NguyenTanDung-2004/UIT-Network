@@ -64,6 +64,14 @@
 			<artifactId>reactor-core</artifactId>
 		</dependency>
 		<!--END_WEBFLUX-->
+
+		<!--BEGIN_LOMBOK-->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<!--END_LOMBOK-->
 	</dependencies>
 
 	<build>

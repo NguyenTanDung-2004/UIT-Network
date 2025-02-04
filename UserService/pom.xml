@@ -82,6 +82,13 @@
 			<version>9.40</version>
 		</dependency>
 		<!--END_SCECURITY-->
+
+		<!--BEGIN_KAFKA-->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		<!--END_KAFKA-->
 	</dependencies>
 
 	<build>

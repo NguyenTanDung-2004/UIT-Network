@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Mono;
@@ -12,7 +13,7 @@ import reactor.core.publisher.Mono;
 @RestController
 public class TestController {
     @Async
-    @KafkaListener(topics = "user-events", groupId = "notification-group", concurrency = "2")
+    @KafkaListener(topics = "user-events", groupId = "notification-group")
     public void consume(String message) {
         System.out.println(Thread.currentThread().getName() + " - Received: " + message);
 
@@ -33,5 +34,4 @@ public class TestController {
         // Continue with the rest of the logic
         System.out.println("Message processing continues...");
     }
-
 }
