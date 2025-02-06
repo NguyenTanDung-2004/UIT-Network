@@ -29,6 +29,9 @@ public class NotifiService {
 
     @KafkaListener(topics = "user-notification", groupId = "notification-group")
     public void handleNotification(String message) throws IOException {
+        // update message
+        message = message.replaceAll("\"", "");
+
         // convert message to notification model
         String[] parts = message.split("\\|\\|");
 

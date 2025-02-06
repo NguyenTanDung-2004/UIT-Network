@@ -14,6 +14,7 @@ import com.example.UserService.exception.UserException;
 import com.example.UserService.response.ApiResponse;
 import com.example.UserService.response.EnumResponse;
 import com.example.UserService.user.dto.request.RequestLogin;
+import com.example.UserService.user.dto.request.RequestResetPassword;
 import com.example.UserService.user.entity.User;
 import com.example.UserService.user.repository.UserRepository;
 
@@ -42,8 +43,7 @@ public class UserService {
         }
 
         // check password
-        String hashedPassword = passwordService.hashPassword(requestLogin.getPassword());
-        if (passwordService.checkPassword(requestLogin.getPassword(), hashedPassword) == 0) {
+        if (passwordService.checkPassword(requestLogin.getPassword(), user.getPassword()) == 0) {
             throw new UserException(EnumException.USER_NOT_FOUND);
         }
 
@@ -78,14 +78,61 @@ public class UserService {
             throw new UserException(EnumException.USER_NOT_FOUND);
         }
 
+        // generate code
+        String code = generateCode();
+
+        // save to database
+        user.setCode(code);
+        userRepository.save(user);
+
         // push event to kafka
-        // type:email||mailType:forgot-password||to:" + email
-        this.kafkaTemplate.send("user-notification", "email||forgot-password||" + email);
+        // type:email||mailType:ForgotPassword||to:" + email
+        this.kafkaTemplate.send("user-notification", "email||ForgotPassword||" + email + "||" + code);
 
         // create response
         ApiResponse apiResponse = ApiResponse.builder()
                 .object(null)
                 .enumResponse(EnumResponse.toJson(EnumResponse.SEND_CODE_FORGOT_PASSWORD_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    private String generateCode() {
+        StringBuilder code = new StringBuilder("");
+
+        // generate 6 random numbers (0 - 9)
+        for (int i = 0; i < 6; i++) {
+            code.append((int) (Math.random() * 10));
+        }
+
+        return code.toString();
+    }
+
+    public ResponseEntity resetPassword(RequestResetPassword requestResetPassword) {
+        // find account
+        User user = getUser(requestResetPassword.getEmail(), "email");
+        if (user == null) {
+            throw new UserException(EnumException.USER_NOT_FOUND);
+        }
+
+        // check code
+        if (requestResetPassword.getCode().equals(user.getCode())) {
+            // reset password
+            String hashedPassword = this.passwordService.hashPassword(requestResetPassword.getNewPass());
+
+            // save user
+            user.setPassword(hashedPassword);
+            this.userRepository.save(user);
+        } else {
+            // response code fail
+            throw new UserException(EnumException.CODE_RESETPASS_WRONG);
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.RESET_PASSWORD_SUCCESS))
                 .build();
 
         return ResponseEntity.ok(apiResponse);

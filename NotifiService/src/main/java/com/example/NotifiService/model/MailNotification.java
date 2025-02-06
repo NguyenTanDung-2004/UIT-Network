@@ -31,7 +31,7 @@ public class MailNotification extends Notification {
         this.mailType = parts.get(1);
         this.to = parts.get(2);
         this.subject = getSubject(mailType);
-        this.body = getBody(this.mailType, parts.get(3), getDatas(mailType));
+        this.body = getBody(this.mailType, parts.get(4), getDatas(mailType, parts.get(3)));
     }
 
     private String getSubject(String mailType) {
@@ -79,16 +79,16 @@ public class MailNotification extends Notification {
         return code.toString();
     }
 
-    private Map<String, String> getDatasForgotPassword() {
+    private Map<String, String> getDatasForgotPassword(String code) {
         Map<String, String> datas = new HashMap<>();
-        datas.put("code", generateCode());
+        datas.put("code", code);
         return datas;
     }
 
-    private Map<String, String> getDatas(String type) {
+    private Map<String, String> getDatas(String type, String code) {
         switch (type) {
             case "ForgotPassword":
-                return getDatasForgotPassword();
+                return getDatasForgotPassword(code);
             default:
                 return null;
         }

@@ -19,7 +19,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum EnumException {
     VERIFY_TOKEN_FAIL("f_01", "Verify Token Fail", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND("f_02", "User Not Found", HttpStatus.BAD_REQUEST);
+    USER_NOT_FOUND("f_02", "User Not Found", HttpStatus.BAD_REQUEST),
+    CODE_RESETPASS_WRONG("f_03", "Code is wrong", HttpStatus.BAD_REQUEST);
 
     String code;
     String message;

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.UserService.user.dto.request.RequestCreate;
 import com.example.UserService.user.dto.request.RequestLogin;
+import com.example.UserService.user.dto.request.RequestResetPassword;
 import com.example.UserService.user.entity.User;
 import com.example.UserService.user.mapper.UserMapper;
 import com.example.UserService.user.repository.UserRepository;
@@ -54,5 +55,10 @@ public class UserController {
     @GetMapping("/send-code-via-email")
     public ResponseEntity sendCodeViaEmail(@RequestParam String email) {
         return userService.sendCodeViaEmail(email);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity resetPassword(@RequestBody RequestResetPassword requestResetPassword) {
+        return userService.resetPassword(requestResetPassword);
     }
 }

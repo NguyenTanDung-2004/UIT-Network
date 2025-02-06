@@ -18,7 +18,8 @@ import lombok.experimental.FieldDefaults;
 public enum EnumResponse {
     CREATE_USER_SUCCESS("s_01", "Create user successfully", HttpStatus.OK),
     LOGIN_SUCCESS("s_02", "Login successfully", HttpStatus.OK),
-    SEND_CODE_FORGOT_PASSWORD_SUCCESS("s_03", "Send code forgot password successfully", HttpStatus.OK);
+    SEND_CODE_FORGOT_PASSWORD_SUCCESS("s_03", "Send code forgot password successfully", HttpStatus.OK),
+    RESET_PASSWORD_SUCCESS("s_04", "Reset password successfully!", HttpStatus.OK);
 
     String code;
     String message;
