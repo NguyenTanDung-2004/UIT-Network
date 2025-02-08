@@ -1,7 +1,11 @@
 package com.example.UserService.user.service;
 
+import java.lang.reflect.Type;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
@@ -11,12 +15,22 @@ import org.springframework.stereotype.Service;
 
 import com.example.UserService.exception.EnumException;
 import com.example.UserService.exception.UserException;
+import com.example.UserService.hobby.entity.Hobby;
+import com.example.UserService.hobby.service.HobbyService;
+import com.example.UserService.mapper.UserMapper;
 import com.example.UserService.response.ApiResponse;
 import com.example.UserService.response.EnumResponse;
 import com.example.UserService.user.dto.request.RequestLogin;
 import com.example.UserService.user.dto.request.RequestResetPassword;
+import com.example.UserService.user.dto.request.RequestUpdateUserInfo;
+import com.example.UserService.user.dto.response.ResponseUserInfo;
 import com.example.UserService.user.entity.User;
+import com.example.UserService.user.model.TimeSlot;
 import com.example.UserService.user.repository.UserRepository;
+import com.example.UserService.util.JsonConverter;
+import com.fasterxml.jackson.core.JsonParser;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import lombok.experimental.FieldDefaults;
 
@@ -34,6 +48,15 @@ public class UserService {
 
     @Autowired
     KafkaTemplate<String, String> kafkaTemplate;
+
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private HobbyService hobbyService;
+
+    @Autowired
+    private JsonConverter jsonConverter;
 
     public ResponseEntity login(RequestLogin requestLogin) {
         // find user by email
@@ -67,8 +90,29 @@ public class UserService {
             } else {
                 return null;
             }
+        } else if (columnName.equals("id")) {
+            Optional<User> user = userRepository.findById(value);
+            if (user.isPresent()) {
+                return user.get();
+            } else {
+                return null;
+            }
         }
         return null;
+    }
+
+    private User getUserFromAthorization(String authorizationHeader) {
+        // Extract token from "Bearer <token>"
+        String token = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7)
+                : authorizationHeader;
+
+        // get userId from token
+        String userId = (String) this.jwtService.decodeJWT(token).get("userId");
+
+        // get user info
+        User user = getUser(userId, "id");
+
+        return user;
     }
 
     public ResponseEntity sendCodeViaEmail(String email) {
@@ -136,5 +180,109 @@ public class UserService {
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getUserInfo(String authorizationHeader) {
+        // Extract token from "Bearer <token>"
+        String token = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7)
+                : authorizationHeader;
+
+        // get user id
+        String userId = (String) this.jwtService.decodeJWT(token).get("userId");
+
+        // get user info
+        User user = getUser(userId, "id");
+
+        // convert to response
+        ResponseUserInfo responseUserInfo = this.userMapper.toResponse(user, hobbyService);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(responseUserInfo)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_USERINFO_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity updateUserInfo(RequestUpdateUserInfo requestUpdateUserInfo, String authorizationHeader) {
+        // get user from authorization
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        // update new properties
+        this.userMapper.updateBasicInfo(requestUpdateUserInfo, user);
+
+        // save user
+        user = this.userRepository.save(user);
+
+        // convert to response
+        ResponseUserInfo responseUserInfo = this.userMapper.toResponse(user, hobbyService);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(responseUserInfo)
+                .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_BASIC_USERINFO))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity updateUserHobbies(RequestUpdateUserInfo request, String authorizationHeader) {
+        // get user
+        User user = getUserFromAthorization(authorizationHeader);
+
+        // get user hobby ids
+        Set<Long> originalHobbyIds = this.hobbyService.getUserHobbyIds(user.getId());
+
+        // create user hobby ids
+        Set<Long> updatedHobbyIds = createUserHobbyIds(request.getHobbyIds(), originalHobbyIds);
+
+        // save
+        this.hobbyService.insertUserHobbies(user.getId(), updatedHobbyIds);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_USER_HOBBIES))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    private Set<Long> createUserHobbyIds(Set<Long> updateSet, Set<Long> originalSet) {
+        Set<Long> resultSet = new HashSet<>(updateSet); // Copy updateSet
+        resultSet.removeAll(originalSet); // Remove elements that are in originalSet
+        return resultSet;
+    }
+
+    public ResponseEntity updateSchedule(RequestUpdateUserInfo request, String authorizationHeader) {
+        // get user
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        // convert to Json
+        String json = jsonConverter.toJsonString(request.getJsonSchedule());
+
+        // update data
+        user.setJsonSchedule(json);
+
+        // save
+        user = this.userRepository.save(user);
+
+        // convert to object
+        Object object = jsonConverter.toObject(user.getJsonSchedule());
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(object)
+                .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_USER_HOBBIES))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public void pushEventWhenCreateUser(User user) {
+        // id||name||dob||studentId||major||faculty||phone
+        this.kafkaTemplate.send("user-creation", user.getId() + "||" + user.getName() + "||" + user.getDob() + "||"
+                + user.getStudentID() + "||" + user.getMajor() + "||" + user.getFaculty() + "||" + user.getPhone());
     }
 }

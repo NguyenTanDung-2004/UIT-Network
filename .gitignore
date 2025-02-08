@@ -1,3 +1,5 @@
 /.metadata/
 mysql.sock
 application.yml
+.cmd
+volumes/

@@ -19,7 +19,10 @@ public enum EnumResponse {
     CREATE_USER_SUCCESS("s_01", "Create user successfully", HttpStatus.OK),
     LOGIN_SUCCESS("s_02", "Login successfully", HttpStatus.OK),
     SEND_CODE_FORGOT_PASSWORD_SUCCESS("s_03", "Send code forgot password successfully", HttpStatus.OK),
-    RESET_PASSWORD_SUCCESS("s_04", "Reset password successfully!", HttpStatus.OK);
+    RESET_PASSWORD_SUCCESS("s_04", "Reset password successfully!", HttpStatus.OK),
+    GET_USERINFO_SUCCESS("s_05", "Get user info successfully!", HttpStatus.OK),
+    UPDATE_BASIC_USERINFO("s_06", "Update user info successfully!", HttpStatus.OK),
+    UPDATE_USER_HOBBIES("s_07", "Update user hobbies successfully!", HttpStatus.OK);
 
     String code;
     String message;

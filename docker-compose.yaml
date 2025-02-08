@@ -35,6 +35,25 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER  
 
+  db_friendservice:
+    image: neo4j:latest
+    container_name: project2_db_friendservice
+    environment:
+      - NEO4J_AUTH=neo4j/neo4j1234 #username/password
+    ports:
+      - "7474:7474"   
+      - "7687:7687"                     
+    volumes:
+      - ./volumes/db_friendservice:/data                 
+    networks:
+      - project2
+    restart: always
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "neo4j1234", "MATCH () RETURN 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3  
+
 networks:
   project2:  
     driver: bridge

@@ -20,7 +20,9 @@ import lombok.experimental.FieldDefaults;
 public enum EnumException {
     VERIFY_TOKEN_FAIL("f_01", "Verify Token Fail", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND("f_02", "User Not Found", HttpStatus.BAD_REQUEST),
-    CODE_RESETPASS_WRONG("f_03", "Code is wrong", HttpStatus.BAD_REQUEST);
+    CODE_RESETPASS_WRONG("f_03", "Code is wrong", HttpStatus.BAD_REQUEST),
+    JSON_OBJECT_FAIL("f_04", "Convert json to object fail", HttpStatus.INTERNAL_SERVER_ERROR),
+    OBJECT_JSON_FAIL("f_05", "Convert object to json fail", HttpStatus.INTERNAL_SERVER_ERROR);
 
     String code;
     String message;

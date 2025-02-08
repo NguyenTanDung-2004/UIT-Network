@@ -3,6 +3,7 @@ package com.example.UserService.hobby.entity;
 import java.util.Set;
 
 import com.example.UserService.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.annotation.Generated;
 import jakarta.persistence.Entity;
@@ -35,6 +36,7 @@ public class Hobby {
     String description;
     String avtURL;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "hobbies")
     Set<User> users;
 }

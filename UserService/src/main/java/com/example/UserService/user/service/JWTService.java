@@ -75,9 +75,11 @@ public class JWTService {
                 claimsMap.put("expirationTime", claims.getExpirationTime());
                 claimsMap.put("roleId", claims.getClaim("roleId"));
                 claimsMap.put("userId", claims.getClaim("userId"));
+            } else {
+                throw new UserException(EnumException.VERIFY_TOKEN_FAIL);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             throw new UserException(EnumException.VERIFY_TOKEN_FAIL);
         }
         return claimsMap;

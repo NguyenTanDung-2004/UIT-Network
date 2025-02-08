@@ -7,15 +7,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.UserService.mapper.UserMapper;
 import com.example.UserService.user.dto.request.RequestCreate;
 import com.example.UserService.user.dto.request.RequestLogin;
 import com.example.UserService.user.dto.request.RequestResetPassword;
+import com.example.UserService.user.dto.request.RequestUpdateUserInfo;
 import com.example.UserService.user.entity.User;
-import com.example.UserService.user.mapper.UserMapper;
 import com.example.UserService.user.repository.UserRepository;
 import com.example.UserService.user.service.UserService;
 
@@ -41,7 +43,12 @@ public class UserController {
             User user = userMapper.toEntity(listRequestCreate.get(i));
 
             // save
-            userRepository.save(user);
+            user = userRepository.save(user);
+
+            if (listRequestCreate.get(i).getFlagRole() == 1) {
+                // push event to kafka
+                this.userService.pushEventWhenCreateUser(user);
+            }
         }
 
         return ResponseEntity.ok("ok");
@@ -61,4 +68,28 @@ public class UserController {
     public ResponseEntity resetPassword(@RequestBody RequestResetPassword requestResetPassword) {
         return userService.resetPassword(requestResetPassword);
     }
+
+    @GetMapping("/get-user-info")
+    public ResponseEntity getUserInfo(@RequestHeader("Authorization") String authorizationHeader) {
+        return userService.getUserInfo(authorizationHeader);
+    }
+
+    @PostMapping("/update-basic-user-info")
+    public ResponseEntity updateUserInfo(@RequestBody RequestUpdateUserInfo requestUpdateUserInfo,
+            @RequestHeader("Authorization") String authorizationHeader) {
+        return userService.updateUserInfo(requestUpdateUserInfo, authorizationHeader);
+    }
+
+    @PostMapping("/update-user-hobbies")
+    public ResponseEntity updateUserHobbies(@RequestBody RequestUpdateUserInfo request,
+            @RequestHeader("Authorization") String authorizationHeader) {
+        return userService.updateUserHobbies(request, authorizationHeader);
+    }
+
+    @PostMapping("/update-user-schedule")
+    public ResponseEntity updateSchedule(@RequestBody RequestUpdateUserInfo request,
+            @RequestHeader("Authorization") String authorizationHeader) {
+        return userService.updateSchedule(request, authorizationHeader);
+    }
+
 }

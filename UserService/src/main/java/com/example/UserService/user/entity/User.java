@@ -1,11 +1,18 @@
 package com.example.UserService.user.entity;
 
+import java.io.IOException;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.example.UserService.hobby.entity.Hobby;
 import com.example.UserService.role.entity.Role;
+import com.example.UserService.user.model.TimeSlot;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -60,6 +67,7 @@ public class User {
     Date dob;
     Long latitude;
     Long longitude;
+    @Column(columnDefinition = "JSON") // Define JSON column
     String jsonSchedule;
 
     @ManyToMany
