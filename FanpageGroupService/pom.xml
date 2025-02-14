@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>fanpage_group</artifactId>
+	<artifactId>FanpageGroupService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
-	<name>fanpage_group</name>
+	<name>FanpageGroupService</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
@@ -66,6 +66,12 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+			<version>4.2.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
