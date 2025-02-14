@@ -92,4 +92,21 @@ public class UserController {
         return userService.updateSchedule(request, authorizationHeader);
     }
 
+    @PostMapping("/set-private")
+    public ResponseEntity updatePrivate(@RequestHeader("Authorization") String authorizationHeader) {
+        return userService.updatePrivate(authorizationHeader);
+    }
+
+    /*
+     * external APIs
+     */
+    @GetMapping("/external-get-user-info")
+    public ResponseEntity externalGetUserInfo(@RequestHeader("Authorization") String authorizationHeader) {
+        return userService.externalGetUserInfo(authorizationHeader);
+    }
+
+    @GetMapping("/user-id")
+    public ResponseEntity externalGetUserId(@RequestHeader("Authorization") String authorizationHeader) {
+        return userService.externalGetUserId(authorizationHeader);
+    }
 }

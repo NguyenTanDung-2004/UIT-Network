@@ -12,6 +12,7 @@ import com.example.UserService.user.dto.request.RequestCreate;
 import com.example.UserService.user.dto.request.RequestUpdateUserInfo;
 import com.example.UserService.user.dto.response.ResponseUserInfo;
 import com.example.UserService.user.entity.User;
+import com.example.UserService.user.model.PrivateProperties;
 import com.example.UserService.user.service.PasswordService;
 
 import lombok.experimental.FieldDefaults;
@@ -43,21 +44,22 @@ public class UserMapper {
                 .dob(requestCreate.getDob())
                 .latitude(requestCreate.getLatitude())
                 .longitude(requestCreate.getLongitude())
+                .privateProperties(0)
                 .build();
     }
 
     public ResponseUserInfo toResponse(User user, HobbyService hobbyService) {
         return ResponseUserInfo.builder()
                 .id(user.getId())
-                .email(user.getEmail())
+                .email(user.getPrivateProperties().equals(1) ? null : user.getEmail())
                 .avtURL(user.getAvtURL())
-                .name(user.getName())
+                .name(user.getPrivateProperties().equals(1) ? null : user.getName())
                 .description(user.getDescription())
                 .studentID(user.getStudentID())
                 .major(user.getMajor())
                 .faculty(user.getFaculty())
-                .phone(user.getPhone())
-                .dob(user.getDob())
+                .phone(user.getPrivateProperties().equals(1) ? null : user.getPhone())
+                .dob(user.getPrivateProperties().equals(1) ? null : user.getDob())
                 .latitude(user.getLatitude())
                 .longitude(user.getLongitude())
                 .jsonSchedule(user.getJsonSchedule())

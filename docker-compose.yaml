@@ -54,6 +54,25 @@ services:
       timeout: 5s
       retries: 3  
 
+  db_postservice:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    container_name: project2_db_postservice
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=username
+      - MONGO_INITDB_ROOT_PASSWORD=12345
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./volumes/db_postservice:/data/db
+    networks:
+      - project2
+    restart: always
+    healthcheck:
+      test: [ "CMD", "mongosh", "mongodb://username:12345@localhost:27017", "--eval", "show dbs;" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3  
+
 networks:
   project2:  
     driver: bridge

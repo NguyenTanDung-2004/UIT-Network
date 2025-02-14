@@ -70,6 +70,9 @@ public class User {
     @Column(columnDefinition = "JSON") // Define JSON column
     String jsonSchedule;
 
+    @Column(columnDefinition = "INT DEFAULT 0")
+    Integer privateProperties = 0; // 1 is private || 0 is public
+
     @ManyToMany
     @JoinTable(name = "user_hobby", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "hobby_id"))
     Set<Hobby> hobbies;

@@ -3,10 +3,13 @@ package com.example.UserService.hobby.entity;
 import java.util.Set;
 
 import com.example.UserService.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.annotation.Generated;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,6 +40,6 @@ public class Hobby {
     String avtURL;
 
     @JsonIgnore
-    @ManyToMany(mappedBy = "hobbies")
+    @ManyToMany(mappedBy = "hobbies", fetch = FetchType.LAZY)
     Set<User> users;
 }

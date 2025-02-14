@@ -2,16 +2,23 @@ package com.example.UserService.hobby.service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.hibernate.Session;
 import org.springframework.stereotype.Service;
 
+import com.example.UserService.hobby.dto.HobbyDTO;
 import com.example.UserService.hobby.entity.Hobby;
+import com.example.UserService.hobby.mapper.HobbyMapper;
 import com.example.UserService.hobby.repository.HobbyRepository;
 
 import jakarta.persistence.EntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class HobbyService {
@@ -21,8 +28,23 @@ public class HobbyService {
     @Autowired
     private EntityManager entityManager;
 
+    /*
+     * The reason for putting code in synchronized block is that
+     * - when we get list hobby from database (hibernate is tracking this list).
+     * - when convert list to hashset (new thread access this list so the exception
+     * will be thrown)
+     */
     public Set<Hobby> getUserHobbies(String userId) {
-        return this.hobbyRepository.getUserHobbies(userId);
+        List<HobbyDTO> listDTO = this.hobbyRepository.getUserHobbies(userId);
+
+        // convert to hobby
+        List<Hobby> listHobby = new ArrayList<>();
+
+        for (int i = 0; i < listDTO.size(); i++) {
+            listHobby.add(HobbyMapper.toEntity(listDTO.get(i)));
+        }
+
+        return new HashSet<>(listHobby);
     }
 
     public Set<Long> getUserHobbyIds(String userId) {

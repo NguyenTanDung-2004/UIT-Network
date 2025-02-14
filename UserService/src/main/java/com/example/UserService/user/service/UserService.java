@@ -1,6 +1,7 @@
 package com.example.UserService.user.service;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import com.example.UserService.user.dto.request.RequestResetPassword;
 import com.example.UserService.user.dto.request.RequestUpdateUserInfo;
 import com.example.UserService.user.dto.response.ResponseUserInfo;
 import com.example.UserService.user.entity.User;
+import com.example.UserService.user.model.PrivateProperties;
 import com.example.UserService.user.model.TimeSlot;
 import com.example.UserService.user.repository.UserRepository;
 import com.example.UserService.util.JsonConverter;
@@ -205,6 +207,19 @@ public class UserService {
         return ResponseEntity.ok(apiResponse);
     }
 
+    private ResponseEntity createUserResponseEntity(User user) {
+        // convert to response
+        ResponseUserInfo responseUserInfo = this.userMapper.toResponse(user, hobbyService);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(responseUserInfo)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_USERINFO_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
     public ResponseEntity updateUserInfo(RequestUpdateUserInfo requestUpdateUserInfo, String authorizationHeader) {
         // get user from authorization
         User user = this.getUserFromAthorization(authorizationHeader);
@@ -284,5 +299,36 @@ public class UserService {
         // id||name||dob||studentId||major||faculty||phone
         this.kafkaTemplate.send("user-creation", user.getId() + "||" + user.getName() + "||" + user.getDob() + "||"
                 + user.getStudentID() + "||" + user.getMajor() + "||" + user.getFaculty() + "||" + user.getPhone());
+    }
+
+    public ResponseEntity updatePrivate(String authorizationHeader) {
+        // get user
+        User user = getUserFromAthorization(authorizationHeader);
+
+        if (user.getPrivateProperties() == 1) {
+            user.setPrivateProperties(0);
+        } else {
+            user.setPrivateProperties(1);
+        }
+
+        // save
+        user = this.userRepository.save(user);
+
+        // create response
+        return createUserResponseEntity(user);
+    }
+
+    public ResponseEntity externalGetUserInfo(String authorizationHeader) {
+        // get User
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        return ResponseEntity.ok(Map.of("userId", user.getId()));
+    }
+
+    public ResponseEntity externalGetUserId(String authorizationHeader) {
+        // get user
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        return ResponseEntity.ok("\"" + user.getId() + "\"");
     }
 }
