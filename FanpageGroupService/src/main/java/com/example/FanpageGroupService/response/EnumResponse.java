@@ -17,7 +17,11 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum EnumResponse {
     CREATE_FANPAGE_SUCCESS("s_01_fanpagegroup", "Create fanpage successfully!", HttpStatus.OK),
-    DELETE_FANPAGE_SUCCESS("s_02_fanpagegroup", "Delete fanpage successfully!", HttpStatus.OK);
+    DELETE_FANPAGE_SUCCESS("s_02_fanpagegroup", "Delete fanpage successfully!", HttpStatus.OK),
+    UPDATE_FANPAGE_SUCCESS("s_03_fanpagegroup", "Update fanpage successfully!", HttpStatus.OK),
+    CREATE_GROUP_SUCCESS("s_04_fanpagegroup", "Create group successfully!", HttpStatus.OK),
+    UPDATE_GROUP_SUCCESS("s_05_fanpagegroup", "Update group successfully!", HttpStatus.OK),
+    DELETE_GROUP_SUCCESS("s_06_fanpagegroup", "Delete fanpage successfully!", HttpStatus.OK);
 
     String code;
     String message;

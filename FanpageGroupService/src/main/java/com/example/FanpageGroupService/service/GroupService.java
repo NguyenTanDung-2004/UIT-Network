@@ -7,15 +7,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.example.FanpageGroupService.dto.request.RequestCreateFanpage;
-import com.example.FanpageGroupService.dto.request.RequestUpdateFanpage;
-import com.example.FanpageGroupService.entities.Fanpage;
+import com.example.FanpageGroupService.dto.request.RequestCreateGroup;
+import com.example.FanpageGroupService.dto.request.RequestUpdateGroup;
+import com.example.FanpageGroupService.entities.Group;
 import com.example.FanpageGroupService.exception.EnumException;
 import com.example.FanpageGroupService.exception.ExternalException;
 import com.example.FanpageGroupService.exception.UserException;
 import com.example.FanpageGroupService.mapper.FanpageMapper;
+import com.example.FanpageGroupService.mapper.GroupMapper;
 import com.example.FanpageGroupService.mapper.Mapper;
-import com.example.FanpageGroupService.repository.FanpageRepository;
+import com.example.FanpageGroupService.repository.GroupRepository;
 import com.example.FanpageGroupService.repository.httpclient.UserClient;
 import com.example.FanpageGroupService.response.ApiResponse;
 import com.example.FanpageGroupService.response.EnumResponse;
@@ -23,33 +24,33 @@ import com.example.FanpageGroupService.response.EnumResponse;
 import feign.FeignException;
 
 @Service
-public class FanpageService {
+public class GroupService {
     @Autowired
-    private FanpageRepository fanpageRepository;
-
-    @Autowired
-    private UserClient userClient;
+    private GroupRepository groupRepository;
 
     private final Mapper mapper;
 
     @Autowired
-    private FanpageService(FanpageMapper fanpageMapper) {
-        this.mapper = fanpageMapper;
+    private UserClient userClient;
+
+    @Autowired
+    private GroupService(GroupMapper groupMapper) {
+        this.mapper = groupMapper;
     }
 
-    public ResponseEntity createFanpage(RequestCreateFanpage request, String authorizationHeader) {
-        // get userid
+    public ResponseEntity createGroup(RequestCreateGroup request, String authorizationHeader) {
+        // get userId
         String userId = getUserId(authorizationHeader);
 
-        // convert to fanpage
-        Fanpage fanpage = (Fanpage) this.mapper.toEntity(request, userId);
+        // convert request to entity
+        Group group = (Group) mapper.toEntity(request, userId);
 
         // save
-        fanpage = this.fanpageRepository.save(fanpage);
+        group = this.groupRepository.save(group);
 
         // create response
         ApiResponse apiResponse = ApiResponse.builder()
-                .object(fanpage)
+                .object(group)
                 .enumResponse(EnumResponse.toJson(EnumResponse.CREATE_FANPAGE_SUCCESS))
                 .build();
 
@@ -72,50 +73,52 @@ public class FanpageService {
         return userId;
     }
 
-    public ResponseEntity updateFanpage(RequestUpdateFanpage request) {
-        // get fanpage id
-        Fanpage fanpage = getFanpage(request.getFanpageId());
+    public ResponseEntity updateGroup(RequestUpdateGroup request) {
+        // get group
+        Group group = this.getGroupById(request.getGroupId());
 
         // update
-        fanpage = (Fanpage) this.mapper.toEntity(request, fanpage);
+        group = (Group) this.mapper.toEntity(request, group);
 
         // save
-        fanpage = this.fanpageRepository.save(fanpage);
+        group = this.groupRepository.save(group);
 
         // create response
         ApiResponse apiResponse = ApiResponse.builder()
-                .object(fanpage)
-                .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_FANPAGE_SUCCESS))
+                .object(group)
+                .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_GROUP_SUCCESS))
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+
     }
 
-    public Fanpage getFanpage(String fanpageId) {
-        Optional<Fanpage> optional = this.fanpageRepository.findById(fanpageId);
+    private Group getGroupById(String groupId) {
+        Optional<Group> optional = this.groupRepository.findById(groupId);
 
         if (optional.isEmpty()) {
-            throw new UserException(EnumException.FANPAGE_NOT_FOUND);
+            throw new UserException(EnumException.GROUP_NOT_FOUND);
         }
-
         return optional.get();
     }
 
-    public ResponseEntity delete(String fanpageId) {
-        // get fanpage id
-        Fanpage fanpage = getFanpage(fanpageId);
+    public ResponseEntity deleteGroup(String groupId) {
+        Date date = new Date();
+
+        // get group
+        Group group = this.getGroupById(groupId);
 
         // update
-        fanpage.setIsDelete(true);
-        fanpage.setDeletedDate(new Date());
+        group.setDeletedDate(date);
+        group.setIsDelete(true);
 
         // save
-        fanpage = this.fanpageRepository.save(fanpage);
+        group = this.groupRepository.save(group);
 
         // create response
         ApiResponse apiResponse = ApiResponse.builder()
                 .object(null)
-                .enumResponse(EnumResponse.toJson(EnumResponse.DELETE_FANPAGE_SUCCESS))
+                .enumResponse(EnumResponse.toJson(EnumResponse.DELETE_GROUP_SUCCESS))
                 .build();
 
         return ResponseEntity.ok(apiResponse);

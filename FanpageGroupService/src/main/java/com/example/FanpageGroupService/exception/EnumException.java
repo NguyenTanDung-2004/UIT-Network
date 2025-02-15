@@ -17,7 +17,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum EnumException {
     INTERNAL_ERROR("f_01_fanpagegroup", "Internal Error", HttpStatus.INTERNAL_SERVER_ERROR),
-    FANPAGE_NOT_FOUND("f_02_fanpagegroup", "Fanpage is not existed", HttpStatus.BAD_REQUEST);
+    FANPAGE_NOT_FOUND("f_02_fanpagegroup", "Fanpage is not existed", HttpStatus.BAD_REQUEST),
+    GROUP_NOT_FOUND("f_03_fanpagegroup", "Group is not existed", HttpStatus.BAD_REQUEST);
 
     String code;
     String message;
