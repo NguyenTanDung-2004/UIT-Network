@@ -109,4 +109,9 @@ public class UserController {
     public ResponseEntity externalGetUserId(@RequestHeader("Authorization") String authorizationHeader) {
         return userService.externalGetUserId(authorizationHeader);
     }
+
+    @GetMapping("/user-info")
+    public ResponseEntity getListUserInfo(@RequestParam(name = "ids") String ids) {
+        return userService.externalGetUserInfo(ids);
+    }
 }

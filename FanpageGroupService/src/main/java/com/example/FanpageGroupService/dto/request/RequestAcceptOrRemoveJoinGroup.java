@@ -1,17 +1,14 @@
-package com.example.UserService.user.dto.response;
+package com.example.FanpageGroupService.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-public class ResponseExternalUserInfo {
+public class RequestAcceptOrRemoveJoinGroup {
     private String userId;
-    private String userName;
-    private String avtURL;
-    private String studentId;
 }

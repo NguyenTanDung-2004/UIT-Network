@@ -37,4 +37,6 @@ public class Post {
 
     private boolean isDelete = false;
     private Date deletedDate;
+
+    private String parentId; // group or fanpage
 }

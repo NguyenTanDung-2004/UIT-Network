@@ -2,6 +2,7 @@ package com.example.UserService.user.service;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import com.example.UserService.response.EnumResponse;
 import com.example.UserService.user.dto.request.RequestLogin;
 import com.example.UserService.user.dto.request.RequestResetPassword;
 import com.example.UserService.user.dto.request.RequestUpdateUserInfo;
+import com.example.UserService.user.dto.response.ResponseExternalUserInfo;
 import com.example.UserService.user.dto.response.ResponseUserInfo;
 import com.example.UserService.user.entity.User;
 import com.example.UserService.user.model.PrivateProperties;
@@ -318,17 +320,31 @@ public class UserService {
         return createUserResponseEntity(user);
     }
 
-    public ResponseEntity externalGetUserInfo(String authorizationHeader) {
-        // get User
-        User user = this.getUserFromAthorization(authorizationHeader);
+    // public ResponseEntity externalGetUserInfo(String authorizationHeader) {
+    // // get User
+    // User user = this.getUserFromAthorization(authorizationHeader);
 
-        return ResponseEntity.ok(Map.of("userId", user.getId()));
-    }
+    // return ResponseEntity.ok(Map.of("userId", user.getId()));
+    // }
 
     public ResponseEntity externalGetUserId(String authorizationHeader) {
         // get user
         User user = this.getUserFromAthorization(authorizationHeader);
 
         return ResponseEntity.ok("\"" + user.getId() + "\"");
+    }
+
+    public ResponseEntity externalGetUserInfo(String ids) {
+        List<String> idList = Arrays.asList(ids.split(",")); // Convert to List
+
+        List<User> users = this.userRepository.getListUser(idList);
+
+        // convert to list external response info
+        List<ResponseExternalUserInfo> lists = new ArrayList<>();
+        for (int i = 0; i < users.size(); i++) {
+            lists.add(this.userMapper.toResponseExternalUserInfo(users.get(i)));
+        }
+
+        return ResponseEntity.ok(lists);
     }
 }

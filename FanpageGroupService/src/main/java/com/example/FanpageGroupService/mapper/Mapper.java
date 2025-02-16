@@ -5,4 +5,6 @@ import org.springframework.stereotype.Component;
 @Component
 public interface Mapper {
     public Object toEntity(Object object1, Object object2);
+
+    public Object toObject(Object object1, Object object2);
 }

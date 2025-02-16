@@ -1,4 +1,4 @@
-package com.example.UserService.user.dto.response;
+package com.example.FanpageGroupService.dto.external;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ResponseExternalUserInfo {
+public class UserInfoFromUser {
     private String userId;
     private String userName;
     private String avtURL;

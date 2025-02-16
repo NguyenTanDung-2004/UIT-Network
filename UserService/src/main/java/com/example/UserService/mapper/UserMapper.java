@@ -10,6 +10,7 @@ import com.example.UserService.hobby.service.HobbyService;
 import com.example.UserService.role.service.RoleService;
 import com.example.UserService.user.dto.request.RequestCreate;
 import com.example.UserService.user.dto.request.RequestUpdateUserInfo;
+import com.example.UserService.user.dto.response.ResponseExternalUserInfo;
 import com.example.UserService.user.dto.response.ResponseUserInfo;
 import com.example.UserService.user.entity.User;
 import com.example.UserService.user.model.PrivateProperties;
@@ -75,5 +76,14 @@ public class UserMapper {
         Optional.ofNullable(requestUpdateUserInfo.getDob()).ifPresent(user::setDob);
         Optional.ofNullable(requestUpdateUserInfo.getLongitude()).ifPresent(user::setLongitude);
         Optional.ofNullable(requestUpdateUserInfo.getLatitude()).ifPresent(user::setLatitude);
+    }
+
+    public ResponseExternalUserInfo toResponseExternalUserInfo(User user) {
+        return ResponseExternalUserInfo.builder()
+                .userId(user.getId())
+                .avtURL(user.getAvtURL())
+                .userName(user.getPrivateProperties().equals(1) ? null : user.getName())
+                .studentId(user.getStudentID())
+                .build();
     }
 }

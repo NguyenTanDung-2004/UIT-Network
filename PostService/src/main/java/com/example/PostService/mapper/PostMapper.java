@@ -33,6 +33,7 @@ public class PostMapper implements Mapper {
                 .postTypeId(requestCreatePost.getPostTypeId())
                 .createdDate(date)
                 .updatedDate(date)
+                .parentId(requestCreatePost.getParentId())
                 .build();
     }
 

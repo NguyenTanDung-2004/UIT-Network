@@ -1,4 +1,6 @@
-package com.example.UserService.user.dto.response;
+package com.example.FanpageGroupService.entities.user_group;
+
+import java.io.Serializable;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ResponseExternalUserInfo {
+public class UserGroupPK implements Serializable {
     private String userId;
-    private String userName;
-    private String avtURL;
-    private String studentId;
+    private String groupId;
 }

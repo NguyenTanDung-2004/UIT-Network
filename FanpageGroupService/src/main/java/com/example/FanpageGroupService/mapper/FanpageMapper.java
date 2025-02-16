@@ -51,4 +51,10 @@ public class FanpageMapper implements Mapper {
         return fanpage;
     }
 
+    @Override
+    public Object toObject(Object object1, Object object2) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'toObject'");
+    }
+
 }

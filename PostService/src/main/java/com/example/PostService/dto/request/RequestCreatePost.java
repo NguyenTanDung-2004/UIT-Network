@@ -22,4 +22,6 @@ public class RequestCreatePost {
     private List<Media> media;
 
     private int postTypeId;
+
+    private String parentId;
 }
