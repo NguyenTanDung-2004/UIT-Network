@@ -1,11 +1,14 @@
 package com.example.FriendService.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.example.FriendService.entity.User;
 import com.example.FriendService.mapper.FriendMapper;
 import com.example.FriendService.repository.FriendRepository;
+import com.example.FriendService.response.ApiResponse;
+import com.example.FriendService.response.EnumResponse;
 
 @Service
 public class FriendService {
@@ -31,5 +34,53 @@ public class FriendService {
 
         // save
         this.friendRepository.save(user);
+    }
+
+    public ResponseEntity requestAddFriend(String senderId, String receiverId) {
+        this.friendRepository.sendFriendRequest(senderId, receiverId);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.REQUEST_TO_ADDFRIEND))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity cancelRequestFriend(String senderId, String receiverId) {
+        this.friendRepository.cancelFriendRequest(senderId, receiverId);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.REQUEST_TO_ADDFRIEND))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity acceptFriend(String senderId, String receiverId) {
+        this.friendRepository.acceptFriendRequest(senderId, receiverId);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.ACCEPT_REQUEST_ADDFRIEND))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity deleteFriend(String senderId, String receiverId) {
+        this.friendRepository.removeFriend(senderId, receiverId);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.REMOVE_REQUEST_ADDFRIEND))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
 }

@@ -1,8 +1,12 @@
 package com.example.FriendService.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,5 +21,29 @@ public class FriendController {
     @KafkaListener(topics = "user-creation", groupId = "friend-group")
     public void addUser(String message) {
         friendService.createUser(message);
+    }
+
+    @PostMapping("/{senderId}/request/{receiverId}")
+    public ResponseEntity requestAddFriend(@PathVariable(name = "senderId") String senderId,
+            @PathVariable(name = "receiverId") String receiverId) {
+        return friendService.requestAddFriend(senderId, receiverId);
+    }
+
+    @DeleteMapping("/{senderId}/request/{receiverId}")
+    public ResponseEntity cancelRequestFriend(@PathVariable(name = "senderId") String senderId,
+            @PathVariable(name = "receiverId") String receiverId) {
+        return friendService.cancelRequestFriend(senderId, receiverId);
+    }
+
+    @PostMapping("/{senderId}/friend/{receiverId}")
+    public ResponseEntity acceptFriend(@PathVariable(name = "senderId") String senderId,
+            @PathVariable(name = "receiverId") String receiverId) {
+        return friendService.acceptFriend(senderId, receiverId);
+    }
+
+    @DeleteMapping("/{senderId}/friend/{receiverId}")
+    public ResponseEntity deleteFriend(@PathVariable(name = "senderId") String senderId,
+            @PathVariable(name = "receiverId") String receiverId) {
+        return friendService.deleteFriend(senderId, receiverId);
     }
 }

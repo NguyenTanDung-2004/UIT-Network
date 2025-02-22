@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.FanpageGroupService.dto.request.RequestCreateFanpage;
 import com.example.FanpageGroupService.dto.request.RequestUpdateFanpage;
@@ -21,20 +22,21 @@ import com.example.FanpageGroupService.response.ApiResponse;
 import com.example.FanpageGroupService.response.EnumResponse;
 
 import feign.FeignException;
+import feign.Request;
 
 @Service
 public class FanpageService {
-    @Autowired
-    private FanpageRepository fanpageRepository;
+    private final FanpageRepository fanpageRepository;
 
-    @Autowired
-    private UserClient userClient;
+    private final UserClient userClient;
 
     private final Mapper mapper;
 
     @Autowired
-    private FanpageService(FanpageMapper fanpageMapper) {
+    public FanpageService(FanpageMapper fanpageMapper, FanpageRepository fanpageRepository, UserClient userClient) {
         this.mapper = fanpageMapper;
+        this.userClient = userClient;
+        this.fanpageRepository = fanpageRepository;
     }
 
     public ResponseEntity createFanpage(RequestCreateFanpage request, String authorizationHeader) {
@@ -116,6 +118,24 @@ public class FanpageService {
         ApiResponse apiResponse = ApiResponse.builder()
                 .object(null)
                 .enumResponse(EnumResponse.toJson(EnumResponse.DELETE_FANPAGE_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @Transactional
+    public ResponseEntity reactFanpage(String authorizationHeader,
+            String fanpageId) {
+        // get userId
+        String userId = getUserId(authorizationHeader);
+
+        // insert
+        this.fanpageRepository.userReactFanpage(userId, fanpageId);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.REACT_FANPAGE_SUCCESS))
                 .build();
 
         return ResponseEntity.ok(apiResponse);

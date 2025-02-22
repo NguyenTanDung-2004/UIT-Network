@@ -3,6 +3,7 @@ package com.example.FanpageGroupService.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -34,5 +35,12 @@ public class FanpageController {
     @DeleteMapping("/delete")
     public ResponseEntity deleteFanpage(@RequestParam(name = "fanpageId") String fanpageId) {
         return fanpageService.delete(fanpageId);
+    }
+
+    @PostMapping("/{fanpageId}/reactions")
+    public ResponseEntity reactFanpage(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable(name = "fanpageId") String fanpageId) {
+        return fanpageService.reactFanpage(authorizationHeader, fanpageId);
     }
 }
