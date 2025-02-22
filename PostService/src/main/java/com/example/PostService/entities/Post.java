@@ -2,10 +2,12 @@ package com.example.PostService.entities;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.example.PostService.enums.EnumPostType;
 import com.example.PostService.models.PostType;
 import com.example.PostService.models.UserInfo;
 import com.example.PostService.models.media.Media;
@@ -31,12 +33,12 @@ public class Post {
 
     private List<Media> media;
 
-    private int postTypeId;
+    private Map<String, Object> postType;
 
     // Getters and Setters
 
     private boolean isDelete = false;
     private Date deletedDate;
 
-    private String parentId; // group or fanpage
+    private String parentId; // group or fanpage (we will save group||groupid or fanpage||fanpageid)
 }

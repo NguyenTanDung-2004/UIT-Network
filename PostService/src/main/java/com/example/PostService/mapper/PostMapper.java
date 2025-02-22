@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import com.example.PostService.dto.request.RequestCreatePost;
 import com.example.PostService.dto.request.RequestUpdatePost;
 import com.example.PostService.entities.Post;
+import com.example.PostService.enums.EnumPostType;
 
 @Component
 public class PostMapper implements Mapper {
@@ -30,11 +31,24 @@ public class PostMapper implements Mapper {
         return Post.builder()
                 .caption(requestCreatePost.getCaption())
                 .media(requestCreatePost.getMedia())
-                .postTypeId(requestCreatePost.getPostTypeId())
+                .postType(EnumPostType.toMap(EnumPostType.fromTypeId(requestCreatePost.getPostTypeId())))
                 .createdDate(date)
                 .updatedDate(date)
-                .parentId(requestCreatePost.getParentId())
+                .parentId(createParentId(requestCreatePost.getPostTypeId(), requestCreatePost.getParentId()))
                 .build();
+    }
+
+    public String createParentId(int postTypeId, String parentId) {
+        if (parentId == null) {
+            return null;
+        }
+        if (postTypeId == 6 || postTypeId == 7) {
+            return "group||" + parentId;
+        } else if (postTypeId == 4 || postTypeId == 5) {
+            return "fanpage||" + parentId;
+        } else {
+            return null;
+        }
     }
 
     public Post toEntity(RequestUpdatePost requestUpdatePost, Post post) {
@@ -43,7 +57,7 @@ public class PostMapper implements Mapper {
 
         post.setCaption(requestUpdatePost.getCaption());
         post.setMedia(requestUpdatePost.getMedia());
-        post.setPostTypeId(requestUpdatePost.getPostTypeId());
+        post.setPostType(EnumPostType.toMap(EnumPostType.fromTypeId(requestUpdatePost.getPostTypeId())));
         post.setUpdatedDate(date);
 
         return post;
