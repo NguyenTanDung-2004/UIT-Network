@@ -39,4 +39,8 @@ public enum EnumPostType {
         return Map.of("id", enumPostType.getId(), "typeName", enumPostType.getTypeName(), "value",
                 enumPostType.getValue());
     }
+
+    public static String getType(int typeId) {
+        return fromTypeId(typeId).getTypeName();
+    }
 }

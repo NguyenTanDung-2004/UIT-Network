@@ -28,4 +28,13 @@ public interface UserGroupRepository extends JpaRepository<UserGroup, UserGroupP
                         where t.group_id = :groupId and t.user_id = :userId
                         """, nativeQuery = true)
         public void removeJoinRequest(String groupId, String userId);
+
+        @Query(value = """
+                        select case
+                        	when exists (select 1 from user_group where user_id = :user)
+                        	then 1
+                        	else 0
+                        end as result
+                                                """, nativeQuery = true)
+        public int isMember(String userId);
 }

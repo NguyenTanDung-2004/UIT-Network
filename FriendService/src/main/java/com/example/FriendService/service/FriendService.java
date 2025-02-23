@@ -83,4 +83,10 @@ public class FriendService {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    public ResponseEntity isFriend(String userId1, String userId2) {
+        int isFriend = this.friendRepository.isFriend(userId1, userId2);
+
+        return ResponseEntity.ok(isFriend);
+    }
 }

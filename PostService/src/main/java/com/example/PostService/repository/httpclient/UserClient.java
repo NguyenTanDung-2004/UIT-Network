@@ -12,4 +12,7 @@ public interface UserClient {
 
     @GetMapping(value = "/user-id", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     public Object getUserId(@RequestHeader("Authorization") String authorizationHeader);
+
+    @GetMapping(value = "/user-info", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    public Object getListUserInfos(@RequestHeader("userId") String userIds);
 }

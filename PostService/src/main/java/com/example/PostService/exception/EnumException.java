@@ -19,7 +19,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum EnumException {
     INTERNAL_ERROR("f_01_post", "Internal Error", HttpStatus.INTERNAL_SERVER_ERROR),
-    POST_NOT_FOUND("f_02_post", "Post is not existed", HttpStatus.BAD_REQUEST);
+    POST_NOT_FOUND("f_02_post", "Post is not existed", HttpStatus.BAD_REQUEST),
+    POST_PERMISSION_DENIED("f_03_post", "Permission denied", HttpStatus.FORBIDDEN);
 
     String code;
     String message;

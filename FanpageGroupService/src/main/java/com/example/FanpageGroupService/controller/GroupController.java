@@ -63,4 +63,14 @@ public class GroupController {
             @RequestBody RequestAcceptOrRemoveJoinGroup requestAcceptJoinGroup) {
         return groupService.removeJoinRequest(groupId, requestAcceptJoinGroup);
     }
+
+    /*
+     * External APIs
+     */
+
+    @GetMapping("/{groupId}/is-member/{userId}")
+    public ResponseEntity isMember(@PathVariable(name = "groupId") String groupId,
+            @PathVariable(name = "userId") String userId) {
+        return groupService.isMember(groupId, userId);
+    }
 }

@@ -23,6 +23,10 @@ import com.example.PostService.repository.PostRepository;
 import com.example.PostService.repository.httpclient.UserClient;
 import com.example.PostService.response.ApiResponse;
 import com.example.PostService.response.EnumResponse;
+import com.example.PostService.service.strategy.PostAccessStrategy.PostAccessStrategy;
+import com.example.PostService.service.strategy.PostAccessStrategy.PostAccessStrategyFactory;
+import com.example.PostService.service.strategy.UserInfoStrategy.UserInfoStrategy;
+import com.example.PostService.service.strategy.UserInfoStrategy.UserInfoStrategyFactory;
 
 import feign.FeignException;
 
@@ -40,6 +44,12 @@ public class PostService {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private PostAccessStrategyFactory postAccessStrategyFactory;
+
+    @Autowired
+    private UserInfoStrategyFactory userInfoStrategyFactory;
 
     public ResponseEntity createPost(RequestCreatePost requestCreatePost, String authorizationHeader) {
         // get userId
@@ -127,5 +137,25 @@ public class PostService {
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getPostDetail(String authorizationHeader, String postId) {
+        // get post
+        Post post = getPost(postId);
+
+        // get userid
+        String userId = getUserId(authorizationHeader);
+
+        // check permission
+        PostAccessStrategy postAccessStrategy = postAccessStrategyFactory
+                .getStrategy((String) post.getPostType().get("id"));
+        if (postAccessStrategy.checkAccess(userId, post) == false) {
+            throw new UserException(EnumException.POST_PERMISSION_DENIED);
+        }
+
+        // get user info
+        UserInfoStrategy userInfoStrategy = userInfoStrategyFactory
+                .getUserInfoStrategy((String) post.getPostType().get("typeName"));
+        UserInfo userInfo = userInfoStrategy.getUserInfo(userId, post);
     }
 }

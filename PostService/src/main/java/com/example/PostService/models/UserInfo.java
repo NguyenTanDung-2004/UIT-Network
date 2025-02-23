@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class UserInfo {
     private String userId;
     private String userName;
-    private String url;
+    private String avtURL;
+    private String studentId;
 }

@@ -33,4 +33,8 @@ public interface FriendRepository extends Neo4jRepository<User, String> {
         void removeFriend(String userId1, String userId2);
 
         Optional<User> findById(String id);
+
+        @Query("MATCH (a:User {id: $userId1})-[r:FRIEND]->(b:User {id: $userId2}) RETURN COUNT(r)")
+        int isFriend(String userId1, String userId2);
+
 }

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -45,5 +46,14 @@ public class FriendController {
     public ResponseEntity deleteFriend(@PathVariable(name = "senderId") String senderId,
             @PathVariable(name = "receiverId") String receiverId) {
         return friendService.deleteFriend(senderId, receiverId);
+    }
+
+    /*
+     * External APIs
+     */
+    @GetMapping("/is-friend/{userId1}/{userId2}")
+    public ResponseEntity isFriend(@PathVariable(name = "userId1") String userId1,
+            @PathVariable(name = "userId2") String userId2) {
+        return friendService.isFriend(userId1, userId2);
     }
 }
