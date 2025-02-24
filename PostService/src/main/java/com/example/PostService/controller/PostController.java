@@ -39,9 +39,16 @@ public class PostController {
         return postService.deletPost(authorizationHeader, postId);
     }
 
-    @GetMapping("/detail/{postId}")
-    public ResponseEntity getPostDetail(@RequestHeader("Authorization") String authorizationHeader,
+    @GetMapping("/like")
+    public ResponseEntity likePost(@RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(name = "postId") String postId) {
-        return postService.getPostDetail(authorizationHeader, postId);
+        return postService.likePost(authorizationHeader, postId);
     }
+
+    // @GetMapping("/detail/{postId}")
+    // public ResponseEntity getPostDetail(@RequestHeader("Authorization") String
+    // authorizationHeader,
+    // @RequestParam(name = "postId") String postId) {
+    // return postService.getPostDetail(authorizationHeader, postId);
+    // }
 }

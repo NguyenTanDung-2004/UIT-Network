@@ -8,17 +8,21 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.PostService.dto.external.ExternalUserInfo;
 import com.example.PostService.dto.request.RequestCreatePost;
 import com.example.PostService.dto.request.RequestUpdatePost;
 import com.example.PostService.entities.Post;
+import com.example.PostService.entities.UserLikePost;
 import com.example.PostService.exception.EnumException;
 import com.example.PostService.exception.ExternalException;
 import com.example.PostService.exception.UserException;
 import com.example.PostService.mapper.Mapper;
 import com.example.PostService.mapper.PostMapper;
 import com.example.PostService.models.UserInfo;
+import com.example.PostService.repository.LikeRepository;
 import com.example.PostService.repository.PostRepository;
 import com.example.PostService.repository.httpclient.UserClient;
 import com.example.PostService.response.ApiResponse;
@@ -50,6 +54,9 @@ public class PostService {
 
     @Autowired
     private UserInfoStrategyFactory userInfoStrategyFactory;
+
+    @Autowired
+    private LikeRepository likeRepository;
 
     public ResponseEntity createPost(RequestCreatePost requestCreatePost, String authorizationHeader) {
         // get userId
@@ -139,23 +146,53 @@ public class PostService {
         return ResponseEntity.ok(apiResponse);
     }
 
-    public ResponseEntity getPostDetail(String authorizationHeader, String postId) {
-        // get post
-        Post post = getPost(postId);
-
-        // get userid
+    public ResponseEntity likePost(String authorizationHeader, String postId) {
+        // get userId
         String userId = getUserId(authorizationHeader);
 
-        // check permission
-        PostAccessStrategy postAccessStrategy = postAccessStrategyFactory
-                .getStrategy((String) post.getPostType().get("id"));
-        if (postAccessStrategy.checkAccess(userId, post) == false) {
-            throw new UserException(EnumException.POST_PERMISSION_DENIED);
+        // check like
+        UserLikePost userLikePost = likeRepository.findByUserIdAndPostId(userId, postId);
+
+        if (userLikePost != null) {
+            this.likeRepository.delete(userLikePost);
+        } else {
+            // create user like post
+            userLikePost = UserLikePost.builder()
+                    .postId(postId)
+                    .userId(userId)
+                    .build();
+
+            // save
+            likeRepository.save(userLikePost);
         }
 
-        // get user info
-        UserInfoStrategy userInfoStrategy = userInfoStrategyFactory
-                .getUserInfoStrategy((String) post.getPostType().get("typeName"));
-        UserInfo userInfo = userInfoStrategy.getUserInfo(userId, post);
+        // response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.LIKE_POST_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
+
+    // public ResponseEntity getPostDetail(String authorizationHeader, String
+    // postId) {
+    // // get post
+    // Post post = getPost(postId);
+
+    // // get userid
+    // String userId = getUserId(authorizationHeader);
+
+    // // check permission
+    // PostAccessStrategy postAccessStrategy = postAccessStrategyFactory
+    // .getStrategy((String) post.getPostType().get("id"));
+    // if (postAccessStrategy.checkAccess(userId, post) == false) {
+    // throw new UserException(EnumException.POST_PERMISSION_DENIED);
+    // }
+
+    // // get user info
+    // UserInfoStrategy userInfoStrategy = userInfoStrategyFactory
+    // .getUserInfoStrategy((String) post.getPostType().get("typeName"));
+    // UserInfo userInfo = userInfoStrategy.getUserInfo(userId, post);
+    // }
 }
