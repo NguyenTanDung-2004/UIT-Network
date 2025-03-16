@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: FanpageGroupService
+  datasource:
+    url: jdbc:mysql://localhost:3308/project2_db_fanpagegroupservice
+    username: root
+    password: 12345
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+app:
+  services:
+    user: http://localhost:8080/user
+
+server:
+  port: 8084

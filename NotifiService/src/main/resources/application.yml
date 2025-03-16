@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: NotifiService
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+mail:
+  apikey: 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
+  url: https://api.brevo.com/v3/smtp/email
+  sendername: UIT-Network
+  senderemail: 22520001@gm.uit.edu.vn
+  templatepath: NotifiService\src\main\java\com\example\NotifiService\mail\template
+
+server:
+  port: 8081

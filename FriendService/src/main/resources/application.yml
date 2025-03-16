@@ -1,0 +1,20 @@
+spring:
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: neo4j1234
+  application:
+    name: FriendService
+
+  kafka:
+      bootstrap-servers: localhost:9094
+      consumer:
+        group-id: friend-group
+        auto-offset-reset: earliest
+        key-serializer: org.apache.kafka.common.serialization.StringSerializer
+        value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+server:
+  port: 8082
+

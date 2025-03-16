@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: PostService
+  data:
+    mongodb:
+      uri: mongodb://username:12345@localhost:27017/project_postservice?authSource=admin
+app:
+  services:
+    user: http://localhost:8080/user
+    group: http://localhost:8084/group
+    friend: http://localhost:8082/friend
+
+server:
+  port: 8083
