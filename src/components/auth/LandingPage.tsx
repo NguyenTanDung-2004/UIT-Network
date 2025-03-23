@@ -53,7 +53,7 @@ const LandingPage = () => {
             alt="Study Buddy Logo"
             width={200}
             height={200}
-            className="mr-2"
+            className="mr-2 hidden md:block"
           />
         </div>
         <nav className="hidden md:flex items-center gap-10 font-semibold">
@@ -65,7 +65,7 @@ const LandingPage = () => {
           </a>
           <a
             href="#"
-            className="text-[#838383] hover:text-opacity-80 mr-[360px]"
+            className="text-[#838383] hover:text-opacity-80 mr-[360px] md:mr-[120px] "
           >
             Contact
           </a>
