@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+interface UploadedFile {
+  name: string;
+  size: number;
+  url: string;
+  type: string;
+}
 interface PostProps {
   post: {
     id: string;
@@ -18,6 +24,7 @@ interface PostProps {
     likes: number;
     comments: number;
     shares: number;
+    file?: UploadedFile;
   };
 }
 
@@ -37,6 +44,24 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const handleShare = () => {
     setIsShared(!isShared);
     setSharesCount(isShared ? sharesCount - 1 : sharesCount + 1); // Cập nhật số lượt share
+  };
+
+  // Lấy icon file dựa trên loại file
+  const getFileIcon = (fileUrl: string): string => {
+    if (fileUrl.endsWith(".pdf")) {
+      return "/images/files/pdf-icon.png";
+    } else if (fileUrl.endsWith(".doc") || fileUrl.endsWith(".docx"))
+      return "/images/files/docx-icon.png";
+    else {
+      return "/images/files/file-icon.png";
+    }
+  };
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   return (
@@ -131,6 +156,26 @@ const Post: React.FC<PostProps> = ({ post }) => {
         </div>
       )}
 
+      {post.file && (
+        <div
+          className="mt-3 border rounded-sm shadow-sm p-3 w-full flex items-center gap-4 cursor-pointer"
+          onClick={() => window.open(post.file?.url, "_blank")}
+        >
+          <div className="flex items-center">
+            <img
+              src={getFileIcon(post.file.type)}
+              alt="File"
+              className="w-8 h-8 "
+            />
+          </div>
+          <div>
+            <p className="text-sm font-medium">{post.file.name}</p>
+            <p className="text-xs text-gray-500">
+              {formatFileSize(post.file.size)}
+            </p>
+          </div>
+        </div>
+      )}
       {/* Post Actions */}
       <div className="flex justify-between items-center pt-2 border-t">
         {/* like */}

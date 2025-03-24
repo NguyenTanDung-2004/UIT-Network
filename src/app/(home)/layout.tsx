@@ -74,18 +74,12 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
     { id: "user8", name: "Yến Trần", status: "online" as "online" | "offline" },
   ];
 
-  // const groupsToJoin = [
-  //   { id: "uit-k22", name: "UIT K22" },
-  //   { id: "uit-khdl", name: "UIT KHDL" },
-  //   { id: "rubik-club", name: "Rubik Club" },
-  //   { id: "uit-cnpm", name: "UIT CNPM", years: "2022 - 2025" },
-  // ];
-
-  // Check screen size to handle responsive layout
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
         setIsMobile(true);
+        document.body.style.overflowY = "hidden";
+        document.body.style.overflowX = "hidden";
         setShowLeftSidebar(false);
         setShowRightSidebar(false);
       } else if (window.innerWidth < 1024) {
@@ -119,22 +113,23 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
 
   const toggleRightSidebar = () => {
     setShowRightSidebar(!showRightSidebar);
-    if (isMobile && !showRightSidebar) {
-      setShowLeftSidebar(false);
-    }
+    // if (!showRightSidebar) {
+    //   setShowLeftSidebar(false);
+    // }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F3F3F3]">
+    <div className="flex flex-col h-screen bg-[#F3F3F3] overflow-x-hidden">
       {/* Navigation Bar */}
       <NavBar user={user} />
 
       {/* Mobile Toggle Buttons*/}
-      <div className="md:hidden flex justify-between px-4 py-2 bg-white border-b">
-        <button onClick={toggleLeftSidebar} className="text-gray-600">
+      <div className="lg:hidden  flex  px-4 py-2 bg-white border-b">
+        <button onClick={toggleLeftSidebar} className="text-gray-600 md:hidden">
           <i className={`fas ${showLeftSidebar ? "fa-times" : "fa-bars"}`}></i>
         </button>
-        <button onClick={toggleRightSidebar} className="text-gray-600">
+
+        <button onClick={toggleRightSidebar} className="text-gray-600 ml-auto">
           <i
             className={`fas ${showRightSidebar ? "fa-times" : "fa-users"}`}
           ></i>
@@ -158,17 +153,19 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         {/* Right Sidebar */}
-        <div
-          className={`${
-            showRightSidebar ? "translate-x-0" : "translate-x-full"
-          } transition-transform duration-300 w-72 flex-shrink-0 lg:translate-x-0 absolute right-0 md:relative z-20 bg-white h-full`}
-        >
-          <RightBar
-            communityChats={communityChats}
-            groupChats={groupChats}
-            onlineContacts={onlineContacts}
-          />
-        </div>
+        {!isMobile && !showRightSidebar && window.innerWidth < 1024 ? null : (
+          <div
+            className={`${
+              showRightSidebar ? "translate-x-0" : "translate-x-full"
+            } transition-transform duration-300 w-72 flex-shrink-0 lg:translate-x-0 absolute right-0 md:relative z-20 bg-white h-full`}
+          >
+            <RightBar
+              communityChats={communityChats}
+              groupChats={groupChats}
+              onlineContacts={onlineContacts}
+            />
+          </div>
+        )}
       </div>
 
       {/* Backdrop for mobile when sidebar is open */}

@@ -1,12 +1,14 @@
 "use client";
 import React, { useState } from "react";
-import CreatePost from "@/components/home/post/CreatePost";
-import Post from "@/components/home/post/Post";
+import CreatePost from "@/components/post/CreatePost";
+import Post from "@/components/post/Post";
 import {
   PeopleToConnectWidget,
   GroupsToJoinWidget,
   ConnectionStatus,
 } from "@/components/home/Connect";
+import CreatePostModal from "@/components/post/create/CreatePostModal";
+import { UploadedFile } from "@/components/post/create/CreatePostModal";
 
 const HomePage = () => {
   // Mock user data
@@ -128,8 +130,20 @@ const HomePage = () => {
     },
   ]);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
   // Handle creating a new post
-  const handleCreatePost = (content: string, attachments: string[]) => {
+  const handleCreatePost = (
+    content: string,
+    imageUrl?: string,
+    file?: UploadedFile
+  ) => {
     let truncatedContent: string | undefined = undefined;
     if (content.length > 200) {
       truncatedContent = content.substring(0, 200);
@@ -154,10 +168,11 @@ const HomePage = () => {
         minute: "numeric",
         hour12: true,
       }),
-      images: attachments,
+      images: imageUrl ? [imageUrl] : [],
       likes: 0,
       comments: 0,
       shares: 0,
+      file: file,
     };
 
     setPosts([newPost, ...posts]);
@@ -187,7 +202,7 @@ const HomePage = () => {
     <div className="flex flex-col md:flex-row">
       {/* Main Feed */}
       <div className="flex-1 ">
-        <CreatePost user={currentUser} onPostCreate={handleCreatePost} />
+        <CreatePost user={currentUser} onPostCreate={openModal} />
 
         {posts.map((post) => (
           <Post key={post.id} post={post} />
@@ -207,6 +222,16 @@ const HomePage = () => {
           onJoin={handleJoinGroup}
         />
       </div>
+
+      {/* Show CreatePostModal */}
+      {isModalOpen && (
+        <CreatePostModal
+          onClose={closeModal}
+          onPost={(content, imageUrl, fileUrl) => {
+            handleCreatePost(content, imageUrl, fileUrl);
+          }}
+        />
+      )}
     </div>
   );
 };

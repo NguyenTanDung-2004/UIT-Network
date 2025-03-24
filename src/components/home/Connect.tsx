@@ -109,7 +109,7 @@ export const GroupToJoin: React.FC<GroupToJoinProps> = ({ group, onJoin }) => {
         </div>
       </div>
       {group.joined ? (
-        <button className="w-8 h-8 bg-primary rounded-full text-white flex items-center justify-center">
+        <button className="w-8 h-8 bg-primary  rounded-full text-white flex items-center justify-center">
           <i className="fas fa-check text-xs"></i>
         </button>
       ) : (
