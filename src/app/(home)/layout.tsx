@@ -113,13 +113,10 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
 
   const toggleRightSidebar = () => {
     setShowRightSidebar(!showRightSidebar);
-    // if (!showRightSidebar) {
-    //   setShowLeftSidebar(false);
-    // }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F3F3F3] overflow-x-hidden">
+    <div className="flex flex-col h-screen bg-[#F3F3F3] overflow-x-hidden dark:bg-gray-700">
       {/* Navigation Bar */}
       <NavBar user={user} />
 

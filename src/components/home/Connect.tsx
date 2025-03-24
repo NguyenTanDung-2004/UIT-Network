@@ -41,20 +41,20 @@ export const PersonToConnect: React.FC<PersonToConnectProps> = ({
         return (
           <button
             onClick={() => onConnect(person.id)}
-            className="w-8 h-8 bg-pink-100 rounded-full text-primary hover:bg-pink-200 flex items-center justify-center"
+            className="w-8 h-8 bg-pink-100 rounded-full text-primary hover:bg-pink-200 flex items-center justify-center "
           >
             <i className="fas fa-plus text-xs"></i>
           </button>
         );
       case ConnectionStatus.CONNECTED:
         return (
-          <button className="w-8 h-8 bg-primary rounded-full text-white flex items-center justify-center">
+          <button className="w-8 h-8 bg-primary rounded-full text-white flex items-center justify-center ">
             <i className="fas fa-user-check text-xs"></i>
           </button>
         );
       case ConnectionStatus.PENDING:
         return (
-          <button className="w-8 h-8 bg-primary rounded-full text-white flex items-center justify-center">
+          <button className="w-8 h-8 bg-primary rounded-full text-white flex items-center justify-center ">
             <i className="fas fa-check text-xs"></i>
           </button>
         );
@@ -62,9 +62,9 @@ export const PersonToConnect: React.FC<PersonToConnectProps> = ({
   };
 
   return (
-    <div className="flex justify-between items-center py-2">
+    <div className="flex justify-between items-center py-2 dark:text-gray-300">
       <div className="flex items-center">
-        <div className="w-8 h-8 relative rounded-full overflow-hidden border">
+        <div className="w-8 h-8 relative rounded-full overflow-hidden border dark:border-gray-700">
           <Image
             src={person.avatar}
             alt={person.name}
@@ -73,9 +73,13 @@ export const PersonToConnect: React.FC<PersonToConnectProps> = ({
           />
         </div>
         <div className="ml-2">
-          <p className="font-medium text-sm">{person.name}</p>
+          <p className="font-medium text-sm dark:text-gray-300">
+            {person.name}
+          </p>
           {person.role && (
-            <p className="text-xs text-gray-500">{person.role}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {person.role}
+            </p>
           )}
         </div>
       </div>
@@ -87,9 +91,9 @@ export const PersonToConnect: React.FC<PersonToConnectProps> = ({
 // Component for displaying a group to join
 export const GroupToJoin: React.FC<GroupToJoinProps> = ({ group, onJoin }) => {
   return (
-    <div className="flex justify-between items-center py-2">
+    <div className="flex justify-between items-center py-2 dark:text-gray-300">
       <div className="flex items-center">
-        <div className="w-8 h-8 relative rounded-full overflow-hidden bg-blue-100 flex items-center justify-center border">
+        <div className="w-8 h-8 relative rounded-full overflow-hidden bg-blue-100 flex items-center justify-center dark:bg-gray-700 dark:border-gray-600">
           {group.avatar ? (
             <Image
               src={group.avatar}
@@ -98,24 +102,26 @@ export const GroupToJoin: React.FC<GroupToJoinProps> = ({ group, onJoin }) => {
               className="object-cover"
             />
           ) : (
-            <i className="fas fa-users text-blue-500 text-xs"></i>
+            <i className="fas fa-users text-blue-500 text-xs dark:text-gray-400"></i>
           )}
         </div>
         <div className="ml-2">
-          <p className="font-medium text-sm">{group.name}</p>
+          <p className="font-medium text-sm dark:text-gray-300">{group.name}</p>
           {group.years && (
-            <p className="text-xs text-gray-500">{group.years}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {group.years}
+            </p>
           )}
         </div>
       </div>
       {group.joined ? (
-        <button className="w-8 h-8 bg-primary  rounded-full text-white flex items-center justify-center">
+        <button className="w-8 h-8 bg-primary  rounded-full text-white flex items-center justify-center ">
           <i className="fas fa-check text-xs"></i>
         </button>
       ) : (
         <button
           onClick={() => onJoin(group.id)}
-          className="w-8 h-8 bg-pink-100 rounded-full text-primary hover:bg-pink-200 flex items-center justify-center"
+          className="w-8 h-8 bg-pink-100 rounded-full text-primary hover:bg-pink-200 flex items-center justify-center "
         >
           <i className="fas fa-plus text-xs"></i>
         </button>
@@ -131,8 +137,10 @@ export const PeopleToConnectWidget: React.FC<{
   onConnect: (id: string) => void;
 }> = ({ title, people, onConnect }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-      <h3 className="font-semibold text-base mb-2">{title}</h3>
+    <div className="bg-white rounded-lg shadow-sm p-4 mb-4 dark:bg-gray-800 dark:shadow-gray-700">
+      <h3 className="font-semibold text-base mb-2 dark:text-gray-200">
+        {title}
+      </h3>
       <div className="space-y-3">
         {people.map((person) => (
           <PersonToConnect
@@ -153,8 +161,10 @@ export const GroupsToJoinWidget: React.FC<{
   onJoin: (id: string) => void;
 }> = ({ title, groups, onJoin }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-      <h3 className="font-semibold text-base mb-2">{title}</h3>
+    <div className="bg-white rounded-lg shadow-sm p-4 mb-4 dark:bg-gray-800 dark:shadow-gray-700">
+      <h3 className="font-semibold text-base mb-2 dark:text-gray-200">
+        {title}
+      </h3>
       <div className="space-y-3">
         {groups.map((group) => (
           <GroupToJoin key={group.id} group={group} onJoin={onJoin} />

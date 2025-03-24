@@ -84,12 +84,14 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
       ) : (
         <>
           <i className="fa fa-cloud-upload-alt fa-2x text-gray-500 mb-2"></i>
-          <p className="text-gray-700 text-center">
+          <p className="text-gray-700 text-center dark:text-gray-400 text-sm">
             Drag and drop an image or video here, or click to select
           </p>
         </>
       )}
-      {uploading && <p className="text-gray-500">Uploading...</p>}
+      {uploading && (
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Uploading...</p>
+      )}
     </div>
   );
 };

@@ -65,12 +65,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-4 relative">
+    <div className="bg-white rounded-lg shadow-sm p-4 mb-4 relative dark:bg-gray-800 dark:shadow-gray-700">
       {/* Post Header */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center">
           <Link href={`/profile/${post.author.id}`}>
-            <div className="w-10 h-10 relative rounded-full overflow-hidden border">
+            <div className="w-10 h-10 relative rounded-full overflow-hidden border dark:border-gray-700">
               <Image
                 src={post.author.avatar}
                 alt={post.author.name}
@@ -81,32 +81,32 @@ const Post: React.FC<PostProps> = ({ post }) => {
           </Link>
           <div className="ml-2">
             <Link href={`/profile/${post.author.id}`}>
-              <span className="font-medium text-gray-900 block">
+              <span className="font-medium text-gray-900 block dark:text-gray-300">
                 {post.author.name}
               </span>
             </Link>
-            <span className="text-gray-500 text-sm">
+            <span className="text-gray-500 text-sm dark:text-gray-400">
               {post.date} {post.time}
             </span>
           </div>
         </div>
         <button
           onClick={() => setShowMoreOptions(!showMoreOptions)}
-          className="text-gray-500 hover:text-gray-700"
+          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         >
           <i className="fas fa-ellipsis-h"></i>
         </button>
         {showMoreOptions && (
-          <div className="absolute right-4 mt-5 w-36 bg-white text-[#7b7b7b] border rounded-md shadow-[0px_0px_14px_0px_rgba(0,0,0,0.2)] z-10">
-            <button className="w-full flex items-center px-4 py-2 hover:bg-gray-100">
+          <div className="absolute right-4 mt-5 w-36 bg-white text-[#7b7b7b] border rounded-md shadow-[0px_0px_14px_0px_rgba(0,0,0,0.2)] z-10 dark:bg-gray-700 dark:border-gray-600 dark:shadow-[0px_0px_14px_0px_rgba(0,0,0,0.4)] dark:text-gray-300">
+            <button className="w-full flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-300">
               <i className="fas fa-bookmark w-5 text-center mr-3"></i>
               <span>Save post</span>
             </button>
-            <button className="w-full flex items-center px-4 py-2 hover:bg-gray-100">
+            <button className="w-full flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-300">
               <i className="fas fa-flag w-5 text-center mr-3"></i>
               <span>Report</span>
             </button>
-            <button className="w-full flex items-center px-4 py-2 hover:bg-gray-100">
+            <button className="w-full flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-300">
               <i className="fas fa-eye-slash w-5 text-center mr-3"></i>
               <span>Hide</span>
             </button>
@@ -116,7 +116,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
       {/* Post Content */}
       <div className="mb-3">
-        <p className="text-gray-800">
+        <p className="text-gray-800 dark:text-gray-300">
           {post.content === ""
             ? post.fullContent
             : isExpanded
@@ -158,7 +158,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
       {post.file && (
         <div
-          className="mt-3 border rounded-sm shadow-sm p-3 w-full flex items-center gap-4 cursor-pointer"
+          className="mt-3 border rounded-sm shadow-sm p-3 w-full flex items-center gap-4 cursor-pointer dark:bg-gray-700 dark:border-gray-600"
           onClick={() => window.open(post.file?.url, "_blank")}
         >
           <div className="flex items-center">
@@ -169,25 +169,27 @@ const Post: React.FC<PostProps> = ({ post }) => {
             />
           </div>
           <div>
-            <p className="text-sm font-medium">{post.file.name}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm font-medium dark:text-gray-300">
+              {post.file.name}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {formatFileSize(post.file.size)}
             </p>
           </div>
         </div>
       )}
       {/* Post Actions */}
-      <div className="flex justify-between items-center pt-2 border-t">
+      <div className="flex justify-between items-center pt-2 border-t dark:border-gray-700">
         {/* like */}
         <button
           onClick={handleLike}
           className={`flex items-center ${
-            isLiked ? "text-primary" : "text-gray-500"
-          } hover:text-primary`}
+            isLiked ? "text-primary dark:" : "text-gray-400"
+          } hover:text-opacity-80 `}
         >
           <div
             className={`py-2 px-3 rounded-3xl ${
-              isLiked ? "bg-pink-100" : ""
+              isLiked ? "bg-pink-200" : ""
             } transition-colors duration-200`}
           >
             <i className={`${isLiked ? "fas" : "far"} fa-thumbs-up mr-2`}></i>
@@ -196,7 +198,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
           <span
             className={`ml-1 ${
               isLiked
-                ? "bg-pink-100 text-primary px-2 py-1 rounded-full"
+                ? "bg-pink-200 text-primary px-2 py-1 rounded-full"
                 : "text-gray-400"
             }`}
           >
@@ -205,7 +207,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         </button>
 
         {/* cmt */}
-        <button className="flex items-center text-gray-500 hover:text-gray-700">
+        <button className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
           <div className="p-2 rounded-md">
             <i className="far fa-comment-alt mr-2"></i>
             <span>Comment</span>
@@ -217,12 +219,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
         <button
           onClick={handleShare}
           className={`flex items-center ${
-            isShared ? "text-primary" : "text-gray-500"
-          } hover:text-primary`}
+            isShared ? "text-primary" : "text-gray-400"
+          } hover:text-opacity-80 `}
         >
           <div
             className={`py-2 px-3 rounded-3xl ${
-              isShared ? "bg-pink-100" : ""
+              isShared ? "bg-pink-200" : ""
             } transition-colors duration-200`}
           >
             <i className={`fas fa-share mr-2`}></i>
@@ -231,11 +233,11 @@ const Post: React.FC<PostProps> = ({ post }) => {
           <span
             className={`ml-1 ${
               isShared
-                ? "bg-pink-100 text-primary px-2 py-1 rounded-full"
+                ? "bg-pink-200 text-primary px-2 py-1 rounded-full"
                 : "text-gray-400"
             }`}
           >
-            {sharesCount} {/* Hiển thị số lượt share từ state */}
+            {sharesCount}
           </span>
         </button>
       </div>

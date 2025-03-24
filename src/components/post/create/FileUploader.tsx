@@ -104,13 +104,15 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       ) : (
         <>
           <i className="fas fa-cloud-upload-alt fa-2x text-gray-500 mb-2"></i>
-          <p className="text-gray-700 text-center">
+          <p className="text-gray-700 text-center dark:text-gray-400 text-sm">
             Drag and drop a file here, or click to select a file (PDF, DOCX,
             DOC)
           </p>
         </>
       )}
-      {uploading && <p className="text-gray-500">Uploading...</p>}
+      {uploading && (
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Uploading...</p>
+      )}
     </div>
   );
 };

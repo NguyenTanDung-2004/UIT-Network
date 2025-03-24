@@ -146,14 +146,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-[#b0afaf] bg-opacity-80  flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl w-full max-w-md shadow-lg overflow-y-auto max-h-[80vh]">
+    <div className="fixed top-0 left-0 w-full h-full bg-[#b0afaf] bg-opacity-80  flex items-center justify-center z-50 dark:bg-gray-900 dark:bg-opacity-80">
+      <div className="bg-white rounded-xl w-full max-w-md shadow-lg overflow-y-auto max-h-[80vh] dark:bg-gray-800 dark:shadow-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="text-lg font-semibold text-gray-800">Create a post</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            Create a post
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            className="text-gray-500 hover:text-gray-700 focus:outline-none dark:text-gray-400 dark:hover:text-gray-300"
           >
             <i className="fa fa-times"></i>
           </button>
@@ -165,7 +167,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             value={content}
             onChange={handleInputChange}
             placeholder="Share some what you are thinking?"
-            className="w-full h-20 p-3 border rounded-lg resize-none focus:outline-none focus:ring focus:border-blue-300 text-sm"
+            className="w-full h-20 p-3 border rounded-lg resize-none  focus:outline-none focus:ring-2 focus:ring-pink-200 text-[15px] dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 "
           />
 
           {/* Display selected image or video */}
@@ -191,7 +193,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 )}
                 <button
                   onClick={() => handleDeleteMedia(index)}
-                  className="absolute top-1 right-1 bg-white bg-opacity-50 text-black rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-70 focus:outline-none transition-colors"
+                  className="absolute top-1 right-1 bg-white bg-opacity-50 text-black rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-70 focus:outline-none transition-colors dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-opacity-80"
                   aria-label="Delete media"
                 >
                   <i className="fas fa-times text-sm"></i>
@@ -202,7 +204,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           {uploadedFile ? (
             // Hiển thị thông tin file và nút xóa
             <div
-              className="mt-3 border rounded-md shadow-sm p-3 w-full flex items-center justify-between cursor-pointer"
+              className="mt-3 border rounded-md shadow-sm p-3 w-full flex items-center justify-between cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
               onClick={handleViewFile}
             >
               <div className="flex items-center">
@@ -213,14 +215,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 />
                 <div>
                   <p className="text-sm font-medium">{uploadedFile.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {formatFileSize(uploadedFile.size)}
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleDeleteFile}
-                className="text-red-500 hover:text-red-700"
+                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
               >
                 <i className="fas fa-times"></i>
               </button>
@@ -229,9 +231,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t flex flex-col gap-2">
+        <div className="p-4 border-t flex flex-col gap-2 dark:border-gray-700">
           {showMediaUploader && (
-            <div className="rounded-xl border-2 border-dashed border-gray-400 p-4">
+            <div className="rounded-xl border-2 border-dashed border-gray-400 p-4 dark:border-gray-600">
               <MediaUploader
                 onMediaUpload={handleMediaUpload}
                 onFileSelect={handleFileSelect}
@@ -255,27 +257,28 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           <div className="flex justify-between items-center">
             <button
               onClick={() => setShowEmojiPicker(true)}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+              className=" text-gray-500 hover:text-gray-700 rounded-md dark:text-gray-400 dark:hover:text-gray-300"
             >
-              <i className="fa fa-smile text-lg"></i>
+              <i className="far fa-smile text-lg"></i>
             </button>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => {
                   setShowMediaUploader(true);
                   setShowFileUploader(false);
                 }}
-                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                className="text-gray-500 hover:text-gray-700 rounded-md dark:text-gray-400 dark:hover:text-gray-300"
               >
-                <i className="fa fa-image text-lg"></i>
+                <i className="far fa-image text-lg"></i>
               </button>
+
               <button
                 onClick={() => {
                   setShowFileUploader(true);
                   setShowMediaUploader(false);
                 }}
-                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                className="text-gray-500 hover:text-gray-700 rounded-md dark:text-gray-400 dark:hover:text-gray-300"
               >
                 <i className="fa fa-paperclip text-lg"></i>
               </button>
@@ -285,7 +288,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           {/* Post Button */}
           <button
             onClick={handlePost}
-            className="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-xl focus:outline-none"
+            className="mt-3 bg-primary hover:bg-opacity-80 text-white py-2 px-4 rounded-3xl focus:outline-none"
           >
             Post
           </button>
@@ -293,13 +296,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
         {/* Emoji Picker Modal */}
         {showEmojiPicker && (
-          <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white rounded-lg p-4">
+          <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-50 dark:bg-gray-900 dark:bg-opacity-50">
+            <div className="bg-white rounded-lg p-4 dark:bg-gray-700">
               <EmojiPicker onEmojiSelect={handleEmojiSelect} />
               <div className="flex justify-end mt-4">
                 <button
                   onClick={() => setShowEmojiPicker(false)}
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none"
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none dark:bg-gray-500 dark:hover:bg-gray-600 dark:text-gray-200"
                 >
                   Close
                 </button>
