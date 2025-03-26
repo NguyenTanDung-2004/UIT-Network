@@ -13,7 +13,11 @@ export interface UploadedFile {
 }
 interface CreatePostModalProps {
   onClose: () => void;
-  onPost: (content: string, imageUrl?: string, file?: UploadedFile) => void;
+  onPost: (
+    content: string,
+    mediaList?: { url: string; type: string }[],
+    file?: UploadedFile
+  ) => void;
 }
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({
@@ -82,11 +86,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const handlePost = () => {
-    onPost(
-      content,
-      mediaList.length > 0 ? mediaList[0].url : undefined,
-      uploadedFile || undefined
-    );
+    onPost(content, mediaList, uploadedFile || undefined);
     onClose();
   };
 

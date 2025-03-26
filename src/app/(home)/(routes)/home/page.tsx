@@ -96,10 +96,17 @@ const HomePage = () => {
         "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and tourism. With a population of about 97 million people, Vietnam is one of the most populous countries in the world. The country's cuisine is renowned globally for its fresh ingredients, vibrant flavors, and healthy cooking techniques.",
       date: "Fri, February 7, 2025",
       time: "10:58 AM",
-      images: [
-        "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-        "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+      mediaList: [
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
       ],
+
       likes: 293,
       comments: 18,
       shares: 10,
@@ -118,11 +125,27 @@ const HomePage = () => {
         "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and tourism. With a population of about 97 million people, Vietnam is one of the most populous countries in the world. The country's cuisine is renowned globally for its fresh ingredients, vibrant flavors, and healthy cooking techniques.",
       date: "Fri, February 7, 2025",
       time: "10:56 AM",
-      images: [
-        "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-        "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-        "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-        "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+      mediaList: [
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661303/cld-sample-2.jpg",
+          type: "image",
+        },
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
       ],
       likes: 150,
       comments: 22,
@@ -141,7 +164,7 @@ const HomePage = () => {
   // Handle creating a new post
   const handleCreatePost = (
     content: string,
-    imageUrl?: string,
+    mediaList: { url: string; type: string }[],
     file?: UploadedFile
   ) => {
     let truncatedContent: string | undefined = undefined;
@@ -168,7 +191,7 @@ const HomePage = () => {
         minute: "numeric",
         hour12: true,
       }),
-      images: imageUrl ? [imageUrl] : [],
+      mediaList: mediaList,
       likes: 0,
       comments: 0,
       shares: 0,
@@ -227,8 +250,8 @@ const HomePage = () => {
       {isModalOpen && (
         <CreatePostModal
           onClose={closeModal}
-          onPost={(content, imageUrl, fileUrl) => {
-            handleCreatePost(content, imageUrl, fileUrl);
+          onPost={(content, mediaList, fileUrl) => {
+            handleCreatePost(content, mediaList || [], fileUrl);
           }}
         />
       )}
