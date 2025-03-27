@@ -1,6 +1,8 @@
 package com.example.FanpageGroupService.service;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -139,5 +141,28 @@ public class FanpageService {
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListFanpage(String userId) {
+        List<String> list = this.fanpageRepository.getListFanpageUserLiked(userId);
+
+        if (list == null){
+            list = new ArrayList<>();
+        }
+
+        return ResponseEntity.ok(list);
+    }
+
+    public ResponseEntity getListFanpageInfos(String ids) {
+        System.out.println(ids);
+        List<Fanpage> list = this.fanpageRepository.getListFanpageInfos(ids);
+
+        if (list == null){
+            list = new ArrayList<>();
+        }
+
+        System.out.println(list);
+
+        return ResponseEntity.ok(list);
     }
 }

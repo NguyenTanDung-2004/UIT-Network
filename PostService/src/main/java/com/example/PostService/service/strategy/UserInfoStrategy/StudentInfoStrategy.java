@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import com.example.PostService.entities.Post;
 import com.example.PostService.models.UserInfo;
 import com.example.PostService.repository.httpclient.UserClient;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class StudentInfoStrategy implements UserInfoStrategy {
@@ -18,10 +20,16 @@ public class StudentInfoStrategy implements UserInfoStrategy {
     public UserInfo getUserInfo(String userId, Post post) {
         Object object = userClient.getListUserInfos(userId);
 
-        // parse object to list<userinfo>
-        List<UserInfo> userInfos = (List<UserInfo>) object;
+        // Use ObjectMapper to convert the object to List<UserInfo>
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<UserInfo> userInfos = objectMapper.convertValue(object, new TypeReference<List<UserInfo>>() {});
 
         return userInfos.get(0);
+    }
+
+    @Override
+    public Boolean createDisplayedFields(Post post) {
+        return true;
     }
 
 }

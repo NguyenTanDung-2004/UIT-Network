@@ -9,6 +9,7 @@ app:
     user: http://localhost:8080/user
     group: http://localhost:8084/group
     friend: http://localhost:8082/friend
+    fanpage: http://localhost:8084/fanpage
 
 server:
   port: 8083

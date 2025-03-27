@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.FanpageGroupService.dto.request.RequestAcceptOrRemoveJoinGroup;
@@ -72,5 +73,15 @@ public class GroupController {
     public ResponseEntity isMember(@PathVariable(name = "groupId") String groupId,
             @PathVariable(name = "userId") String userId) {
         return groupService.isMember(groupId, userId);
+    }
+
+    @GetMapping("/list/{userId}")
+    public ResponseEntity getListGroup(@PathVariable(name = "userId") String userId) {
+        return groupService.getListGroup(userId);
+    }
+
+    @GetMapping("/list-info")
+    public ResponseEntity getListGroupInfos(@RequestParam("ids") String ids) {
+        return groupService.getListGroupInfos(ids);
     }
 }

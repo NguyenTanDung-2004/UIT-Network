@@ -1,9 +1,12 @@
 package com.example.PostService.repository.httpclient;
 
+import java.util.List;
+
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(name = "user-service", url = "${app.services.user}")
 public interface UserClient {
@@ -14,5 +17,5 @@ public interface UserClient {
     public Object getUserId(@RequestHeader("Authorization") String authorizationHeader);
 
     @GetMapping(value = "/user-info", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
-    public Object getListUserInfos(@RequestHeader("userId") String userIds);
+    public Object getListUserInfos(@RequestParam(name = "ids") String ids);
 }

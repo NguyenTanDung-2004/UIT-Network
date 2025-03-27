@@ -1,5 +1,8 @@
 package com.example.FriendService.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -16,9 +19,10 @@ public class FriendService {
     private FriendRepository friendRepository;
 
     @Autowired
-    private FriendMapper firnedFriendMapper;
+    private FriendMapper friendMapper;
 
     public void createUser(String message) {
+        System.out.println(message);
         // update message
         /*
          * The reason for updating message
@@ -30,7 +34,7 @@ public class FriendService {
         String[] parts = message.split("\\|\\|");
 
         // convert to user
-        User user = firnedFriendMapper.messageToUser(parts);
+        User user = friendMapper.messageToUser(parts);
 
         // save
         this.friendRepository.save(user);
@@ -88,5 +92,11 @@ public class FriendService {
         int isFriend = this.friendRepository.isFriend(userId1, userId2);
 
         return ResponseEntity.ok(isFriend);
+    }
+
+    public ResponseEntity getListFriend(String userId) {
+        List<String> list = this.friendRepository.getListFriend(userId);
+        list.add(userId);
+        return ResponseEntity.ok(list);
     }
 }

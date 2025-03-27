@@ -19,8 +19,7 @@ public class StudentPostStrategy implements PostAccessStrategy {
             return true;
         }
 
-        EnumPostType enumPostType = EnumPostType
-                .fromTypeId((Integer) post.getPostType().get("id"));
+        EnumPostType enumPostType = EnumPostType.fromTypeId((Integer) post.getPostType().get("id"));
         switch (enumPostType) {
             case NORMAL_STUDENT_POST_FRIEND:
                 // check friend
@@ -28,6 +27,9 @@ public class StudentPostStrategy implements PostAccessStrategy {
 
             case NORMAL_STUDENT_POST_PRIVATE:
                 return false;
+
+            case NORMAL_STUDENT_POST_PUBLIC:
+                return true;
             default:
                 break;
         }

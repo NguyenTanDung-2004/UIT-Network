@@ -10,11 +10,16 @@ import com.example.PostService.enums.EnumPostType;
 public class FanpagePostStrategy implements PostAccessStrategy {
     @Override
     public boolean checkAccess(String userId, Post post) {
-        if (EnumPostType.fromTypeId((Integer) post.getPostType().get("id")) == EnumPostType.FANPAGE_POST_PRIVATE) {
-            return false;
-
+        EnumPostType enumPostType = EnumPostType.fromTypeId((Integer) post.getPostType().get("id"));
+        switch (enumPostType) {
+            case FANPAGE_POST_PUBLIC:
+                return true;
+            case FANPAGE_POST_PRIVATE:
+                return false;
+            default:
+                break;
         }
-        return true;
+        return false;
     }
 
 }

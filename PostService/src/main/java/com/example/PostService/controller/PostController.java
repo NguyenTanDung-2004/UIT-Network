@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,10 +47,13 @@ public class PostController {
         return postService.likePost(authorizationHeader, postId);
     }
 
-    // @GetMapping("/detail/{postId}")
-    // public ResponseEntity getPostDetail(@RequestHeader("Authorization") String
-    // authorizationHeader,
-    // @RequestParam(name = "postId") String postId) {
-    // return postService.getPostDetail(authorizationHeader, postId);
-    // }
+    @GetMapping("/detail/{postId}")
+    public ResponseEntity getPostDetail(@RequestHeader("Authorization") String authorizationHeader, @PathVariable(name = "postId") String postId) {
+        return postService.getPostDetail(authorizationHeader, postId);
+    }
+
+    @GetMapping("/list/home")
+    public ResponseEntity getListPostHome(@RequestHeader("Authorization") String authorizationHeader) {
+        return postService.getListPostHome(authorizationHeader);
+    }
 }

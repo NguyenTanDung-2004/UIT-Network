@@ -1,9 +1,12 @@
 package com.example.PostService.service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.PostService.dto.external.ExternalFanpageInfo;
+import com.example.PostService.dto.external.ExternalGroupInfo;
 import com.example.PostService.dto.external.ExternalUserInfo;
 import com.example.PostService.dto.request.RequestCreatePost;
 import com.example.PostService.dto.request.RequestUpdatePost;
@@ -24,6 +29,9 @@ import com.example.PostService.mapper.PostMapper;
 import com.example.PostService.models.UserInfo;
 import com.example.PostService.repository.LikeRepository;
 import com.example.PostService.repository.PostRepository;
+import com.example.PostService.repository.httpclient.FanpageClient;
+import com.example.PostService.repository.httpclient.FriendClient;
+import com.example.PostService.repository.httpclient.GroupClient;
 import com.example.PostService.repository.httpclient.UserClient;
 import com.example.PostService.response.ApiResponse;
 import com.example.PostService.response.EnumResponse;
@@ -31,6 +39,8 @@ import com.example.PostService.service.strategy.PostAccessStrategy.PostAccessStr
 import com.example.PostService.service.strategy.PostAccessStrategy.PostAccessStrategyFactory;
 import com.example.PostService.service.strategy.UserInfoStrategy.UserInfoStrategy;
 import com.example.PostService.service.strategy.UserInfoStrategy.UserInfoStrategyFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import feign.FeignException;
 
@@ -57,6 +67,15 @@ public class PostService {
 
     @Autowired
     private LikeRepository likeRepository;
+
+    @Autowired
+    private FriendClient friendClient;
+
+    @Autowired
+    private GroupClient groupClient;
+
+    @Autowired
+    private FanpageClient fanpageClient;
 
     public ResponseEntity createPost(RequestCreatePost requestCreatePost, String authorizationHeader) {
         // get userId
@@ -175,24 +194,128 @@ public class PostService {
         return ResponseEntity.ok(apiResponse);
     }
 
-    // public ResponseEntity getPostDetail(String authorizationHeader, String
-    // postId) {
-    // // get post
-    // Post post = getPost(postId);
+    public ResponseEntity getPostDetail(String authorizationHeader, String postId) {
+        // get post
+        Post post = getPost(postId);
 
-    // // get userid
-    // String userId = getUserId(authorizationHeader);
+        // get userid
+        String userId = getUserId(authorizationHeader);
 
-    // // check permission
-    // PostAccessStrategy postAccessStrategy = postAccessStrategyFactory
-    // .getStrategy((String) post.getPostType().get("id"));
-    // if (postAccessStrategy.checkAccess(userId, post) == false) {
-    // throw new UserException(EnumException.POST_PERMISSION_DENIED);
-    // }
+        // check permission
+        PostAccessStrategy postAccessStrategy = postAccessStrategyFactory.getStrategy((String) post.getPostType().get("typeName"));
+        if (postAccessStrategy.checkAccess(userId, post) == false) {
+            throw new UserException(EnumException.POST_PERMISSION_DENIED);
+        }
 
-    // // get user info
-    // UserInfoStrategy userInfoStrategy = userInfoStrategyFactory
-    // .getUserInfoStrategy((String) post.getPostType().get("typeName"));
-    // UserInfo userInfo = userInfoStrategy.getUserInfo(userId, post);
-    // }
+        // get user info
+        UserInfoStrategy userInfoStrategy = userInfoStrategyFactory.getUserInfoStrategy((String) post.getPostType().get("typeName"));
+
+        UserInfo userInfo = userInfoStrategy.getUserInfo(userId, post);
+
+        // displayed fields
+        Boolean display = userInfoStrategy.createDisplayedFields(post);
+
+        // create response
+        Map<String, Object> response = new HashMap<>();
+        response.put("post", post);
+        response.put("userInfo", userInfo); 
+        response.put("display", display);
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(response)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_POST_DETAIL_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListPostHome(String authorizationHeader){
+        // get userid
+        String userId = getUserId(authorizationHeader);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        // get list friend of user
+        List<String> friendids = objectMapper.convertValue(this.friendClient.getListFriends(userId), 
+            new TypeReference<List<String>>() {});
+
+        // get fanpage that is followed by user
+        List<String> fanpageIds = objectMapper.convertValue(this.fanpageClient.getListFanpage(userId), 
+            new TypeReference<List<String>>() {});
+        appendListIds(fanpageIds, "fanpage");
+        
+        // get group that is joined by user
+        List<String> groupIds = objectMapper.convertValue(this.groupClient.getListGroup(userId), 
+            new TypeReference<List<String>>() {});
+        appendListIds(groupIds, "group");
+
+        // create query
+        List<Post> listFriendPosts = this.postRepository.getListFriendPost(friendids);
+        List<Post> listGroupPosts = this.postRepository.getListGroupPost(groupIds);
+        List<Post> listFanpagePosts = this.postRepository.getListFanpagePost(fanpageIds);
+
+        List<Post> listPost = new ArrayList<>();
+        listPost.addAll(listFriendPosts);
+        listPost.addAll(listGroupPosts);
+        listPost.addAll(listFanpagePosts);
+
+        // sort by created date
+        listPost.sort((p1, p2) -> p2.getCreatedDate().compareTo(p1.getUpdatedDate()));
+
+        // get user info
+        Object listUserInfos = this.userClient.getListUserInfos(convertListToString(listPost.stream().map(Post::getUserId).toList()));
+        List<ExternalUserInfo> externalUserInfos = objectMapper.convertValue(listUserInfos, new TypeReference<List<ExternalUserInfo>>() {});
+        
+        // get fanpage info
+        Object listFanpageInfos = this.fanpageClient.getListFanpageInfos(
+            convertListToString(
+                listFanpagePosts.stream()
+                    .map(Post::getParentId) // Extract parentId
+                    .filter(parentId -> parentId.startsWith("fanpage||")) // Ensure it starts with "fanpage||"
+                    .map(parentId -> parentId.replace("fanpage||", "")) // Remove "fanpage||" prefix
+                    .toList() // Collect as a list
+            )
+        );
+        List<ExternalFanpageInfo> externalFanpageInfos = objectMapper.convertValue(listFanpageInfos, new TypeReference<List<ExternalFanpageInfo>>() {});
+
+        // get group info
+        Object listGroupInfos = this.groupClient.getListGroupInfos(
+            convertListToString(
+                listGroupPosts.stream()
+                    .map(Post::getParentId) // Extract parentId
+                    .filter(parentId -> parentId.startsWith("group||")) // Ensure it starts with "fanpage||"
+                    .map(parentId -> parentId.replace("group||", "")) // Remove "fanpage||" prefix
+                    .toList() // Collect as a list
+            )
+        );
+        List<ExternalGroupInfo> externalGroupInfos = objectMapper.convertValue(listGroupInfos, new TypeReference<List<ExternalGroupInfo>>() {});
+
+        // create response
+        Map<String, Object> response = new HashMap<>();
+        response.put("listPost", listPost);
+        response.put("listUserInfos", externalUserInfos);
+        response.put("listFanpageInfos", externalFanpageInfos);
+        response.put("listGroupInfos", externalGroupInfos);
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(response)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_POST_DETAIL_SUCCESS))
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public void appendListIds(List<String> listIds, String appendedString){
+        for (int i = 0; i < listIds.size(); i++) {
+            listIds.set(i, appendedString + "||" + listIds.get(i));
+        }
+    }
+
+    public String convertListToString(List<String> list) {
+        System.out.println(list.stream()
+        //.map(item -> "\"" + item + "\"") // Add quotes around each item
+        .collect(Collectors.joining(","))); // Join items with a comma)
+        return list.stream()
+                //.map(item -> "\"" + item + "\"") // Add quotes around each item
+                .collect(Collectors.joining(",")); // Join items with a comma
+    }
 }

@@ -3,6 +3,7 @@ package com.example.FanpageGroupService.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,5 +43,18 @@ public class FanpageController {
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable(name = "fanpageId") String fanpageId) {
         return fanpageService.reactFanpage(authorizationHeader, fanpageId);
+    }
+
+    /**
+     * External APIs
+     */
+    @GetMapping("/list/{userId}")
+    public ResponseEntity getListFanpage(@PathVariable(name = "userId") String userId) {
+        return fanpageService.getListFanpage(userId);
+    }
+
+    @GetMapping("/list-info")
+    public ResponseEntity getListFanpageInfos(@RequestParam(name = "ids") String ids) {
+        return fanpageService.getListFanpageInfos(ids);
     }
 }

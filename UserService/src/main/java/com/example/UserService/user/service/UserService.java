@@ -298,6 +298,8 @@ public class UserService {
     }
 
     public void pushEventWhenCreateUser(User user) {
+        System.out.println(user.getId() + "||" + user.getName() + "||" + user.getDob() + "||"
+                + user.getStudentID() + "||" + user.getMajor() + "||" + user.getFaculty() + "||" + user.getPhone());
         // id||name||dob||studentId||major||faculty||phone
         this.kafkaTemplate.send("user-creation", user.getId() + "||" + user.getName() + "||" + user.getDob() + "||"
                 + user.getStudentID() + "||" + user.getMajor() + "||" + user.getFaculty() + "||" + user.getPhone());

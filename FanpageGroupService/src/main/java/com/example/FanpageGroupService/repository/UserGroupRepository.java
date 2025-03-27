@@ -37,4 +37,10 @@ public interface UserGroupRepository extends JpaRepository<UserGroup, UserGroupP
                         end as result
                                                 """, nativeQuery = true)
         public int isMember(String userId);
+
+        @Query(value = """
+                        select group_id from user_group
+                        where user_id = :userId and accepted = true
+                        """, nativeQuery = true)
+        public List<String> getListGroup(String userId);
 }

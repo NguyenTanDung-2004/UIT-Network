@@ -41,4 +41,23 @@ public class UserGroupInfoStrategy implements UserInfoStrategy {
         return userInfo;
     }
 
+    @Override
+    public Boolean createDisplayedFields(Post post) {
+        // get enum post type
+        Integer postTypeId = (Integer) post.getPostType().get("id");
+        EnumPostType enumPostType = EnumPostType.fromTypeId(postTypeId);
+
+        switch (enumPostType) {
+            case STUDY_GROUP_POST_ANONY:
+                return true; 
+                
+            case STUDY_GROUP_POST_UNANONY:
+                return false;
+            default:
+                break;
+        }
+
+        return false;
+    }
+
 }

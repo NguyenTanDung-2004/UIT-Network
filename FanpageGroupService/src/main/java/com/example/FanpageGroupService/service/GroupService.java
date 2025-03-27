@@ -59,6 +59,8 @@ public class GroupService {
         // save
         group = this.groupRepository.save(group);
 
+        // save user in group
+
         // create response
         ApiResponse apiResponse = ApiResponse.builder()
                 .object(group)
@@ -211,6 +213,7 @@ public class GroupService {
 
     @Transactional
     public ResponseEntity acceptJoinRequest(String groupId, RequestAcceptOrRemoveJoinGroup requestAcceptJoinGroup) {
+        System.out.println(requestAcceptJoinGroup.getUserId());
         // update
         this.userGroupRepository.acceptJoinRequest(groupId, requestAcceptJoinGroup.getUserId());
 
@@ -242,6 +245,28 @@ public class GroupService {
         int isMember = this.userGroupRepository.isMember(userId);
 
         return ResponseEntity.ok(isMember);
+    }
+
+    public ResponseEntity getListGroup(String userId) {
+        // get list group
+        List<String> listGroupId = this.userGroupRepository.getListGroup(userId);
+
+        if (listGroupId == null) {
+            listGroupId = new ArrayList<>();
+        }
+
+        return ResponseEntity.ok(listGroupId);
+    }
+
+    public ResponseEntity getListGroupInfos(String ids) {
+        // get list group
+        List<Group> listGroup = this.groupRepository.getListGroupInfos(ids);
+
+        if (listGroup == null) {
+            listGroup = new ArrayList<>();
+        }
+
+        return ResponseEntity.ok(listGroup);
     }
 
 }

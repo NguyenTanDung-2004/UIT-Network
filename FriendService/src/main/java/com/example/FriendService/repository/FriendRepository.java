@@ -3,6 +3,8 @@ package com.example.FriendService.repository;
 import com.example.FriendService.entity.User;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
+
+import java.util.List;
 import java.util.Optional;
 
 public interface FriendRepository extends Neo4jRepository<User, String> {
@@ -36,5 +38,8 @@ public interface FriendRepository extends Neo4jRepository<User, String> {
 
         @Query("MATCH (a:User {id: $userId1})-[r:FRIEND]->(b:User {id: $userId2}) RETURN COUNT(r)")
         int isFriend(String userId1, String userId2);
+
+        @Query("MATCH (a:User {id: $userId})-[:FRIEND]->(b:User) RETURN b.id")
+        List<String> getListFriend(String userId);
 
 }
