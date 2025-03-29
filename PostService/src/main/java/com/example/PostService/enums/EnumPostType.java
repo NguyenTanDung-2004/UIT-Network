@@ -21,7 +21,10 @@ public enum EnumPostType {
 
     // study group post
     STUDY_GROUP_POST_ANONY(6, "study_group_post", "anonymous"),
-    STUDY_GROUP_POST_UNANONY(7, "study_group_post", "unanonymous");
+    STUDY_GROUP_POST_UNANONY(7, "study_group_post", "unanonymous"),
+
+    // share post
+    SHARE_POST(8, "share_post", "share"),;
 
     private final int id;
     private final String typeName;

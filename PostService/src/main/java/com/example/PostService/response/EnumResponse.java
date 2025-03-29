@@ -25,7 +25,8 @@ public enum EnumResponse {
     DELETE_COMMENT_SUCCESS("s_07_post", "Delete comment successfully!", HttpStatus.OK),
     LIKE_COMMENT_SUCCESS("s_08_post", "Like comment successfully!", HttpStatus.OK),
     GET_POST_DETAIL_SUCCESS("s_09_post", "Get post detail successfully!", HttpStatus.OK),
-    GET_POST_IN_HOME_SUCCESS("s_10_post", "Get post in home successfully!", HttpStatus.OK),;
+    GET_POST_IN_HOME_SUCCESS("s_10_post", "Get post in home successfully!", HttpStatus.OK), 
+    GET_LIST_COMMENT_SUCCESS("s_11_post", "Get list comment successfully!", HttpStatus.OK),;
     String code;
     String message;
     HttpStatusCode httpStatus;

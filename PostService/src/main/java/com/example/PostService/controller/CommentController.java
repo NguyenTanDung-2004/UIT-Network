@@ -44,4 +44,9 @@ public class CommentController {
             @PathVariable(name = "userId") String userId) {
         return commentService.likeComment(commentId, userId);
     }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity getListComment(@PathVariable(name = "postId") String postId) {
+        return commentService.getListComment(postId);
+    }
 }
