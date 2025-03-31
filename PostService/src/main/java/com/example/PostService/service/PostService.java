@@ -1,5 +1,6 @@
 package com.example.PostService.service;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -317,5 +318,86 @@ public class PostService {
         return list.stream()
                 //.map(item -> "\"" + item + "\"") // Add quotes around each item
                 .collect(Collectors.joining(",")); // Join items with a comma
+    }
+
+    public ResponseEntity getListPostOfUser(String userId) {
+        // get list post of user
+        List<Post> posts = this.postRepository.getListFriendPost(List.of(userId));
+        Map<String, Object> map = new HashMap<>();
+
+        // check null
+        if (posts == null) {
+            posts = new ArrayList<>();
+        }
+        else{
+            map.put("listPost", posts);
+
+            // get user info
+            Object listUserInfos = this.userClient.getListUserInfos(userId);
+            List<ExternalUserInfo> externalUserInfos = new ObjectMapper().convertValue(listUserInfos, new TypeReference<List<ExternalUserInfo>>() {});
+            map.put("listUserInfos", externalUserInfos);
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(map)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_USER_POST_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListPostOfFanpage(String fanpageId) {
+        // get list post of fanpage
+        List<Post> posts = this.postRepository.getListFanpagePost(List.of("fanpage||" + fanpageId));
+        Map<String, Object> map = new HashMap<>();
+
+        // check null
+        if (posts == null) {
+            posts = new ArrayList<>();
+        }
+        else{
+            map.put("listPost", posts);
+
+            // get user info
+            Object listUserInfos = this.userClient.getListUserInfos(convertListToString(posts.stream().map(Post::getUserId).toList()));
+            List<ExternalUserInfo> externalUserInfos = new ObjectMapper().convertValue(listUserInfos, new TypeReference<List<ExternalUserInfo>>() {});
+            map.put("listUserInfos", externalUserInfos);
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(map)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_FANPAGE_POST_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListPostOfGroup(String groupId) {
+        // get list post of group
+        List<Post> posts = this.postRepository.getListGroupPost(List.of("group||" + groupId));
+        Map<String, Object> map = new HashMap<>();
+
+        // check null
+        if (posts == null) {
+            posts = new ArrayList<>();
+        }
+        else{
+            map.put("listPost", posts);
+
+            // get user info
+            Object listUserInfos = this.userClient.getListUserInfos(convertListToString(posts.stream().map(Post::getUserId).toList()));
+            List<ExternalUserInfo> externalUserInfos = new ObjectMapper().convertValue(listUserInfos, new TypeReference<List<ExternalUserInfo>>() {});
+            map.put("listUserInfos", externalUserInfos);
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(map)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_GROUP_POST_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
 }

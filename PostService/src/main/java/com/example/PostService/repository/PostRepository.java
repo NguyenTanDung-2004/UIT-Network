@@ -17,4 +17,7 @@ public interface PostRepository extends MongoRepository<Post, String> {
 
     @Query("{'isDelete': false, 'parentId': {$in: ?0}}")
     public List<Post> getListFanpagePost(List<String> fanpageIds);
+
+    @Query("{'isDelete': false, 'parentId': null, 'userId': ?0}")
+    public List<Post> findUserPost(String userId);
 }

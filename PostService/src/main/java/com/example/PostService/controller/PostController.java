@@ -56,4 +56,19 @@ public class PostController {
     public ResponseEntity getListPostHome(@RequestHeader("Authorization") String authorizationHeader) {
         return postService.getListPostHome(authorizationHeader);
     }
+
+    @GetMapping("/list/user/{userId}")
+    public ResponseEntity getListPostUser(@PathVariable(name = "userId") String userId, @RequestHeader("Authorization") String authorizationHeader) {
+        return postService.getListPostOfUser(userId);
+    }
+
+    @GetMapping("/list/fanpage/{fanpageId}")
+    public ResponseEntity getListPostFanpage(@PathVariable(name = "fanpageId") String fanpageId, @RequestHeader("Authorization") String authorizationHeader) {
+        return postService.getListPostOfFanpage(fanpageId);
+    }
+
+    @GetMapping("/list/group/{groupId}")
+    public ResponseEntity getListPostGroup(@PathVariable(name = "groupId") String groupId, @RequestHeader("Authorization") String authorizationHeader) {
+        return postService.getListPostOfGroup(groupId);
+    }
 }
