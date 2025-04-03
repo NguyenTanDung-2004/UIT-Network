@@ -4,6 +4,11 @@ spring:
   data:
     mongodb:
       uri: mongodb://username:12345@localhost:27017/project_postservice?authSource=admin
+  kafka:
+    bootstrap-servers: localhost:9094
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 app:
   services:
     user: http://localhost:8080/user

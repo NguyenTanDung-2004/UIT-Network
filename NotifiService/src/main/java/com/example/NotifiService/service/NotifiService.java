@@ -32,6 +32,8 @@ public class NotifiService {
         // update message
         message = message.replaceAll("\"", "");
 
+        System.out.println(message);
+
         // convert message to notification model
         String[] parts = message.split("\\|\\|");
 

@@ -114,4 +114,9 @@ public class UserController {
     public ResponseEntity getListUserInfo(@RequestParam(name = "ids") String ids) {
         return userService.externalGetUserInfo(ids);
     }
+
+    @GetMapping("/v2/user-info")
+    public ResponseEntity getListUserInfoV2(@RequestParam(name = "ids") String ids) {
+        return userService.externalGetUserInfoV2(ids);
+    }
 }

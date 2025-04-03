@@ -22,4 +22,5 @@ jwt:
   secret: hS*0Z/VqAe{Loiu\BErc@2qsW-lG0a,/
   expiration: 3600
 
-kafka:
+kafka-info:
+  typeid: 5

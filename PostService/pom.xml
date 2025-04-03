@@ -67,6 +67,13 @@
 			<optional>true</optional>
 		</dependency>
 
+		<!--BEGIN_KAFKA-->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		<!--END_KAFKA-->
+
 	</dependencies>
 
 	<build>

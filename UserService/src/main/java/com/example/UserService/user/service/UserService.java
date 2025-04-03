@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -32,6 +33,7 @@ import com.example.UserService.user.model.PrivateProperties;
 import com.example.UserService.user.model.TimeSlot;
 import com.example.UserService.user.repository.UserRepository;
 import com.example.UserService.util.JsonConverter;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -61,6 +63,9 @@ public class UserService {
 
     @Autowired
     private JsonConverter jsonConverter;
+
+    @Value("${kafka-info.typeid}")
+    private Integer typeid;
 
     public ResponseEntity login(RequestLogin requestLogin) {
         // find user by email
@@ -134,8 +139,8 @@ public class UserService {
         userRepository.save(user);
 
         // push event to kafka
-        // type:email||mailType:ForgotPassword||to:" + email
-        this.kafkaTemplate.send("user-notification", "email||ForgotPassword||" + email + "||" + code);
+        // type:EnumNotifiType||mailType:ForgotPassword||to:" + email
+        this.kafkaTemplate.send("user-notification", typeid + "||ForgotPassword||" + email + "||" + code);
 
         // create response
         ApiResponse apiResponse = ApiResponse.builder()
@@ -348,5 +353,25 @@ public class UserService {
         }
 
         return ResponseEntity.ok(lists);
+    }
+
+    public ResponseEntity externalGetUserInfoV2(String ids) {
+        List<String> idList = Arrays.asList(ids.split(",")); // Convert to List
+    
+        List<User> users = this.userRepository.getListUser(idList);
+    
+        // Dynamically remove problematic fields
+        users.forEach(user -> {
+            try {
+                // Use reflection to set the "hobbies" field to null
+                java.lang.reflect.Field hobbiesField = user.getClass().getDeclaredField("hobbies");
+                hobbiesField.setAccessible(true); // Make the field accessible
+                hobbiesField.set(user, null); // Set the field to null
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace(); // Log the error if the field is not found or inaccessible
+            }
+        });
+    
+        return ResponseEntity.ok(users);
     }
 }

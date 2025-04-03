@@ -78,6 +78,9 @@ public class PostService {
     @Autowired
     private FanpageClient fanpageClient;
 
+    @Autowired
+    private KafkaService kafkaService;
+
     public ResponseEntity createPost(RequestCreatePost requestCreatePost, String authorizationHeader) {
         // get userId
         String userId = getUserId(authorizationHeader);
@@ -185,6 +188,12 @@ public class PostService {
             // save
             likeRepository.save(userLikePost);
         }
+
+        // get post 
+        Post post = getPost(postId);    
+
+        // push to kafka
+        this.kafkaService.sendMessage("user-notification", post, userId, "reacted to your post.");
 
         // response
         ApiResponse apiResponse = ApiResponse.builder()

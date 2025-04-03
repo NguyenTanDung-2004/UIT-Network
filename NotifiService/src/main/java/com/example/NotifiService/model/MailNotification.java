@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.File;
 
 import com.example.NotifiService.processor.MailNotificationProcessor;
 
@@ -55,14 +56,13 @@ public class MailNotification extends Notification {
     }
 
     private String getTemplateMail(String type, String templatePath) throws IOException {
-        // create absolute path
-        String absolutePath = Paths.get(templatePath).toAbsolutePath().toString() + "\\ForgotPassword.txt";
-
-        // read file
+        // Create absolute path
+        Path absolutePath = Paths.get(templatePath, "ForgotPassword.txt").toAbsolutePath();
+    
+        // Read file
         switch (type) {
             case "ForgotPassword":
-                Path filePath = Paths.get(absolutePath);
-                return Files.readString(filePath);
+                return Files.readString(absolutePath);
             default:
                 return null;
         }

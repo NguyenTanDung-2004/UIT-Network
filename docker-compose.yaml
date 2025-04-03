@@ -35,6 +35,7 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER  
 
+  #db_friendservice
   db_friendservice:
     image: neo4j:latest
     container_name: project2_db_friendservice
@@ -54,6 +55,7 @@ services:
       timeout: 5s
       retries: 3  
 
+  #db_postservice
   db_postservice:
     image: mongodb/mongodb-community-server:6.0-ubi8
     container_name: project2_db_postservice
@@ -73,7 +75,7 @@ services:
       timeout: 5s
       retries: 3
 
-
+  #db_fanpagegroupservice
   db_fanpagegroupservice:
     image: mysql:latest
     container_name: project2_db_fanpagegroupservice
@@ -84,6 +86,26 @@ services:
       - "3308:3306"                        
     volumes:
       - ./volumes/db_fanpagegroupservice:/var/lib/mysql                  
+    networks:
+      - project2
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s     # Check health every 10 seconds
+      timeout: 5s       # Wait 5 seconds for a response
+      retries: 3        # Retry 3 times before declaring failure  
+
+  #db_notifyservice
+  db_notifiservice:
+    image: mysql:latest
+    container_name: project2_db_notifiservice
+    environment:
+      - MYSQL_ROOT_PASSWORD=12345
+      - MYSQL_DATABASE=project2_db_notifiservice # this line is used to create the database
+    ports:
+      - "3309:3306"                        
+    volumes:
+      - ./volumes/project2_db_notifiservice:/var/lib/mysql                  
     networks:
       - project2
     restart: always

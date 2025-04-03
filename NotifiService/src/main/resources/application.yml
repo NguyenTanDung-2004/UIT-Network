@@ -8,13 +8,29 @@ spring:
       auto-offset-reset: earliest
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  datasource:
+    url: jdbc:mysql://localhost:3309/project2_db_notifiservice
+    username: root
+    password: 12345
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 
 mail:
-  apikey: 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
+  apikey: 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
   url: https://api.brevo.com/v3/smtp/email
   sendername: UIT-Network
   senderemail: 22520001@gm.uit.edu.vn
-  templatepath: NotifiService\src\main\java\com\example\NotifiService\mail\template
+  templatePath: NotifiService/src/main/java/com/example/NotifiService/mail/template
+
+app:
+  services:
+    user: http://localhost:8080/user
+    group: http://localhost:8084/group
+    friend: http://localhost:8082/friend
+    fanpage: http://localhost:8084/fanpage
+
 
 server:
   port: 8081
