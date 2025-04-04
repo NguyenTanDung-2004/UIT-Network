@@ -32,6 +32,7 @@ public class NotificationFactory {
                 parts.add(env.getProperty("mail.templatepath"));
                 return new MailNotification(parts);
             case LIKE_NORMAL_USER_POST:
+            case COMMENT_NORMAL_USER_POST:
                 return new ActionNotification(parts);
             default:
                 return null;

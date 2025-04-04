@@ -1,7 +1,9 @@
 package com.example.NotifiService.model;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
@@ -30,6 +32,7 @@ public class ActionNotification extends Notification{
     private String message;
     private Date date;
     private String receivedid;
+    private Map<String, Object> extrafield;
 
     public ActionNotification(List<String> parts){
         super(parts);
@@ -37,6 +40,18 @@ public class ActionNotification extends Notification{
         this.message = parts.get(2);
         this.date = new Date();
         this.receivedid = parts.get(3);
-        //this.extrafield = parts.get(4);
+        
+        Integer typeid = Integer.parseInt(parts.get(0));
+        switch (typeid) {
+            case 1:
+                this.extrafield = null;
+                break;
+            case 2:
+                this.extrafield = new HashMap<>();
+                this.extrafield.put("postid", parts.get(4));
+                break;
+            default:
+                this.extrafield = null;
+        }
     }
 }

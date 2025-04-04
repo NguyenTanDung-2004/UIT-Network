@@ -13,12 +13,14 @@ import com.example.PostService.dto.request.RequestCreateComment;
 import com.example.PostService.dto.request.RequestUpdateComment;
 import com.example.PostService.dto.response.ResponseListComment;
 import com.example.PostService.entities.Comment;
+import com.example.PostService.entities.Post;
 import com.example.PostService.entities.UserLikeComment;
 import com.example.PostService.mapper.CommentMapper;
 import com.example.PostService.mapper.Mapper;
 import com.example.PostService.models.ParentComment;
 import com.example.PostService.repository.CommentRepository;
 import com.example.PostService.repository.LikeCommentRepository;
+import com.example.PostService.repository.PostRepository;
 import com.example.PostService.response.ApiResponse;
 import com.example.PostService.response.EnumResponse;
 
@@ -32,6 +34,9 @@ public class CommentService {
     private Mapper mapper;
 
     @Autowired
+    private KafkaService kafkaService;
+
+    @Autowired
     private LikeCommentRepository likeCommentRepository;
 
     @Autowired
@@ -39,11 +44,22 @@ public class CommentService {
         this.mapper = commentMapper;
     }
 
+    @Autowired
+    private PostService postService;
+
     public ResponseEntity createComment(RequestCreateComment requestCreateComment) {
         // convert to entity
         Comment comment = (Comment) mapper.toEntity(requestCreateComment, null);
         // save to db
         comment = commentRepository.save(comment);
+
+        // get post 
+        Post post = postService.getPost(comment.getPostId());
+
+        // push to kafka
+        this.kafkaService.sendMessage("user-notification", comment, comment.getUserId(), "commented on your post", post);
+        
+
         // return response
         ApiResponse apiResponse = ApiResponse.builder()
                 .object(comment)
