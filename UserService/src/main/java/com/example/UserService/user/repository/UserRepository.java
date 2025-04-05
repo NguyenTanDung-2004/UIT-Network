@@ -15,4 +15,11 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query(value = "SELECT * FROM users WHERE id IN (:ids)", nativeQuery = true)
     List<User> getListUser(List<String> ids);
 
+    @Query(value = """
+            SELECT * FROM users u 
+            WHERE u.name LIKE CONCAT('%', :text, '%')
+            OR u.studentid LIKE CONCAT('%', :text, '%')
+            """, nativeQuery = true)
+    List<User> searchText(String text);
+
 }

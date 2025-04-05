@@ -1,5 +1,6 @@
 package com.example.UserService.user.service;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -373,5 +374,62 @@ public class UserService {
         });
     
         return ResponseEntity.ok(users);
+    }
+
+    public ResponseEntity getUserInfoById(String userId, String authorizationHeader) throws IOException {
+        // get curent user
+        User currentUser = this.getUserFromAthorization(authorizationHeader);
+
+        Object responseUserInfo = null;
+
+        if (currentUser.getId().equals(userId) == false){
+            // get user info
+            User user = getUser(userId, "id");
+
+            // convert to response
+            responseUserInfo = this.userMapper.toResponse(user, hobbyService);
+        }
+        else{
+            responseUserInfo = currentUser.toMap();
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(responseUserInfo)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_USERINFO_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListUser(String authorizationHeader, String textSearch) {
+        List<User> users = this.userRepository.searchText(textSearch);
+
+        if (users == null) {
+            users = new ArrayList<>();
+        }
+       
+        List<Object> listResponses = new ArrayList<>();
+
+        users.stream().forEach(user -> {
+            if (user.getPrivateProperties() == 1) {
+                listResponses.add(this.userMapper.toResponse(user, hobbyService));
+            }
+            else{
+                try {
+                    listResponses.add(user.toMap());
+                } catch (IOException e) {
+                    throw new UserException();
+                }
+            }
+        });
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(listResponses)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
 }

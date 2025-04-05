@@ -22,7 +22,8 @@ public enum EnumResponse {
     RESET_PASSWORD_SUCCESS("s_04", "Reset password successfully!", HttpStatus.OK),
     GET_USERINFO_SUCCESS("s_05", "Get user info successfully!", HttpStatus.OK),
     UPDATE_BASIC_USERINFO("s_06", "Update user info successfully!", HttpStatus.OK),
-    UPDATE_USER_HOBBIES("s_07", "Update user hobbies successfully!", HttpStatus.OK);
+    UPDATE_USER_HOBBIES("s_07", "Update user hobbies successfully!", HttpStatus.OK),
+    SEARCH_USER_SUCCESS("s_08", "Search user successfully!", HttpStatus.OK),;
 
     String code;
     String message;

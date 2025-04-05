@@ -2,6 +2,7 @@ package com.example.UserService.user.entity;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,4 +77,23 @@ public class User {
     @ManyToMany
     @JoinTable(name = "user_hobby", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "hobby_id"))
     Set<Hobby> hobbies;
+
+    public Map<String, Object> toMap() throws IOException {
+        Map<String, Object> map = new HashMap<>();
+    
+        if (this.id != null) map.put("id", this.id);
+        if (this.email != null) map.put("email", this.email);
+        if (this.name != null) map.put("name", this.name);
+        if (this.avtURL != null) map.put("avtURL", this.avtURL);
+        if (this.description != null) map.put("description", this.description);
+        if (this.studentID != null) map.put("studentID", this.studentID);
+        if (this.major != null) map.put("major", this.major);
+        if (this.faculty != null) map.put("faculty", this.faculty);
+        if (this.phone != null) map.put("phone", this.phone);
+        if (this.dob != null) map.put("dob", this.dob);
+        if (this.latitude != null) map.put("latitude", this.latitude);
+        if (this.longitude != null) map.put("longitude", this.longitude);
+        if (this.privateProperties != null) map.put("privateProperties", this.privateProperties);    
+        return map;
+    }
 }

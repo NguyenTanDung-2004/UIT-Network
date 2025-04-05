@@ -1,10 +1,12 @@
 package com.example.UserService.user.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -95,6 +97,17 @@ public class UserController {
     @PostMapping("/set-private")
     public ResponseEntity updatePrivate(@RequestHeader("Authorization") String authorizationHeader) {
         return userService.updatePrivate(authorizationHeader);
+    }
+
+    @GetMapping("/user-info/{userId}")
+    public ResponseEntity getUserInfoById(@RequestHeader("Authorization") String authorizationHeader, @PathVariable(name = "userId") String userId) throws IOException {
+        return userService.getUserInfoById(userId, authorizationHeader);
+    }
+
+    @GetMapping("/list/{textSearch}")
+    public ResponseEntity getListUser(@RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable(name = "textSearch") String textSearch) {
+        return userService.getListUser(authorizationHeader, textSearch);
     }
 
     /*
