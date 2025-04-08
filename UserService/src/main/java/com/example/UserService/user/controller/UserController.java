@@ -121,6 +121,12 @@ public class UserController {
         return userService.getListUserSchedule(authorizationHeader);
     }
 
+    @PostMapping("/location")
+    public ResponseEntity updateLocation(@RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam(name = "latitude") Long latitude, @RequestParam(name = "longitude") Long longitude) {
+        return userService.updateLocation(authorizationHeader, latitude, longitude);
+    }
+
 
     /*
      * external APIs

@@ -482,4 +482,24 @@ public class UserService {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    public ResponseEntity updateLocation(String authorizationHeader, Long latitude, Long longitude) {
+        // get user from authorization
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        // update location
+        user.setLatitude(latitude);
+        user.setLongitude(longitude);
+
+        // save user
+        user = this.userRepository.save(user);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_BASIC_USERINFO))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);  
+    }
 }
