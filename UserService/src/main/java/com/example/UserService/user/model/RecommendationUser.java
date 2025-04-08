@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserSchedule {
+public class RecommendationUser {
     private String id;
     private String name;
     private String avtURL;
@@ -17,5 +17,5 @@ public class UserSchedule {
     private String email;
     private String major;
     private String faculty;
-    private Double overlap;
+    private Object data;
 }

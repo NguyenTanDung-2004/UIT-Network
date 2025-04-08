@@ -123,8 +123,13 @@ public class UserController {
 
     @PostMapping("/location")
     public ResponseEntity updateLocation(@RequestHeader("Authorization") String authorizationHeader,
-            @RequestParam(name = "latitude") Long latitude, @RequestParam(name = "longitude") Long longitude) {
+            @RequestParam(name = "latitude") Double latitude, @RequestParam(name = "longitude") Double longitude) {
         return userService.updateLocation(authorizationHeader, latitude, longitude);
+    }
+
+    @GetMapping("/list/location")
+    public ResponseEntity getListUserLocation(@RequestHeader("Authorization") String authorizationHeader) {
+        return userService.getListUserLocation(authorizationHeader);
     }
 
 

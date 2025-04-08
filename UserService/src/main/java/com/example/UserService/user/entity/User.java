@@ -66,8 +66,8 @@ public class User {
     String faculty;
     String phone;
     Date dob;
-    Long latitude;
-    Long longitude;
+    Double latitude;
+    Double longitude;
     @Column(columnDefinition = "JSON") // Define JSON column
     String jsonSchedule;
 

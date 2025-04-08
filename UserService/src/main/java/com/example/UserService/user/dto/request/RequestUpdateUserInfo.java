@@ -25,8 +25,8 @@ public class RequestUpdateUserInfo {
     String description;
     String phone;
     Date dob;
-    Long latitude;
-    Long longitude;
+    Double latitude;
+    Double longitude;
 
     Set<Long> hobbyIds;
 

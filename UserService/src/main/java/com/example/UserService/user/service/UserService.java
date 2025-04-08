@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.kafka.shaded.com.google.protobuf.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
@@ -31,8 +32,8 @@ import com.example.UserService.user.dto.response.ResponseExternalUserInfo;
 import com.example.UserService.user.dto.response.ResponseUserInfo;
 import com.example.UserService.user.entity.User;
 import com.example.UserService.user.model.PrivateProperties;
+import com.example.UserService.user.model.RecommendationUser;
 import com.example.UserService.user.model.TimeSlot;
-import com.example.UserService.user.model.UserSchedule;
 import com.example.UserService.user.repository.UserRepository;
 import com.example.UserService.util.JsonConverter;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -469,7 +470,7 @@ public class UserService {
         // get user from authorization
         User user = this.getUserFromAthorization(authorizationHeader);
 
-        List<UserSchedule> users = this.userRepository.getListUserSchedule(user.getId());
+        List<RecommendationUser> users = this.userRepository.getListUserSchedule(user.getId());
         if (users == null) {
             users = new ArrayList<>();
         }
@@ -483,7 +484,7 @@ public class UserService {
         return ResponseEntity.ok(apiResponse);
     }
 
-    public ResponseEntity updateLocation(String authorizationHeader, Long latitude, Long longitude) {
+    public ResponseEntity updateLocation(String authorizationHeader, Double latitude, Double longitude) {
         // get user from authorization
         User user = this.getUserFromAthorization(authorizationHeader);
 
@@ -501,5 +502,25 @@ public class UserService {
                 .build();
 
         return ResponseEntity.ok(apiResponse);  
+    }
+
+    public ResponseEntity getListUserLocation(String authorizationHeader) {
+        // get user from authorization
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        // get data from db
+        List<RecommendationUser> users = this.userRepository.getUserByLocation(user.getId(), user.getLatitude(), user.getLongitude());
+    
+        if (users == null) {
+            users = new ArrayList<>();
+        }
+
+        // convert to response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(users)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
 }

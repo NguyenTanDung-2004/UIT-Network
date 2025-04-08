@@ -36,8 +36,8 @@ public class ResponseUserInfo {
     String faculty;
     String phone;
     Date dob;
-    Long latitude;
-    Long longitude;
+    Double latitude;
+    Double longitude;
     String jsonSchedule;
 
     Set<Hobby> hobbies;

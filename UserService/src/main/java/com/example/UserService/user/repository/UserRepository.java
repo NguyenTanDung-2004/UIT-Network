@@ -5,9 +5,10 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.UserService.user.entity.User;
-import com.example.UserService.user.model.UserSchedule;
+import com.example.UserService.user.model.RecommendationUser;
 
 public interface UserRepository extends JpaRepository<User, String> {
 
@@ -39,6 +40,23 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query(value = """
             CALL get_top_10_matching_users(:userid)
             """, nativeQuery = true)
-    List<UserSchedule> getListUserSchedule(String userid);
+    List<RecommendationUser> getListUserSchedule(String userid);
+
+    @Query(value = """
+        SELECT u.id, u.name, u.avturl, u.studentid, u.email, u.major, u.faculty,
+        (
+            6371 * acos(
+                cos(radians(:lat)) * cos(radians(u.latitude)) *
+                cos(radians(u.longitude) - radians(:lng)) +
+                sin(radians(:lat)) * sin(radians(u.latitude))
+            )
+        ) AS data
+        FROM users u
+        WHERE u.id != :userId
+        HAVING data <= 20
+        ORDER BY data ASC
+        LIMIT 10
+    """, nativeQuery = true)
+    List<RecommendationUser> getUserByLocation(String userId, Double lat, Double lng);
 
 }
