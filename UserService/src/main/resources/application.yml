@@ -22,5 +22,12 @@ jwt:
   secret: hS*0Z/VqAe{Loiu\BErc@2qsW-lG0a,/
   expiration: 3600
 
+app:
+  services:
+    user: http://localhost:8080/user
+    group: http://localhost:8084/group
+    friend: http://localhost:8082/friend
+    fanpage: http://localhost:8084/fanpage
+
 kafka-info:
   typeid: 5

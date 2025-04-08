@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.apache.kafka.shaded.com.google.protobuf.Api;
+import org.bouncycastle.crypto.digests.SparkleDigest.Friend;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
@@ -31,13 +33,17 @@ import com.example.UserService.user.dto.request.RequestUpdateUserInfo;
 import com.example.UserService.user.dto.response.ResponseExternalUserInfo;
 import com.example.UserService.user.dto.response.ResponseUserInfo;
 import com.example.UserService.user.entity.User;
+import com.example.UserService.user.model.FriendSuggestion;
 import com.example.UserService.user.model.PrivateProperties;
 import com.example.UserService.user.model.RecommendationUser;
 import com.example.UserService.user.model.TimeSlot;
 import com.example.UserService.user.repository.UserRepository;
+import com.example.UserService.user.repository.httpclient.FriendClient;
 import com.example.UserService.util.JsonConverter;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -69,6 +75,13 @@ public class UserService {
 
     @Value("${kafka-info.typeid}")
     private Integer typeid;
+
+    @Autowired
+    private FriendClient friendClient;
+
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public ResponseEntity login(RequestLogin requestLogin) {
         // find user by email
@@ -516,6 +529,45 @@ public class UserService {
         }
 
         // convert to response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(users)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListMutualFriend(String authorizationHeader) {
+        // get user from authorization
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        // call friend serivice
+        Object response = this.friendClient.getListFanpage(user.getId());
+        
+        // convert to list
+        List<FriendSuggestion> list = this.objectMapper.convertValue(response, new TypeReference<List<FriendSuggestion>>() {});
+
+        List<RecommendationUser> users = new ArrayList<>();
+
+        if (list != null && list.size() > 0){
+            // create map and list userIds
+            Map<String, Integer> map = new HashMap<>();
+            List<String> userIds = new ArrayList<>();
+
+            list.stream().forEach(friend -> {
+                map.put(friend.getId(), friend.getNumberOfMutuals());
+                userIds.add(friend.getId());
+            });
+
+            // get list user from db
+            users = this.userRepository.getListUserByIds(userIds);
+
+            // set value for data 
+            users.stream().forEach(user1 -> {
+                user1.setData(map.get(user1.getId()));
+            });
+        }
+
         ApiResponse apiResponse = ApiResponse.builder()
                 .object(users)
                 .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))

@@ -132,6 +132,11 @@ public class UserController {
         return userService.getListUserLocation(authorizationHeader);
     }
 
+    @GetMapping("/list/mutual-friend")
+    public ResponseEntity getListMutualFriend(@RequestHeader("Authorization") String authorizationHeader) {
+        return userService.getListMutualFriend(authorizationHeader);
+    }
+
 
     /*
      * external APIs

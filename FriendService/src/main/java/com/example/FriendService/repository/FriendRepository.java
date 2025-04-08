@@ -1,6 +1,8 @@
 package com.example.FriendService.repository;
 
 import com.example.FriendService.entity.User;
+import com.example.FriendService.model.FriendSuggestion;
+
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 
@@ -10,9 +12,11 @@ import java.util.Optional;
 public interface FriendRepository extends Neo4jRepository<User, String> {
 
         // Send Friend Request (Create REQUEST relationship)
-        @Query("MATCH (a:User {id: $userId1}), (b:User {id: $userId2}) " +
-                        "MERGE (a)-[:REQUEST]->(b)")
+        @Query("MATCH (a:User {id: $userId1}) " +
+        "MATCH (b:User {id: $userId2}) " +
+        "MERGE (a)-[:REQUEST]->(b)")
         void sendFriendRequest(String userId1, String userId2);
+
 
         // Accept Friend Request (Convert REQUEST to FRIEND)
         /*
@@ -41,5 +45,15 @@ public interface FriendRepository extends Neo4jRepository<User, String> {
 
         @Query("MATCH (a:User {id: $userId})-[:FRIEND]->(b:User) RETURN b.id")
         List<String> getListFriend(String userId);
+
+
+        @Query("""
+        MATCH (u:User {id: $userId})-[:FRIEND]->(f1:User)-[:FRIEND]->(f2:User)
+        WHERE NOT (u)-[:FRIEND]->(f2) AND u.id <> f2.id
+        RETURN f2.id AS id, COUNT(*) AS numberOfMutuals
+        ORDER BY numberOfMutuals DESC
+        LIMIT 10
+        """)
+        List<FriendSuggestion> recommendFriends(String userId);
 
 }

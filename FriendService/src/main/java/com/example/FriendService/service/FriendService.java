@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.FriendService.entity.User;
 import com.example.FriendService.mapper.FriendMapper;
+import com.example.FriendService.model.FriendSuggestion;
 import com.example.FriendService.repository.FriendRepository;
 import com.example.FriendService.response.ApiResponse;
 import com.example.FriendService.response.EnumResponse;
@@ -97,6 +98,16 @@ public class FriendService {
     public ResponseEntity getListFriend(String userId) {
         List<String> list = this.friendRepository.getListFriend(userId);
         list.add(userId);
+        return ResponseEntity.ok(list);
+    }
+
+    public ResponseEntity getListMutualFriend(String userId) {
+        List<FriendSuggestion> list = this.friendRepository.recommendFriends(userId);
+
+        if (list == null){
+            list = new ArrayList<>();
+        }
+
         return ResponseEntity.ok(list);
     }
 }

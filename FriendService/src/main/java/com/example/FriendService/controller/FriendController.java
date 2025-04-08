@@ -61,4 +61,9 @@ public class FriendController {
     public ResponseEntity getListFriend(@PathVariable(name = "userId") String userId) {
         return friendService.getListFriend(userId);
     }
+
+    @GetMapping("/mutual-friend/list/{userId}")
+    public ResponseEntity getListMutualFriend(@PathVariable(name = "userId") String userId) {
+        return friendService.getListMutualFriend(userId);
+    }
 }

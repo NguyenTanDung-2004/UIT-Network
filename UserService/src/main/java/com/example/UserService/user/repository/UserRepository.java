@@ -59,4 +59,13 @@ public interface UserRepository extends JpaRepository<User, String> {
     """, nativeQuery = true)
     List<RecommendationUser> getUserByLocation(String userId, Double lat, Double lng);
 
+
+    @Query(value = """
+        SELECT u.id, u.name, u.avturl, u.studentid, u.email, u.major, u.faculty, 0 AS data
+        FROM users u
+        WHERE u.id IN (:userIds)
+        """, nativeQuery = true)
+    List<RecommendationUser> getListUserByIds(@Param("userIds") List<String> userIds);
+
+
 }
