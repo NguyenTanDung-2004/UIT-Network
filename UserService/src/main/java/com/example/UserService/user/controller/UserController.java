@@ -110,6 +110,12 @@ public class UserController {
         return userService.getListUser(authorizationHeader, textSearch);
     }
 
+    @GetMapping("/list")
+    public ResponseEntity getListUser(@RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam(name = "type") String type, @RequestParam(name = "value") String value) {
+        return userService.getListUser(authorizationHeader, type, value);
+    }
+
     /*
      * external APIs
      */

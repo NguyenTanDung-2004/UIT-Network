@@ -432,4 +432,35 @@ public class UserService {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    public ResponseEntity getListUser(String authorizationHeader, String type, String value) {
+        List<User> users = this.userRepository.getListUser(type, value);
+
+        if (users == null) {
+            users = new ArrayList<>();
+        }
+
+        List<Object> listResponses = new ArrayList<>();
+
+        users.stream().forEach(user -> {
+            if (user.getPrivateProperties() == 1) {
+                listResponses.add(this.userMapper.toResponse(user, hobbyService));
+            }
+            else{
+                try {
+                    listResponses.add(user.toMap());
+                } catch (IOException e) {
+                    throw new UserException();
+                }
+            }
+        });
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(listResponses)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
 }

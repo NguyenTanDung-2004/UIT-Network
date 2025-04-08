@@ -22,4 +22,17 @@ public interface UserRepository extends JpaRepository<User, String> {
             """, nativeQuery = true)
     List<User> searchText(String text);
 
+
+    @Query(value = """
+            SELECT * 
+            FROM users u
+            WHERE 
+                CASE 
+                    WHEN :type = 'major' THEN u.major
+                    WHEN :type = 'faculty' THEN u.faculty
+                    ELSE NULL
+                END = :value
+            """, nativeQuery = true)
+    List<User> getListUser(String type, String value);
+
 }
