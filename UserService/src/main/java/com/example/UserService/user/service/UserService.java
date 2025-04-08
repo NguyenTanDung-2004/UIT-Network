@@ -32,6 +32,7 @@ import com.example.UserService.user.dto.response.ResponseUserInfo;
 import com.example.UserService.user.entity.User;
 import com.example.UserService.user.model.PrivateProperties;
 import com.example.UserService.user.model.TimeSlot;
+import com.example.UserService.user.model.UserSchedule;
 import com.example.UserService.user.repository.UserRepository;
 import com.example.UserService.util.JsonConverter;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -458,6 +459,24 @@ public class UserService {
         // create response
         ApiResponse apiResponse = ApiResponse.builder()
                 .object(listResponses)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListUserSchedule(String authorizationHeader) {
+        // get user from authorization
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        List<UserSchedule> users = this.userRepository.getListUserSchedule(user.getId());
+        if (users == null) {
+            users = new ArrayList<>();
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(users)
                 .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))
                 .build();
 

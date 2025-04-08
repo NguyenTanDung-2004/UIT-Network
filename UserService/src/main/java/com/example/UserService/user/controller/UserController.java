@@ -116,6 +116,12 @@ public class UserController {
         return userService.getListUser(authorizationHeader, type, value);
     }
 
+    @GetMapping("/list/schedule")
+    public ResponseEntity getListUserSchedule(@RequestHeader("Authorization") String authorizationHeader) {
+        return userService.getListUserSchedule(authorizationHeader);
+    }
+
+
     /*
      * external APIs
      */

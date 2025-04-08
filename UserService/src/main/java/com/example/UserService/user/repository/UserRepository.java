@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.example.UserService.user.entity.User;
+import com.example.UserService.user.model.UserSchedule;
 
 public interface UserRepository extends JpaRepository<User, String> {
 
@@ -34,5 +35,10 @@ public interface UserRepository extends JpaRepository<User, String> {
                 END = :value
             """, nativeQuery = true)
     List<User> getListUser(String type, String value);
+
+    @Query(value = """
+            CALL get_top_10_matching_users(:userid)
+            """, nativeQuery = true)
+    List<UserSchedule> getListUserSchedule(String userid);
 
 }
