@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: UserService
+  datasource:
+    url: jdbc:mysql://localhost:3310/project2_db_chatservice
+    username: root
+    password: 12345
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+app:
+  services:
+    user: http://localhost:8080/user
+    group: http://localhost:8084/group
+    friend: http://localhost:8082/friend
+    fanpage: http://localhost:8084/fanpage
+
+server:
+  port: 8085

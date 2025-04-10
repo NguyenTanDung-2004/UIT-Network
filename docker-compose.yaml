@@ -115,6 +115,26 @@ services:
       timeout: 5s       # Wait 5 seconds for a response
       retries: 3        # Retry 3 times before declaring failure  
 
+  #db_chatservice
+  db_chatservice:
+    image: mysql:latest
+    container_name: project2_db_chatservice
+    environment:
+      - MYSQL_ROOT_PASSWORD=12345
+      - MYSQL_DATABASE=project2_db_chatservice # this line is used to create the database
+    ports:
+      - "3310:3306"                        
+    volumes:
+      - ./volumes/db_chatservice:/var/lib/mysql                  
+    networks:
+      - project2
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s     # Check health every 10 seconds
+      timeout: 5s       # Wait 5 seconds for a response
+      retries: 3        # Retry 3 times before declaring failure
+
 networks:
   project2:  
     driver: bridge
