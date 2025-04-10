@@ -1,5 +1,6 @@
 import Image from "next/image";
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -12,8 +13,19 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-[#b0afaf] bg-opacity-80 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-xl shadow- relative">
+    <motion.div
+      className="fixed top-0 left-0 w-full h-full bg-[#b0afaf] bg-opacity-80 flex items-center justify-center z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-white rounded-lg p-8 w-full max-w-md shadow-xl relative"
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: -50, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         {/* Close button */}
         <button
           onClick={onClose}
@@ -144,8 +156,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
             Login
           </button>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import LoginModal from "./LoginModal"; // Assuming LoginModal.tsx is in the same directory
+import LoginModal from "./LoginModal";
+import { AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
 const LandingPage = () => {
@@ -116,7 +117,9 @@ const LandingPage = () => {
       </main>
 
       {/* Login Modal */}
-      {isLoginModalOpen && <LoginModal onClose={closeLoginModal} />}
+      <AnimatePresence>
+        {isLoginModalOpen && <LoginModal onClose={closeLoginModal} />}
+      </AnimatePresence>
     </div>
   );
 };
