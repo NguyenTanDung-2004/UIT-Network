@@ -4,63 +4,44 @@ import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 
 interface MediaUploaderProps {
-  onMediaUpload: (url: string, type: string, publicId: string) => void; // Thêm publicId
+  onMediaSelect: (file: File, previewUrl: string, type: string) => void;
   onFileSelect: (file: File | null) => void;
   onClose: () => void;
 }
 
 const MediaUploader: React.FC<MediaUploaderProps> = ({
-  onMediaUpload,
+  onMediaSelect,
   onFileSelect,
   onClose,
 }) => {
-  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
-
-      if (!file) {
+    (acceptedFiles: File[], rejectedFiles: any[]) => {
+      setError(null);
+      if (rejectedFiles && rejectedFiles.length > 0) {
+        console.error("File rejected:", rejectedFiles);
+        setError("Invalid file type selected.");
         return;
       }
 
-      setUploading(true);
-      onFileSelect(file);
-      const formData = new FormData();
-      formData.append("file", file);
-
-      try {
-        const response = await fetch("/api/test-cloudinary", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          onMediaUpload(
-            data.url,
-            file.type.startsWith("video/") ? "video" : "image",
-            data.public_id // Truyền publicId
-          );
-        } else {
-          console.error("Upload failed:", response);
-          alert("Upload failed. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error uploading media:", error);
-        alert("Error uploading media. Please try again.");
-      } finally {
-        setUploading(false);
+      const file = acceptedFiles[0];
+      if (!file) {
+        return;
       }
+      const previewUrl = URL.createObjectURL(file);
+      const type = file.type.startsWith("video/") ? "video" : "image";
+
+      onMediaSelect(file, previewUrl, type);
     },
-    [onMediaUpload, onFileSelect]
+    [onMediaSelect]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".jpeg", ".png", ".jpg", ".gif", ".svg"],
-      "video/*": [".mp4", ".webm", ".ogg"],
+      "image/*": [".jpeg", ".png", ".jpg", ".gif", ".svg", ".webp"],
+      "video/*": [".mp4", ".webm", ".ogg", ".mov"],
     },
     multiple: false,
   });
@@ -68,30 +49,34 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
   return (
     <div
       {...getRootProps()}
-      className="flex flex-col items-center justify-center py-6 px-8 rounded-xl cursor-pointer focus:outline-none"
+      className="relative flex flex-col items-center justify-center py-6 px-8 rounded-xl cursor-pointer focus:outline-none border-2 border-dashed border-gray-400 dark:border-gray-600 hover:border-gray-500 dark:hover:border-gray-500"
     >
       <button
-        onClick={onClose}
-        className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none z-10 dark:text-gray-400 dark:hover:text-gray-300"
+        aria-label="Close uploader"
       >
         <i className="fa fa-times"></i>
       </button>
       <input {...getInputProps()} />
-      {isDragActive ? (
-        <p className="text-pink-500 text-center">
-          <i className="fa fa-cloud-upload-alt mr-2"></i> Drop the file here...
-        </p>
-      ) : (
-        <>
-          <i className="fa fa-cloud-upload-alt fa-2x text-gray-500 mb-2"></i>
-          <p className="text-gray-700 text-center dark:text-gray-400 text-sm">
-            Drag and drop an image or video here, or click to select
+      <div className="text-center">
+        {isDragActive ? (
+          <p className="text-pink-500">
+            <i className="fa fa-cloud-upload-alt mr-2"></i> Drop file here...
           </p>
-        </>
-      )}
-      {uploading && (
-        <p className="text-gray-500 dark:text-gray-400 text-sm">Uploading...</p>
-      )}
+        ) : (
+          <>
+            <i className="fa fa-cloud-upload-alt fa-2x text-gray-500 dark:text-gray-400 mb-2"></i>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              Drag & drop or click to select image/video
+            </p>
+          </>
+        )}
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      </div>
     </div>
   );
 };
