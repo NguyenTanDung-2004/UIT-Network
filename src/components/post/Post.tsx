@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import DetailPostModal from "./detail/DetailPostModal";
 
 interface UploadedFile {
   name: string;
@@ -29,6 +30,7 @@ interface PostProps {
 }
 
 const Post: React.FC<PostProps> = ({ post }) => {
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false); // State quản lý show detail post modal
   const [isLiked, setIsLiked] = useState(false); // State quản lý người dùng đã like post chưa
   const [isShared, setIsShared] = useState(false); // State quản lý người dùng đã share post chưa
   const [showMoreOptions, setShowMoreOptions] = useState(false); // State cho setting of post
@@ -37,6 +39,10 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const [sharesCount, setSharesCount] = useState(post.shares); // State cho số lượt share
   const [showMediaViewer, setShowMediaViewer] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const currentUser = {
+    avatar:
+      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+  };
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -202,7 +208,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
                 ) : null}
               </div>
               {hasMoreMedia && index === 3 && (
-                <div className="absolute inset-0 flex items-center justify-center text-black  dark:text-white text-2xl font-bold">
+                <div className="absolute inset-0 flex items-center justify-center text-black dark:text-white text-2xl font-bold bg-black bg-opacity-30">
                   + {(post.mediaList?.length || 0) - 4}
                 </div>
               )}
@@ -240,31 +246,22 @@ const Post: React.FC<PostProps> = ({ post }) => {
         {/* like */}
         <button
           onClick={handleLike}
-          className={`flex items-center ${
-            isLiked ? "text-primary dark:" : "text-gray-400"
-          } hover:text-opacity-80 `}
+          className={`flex items-center space-x-1 hover:text-opacity-80 ${
+            isLiked
+              ? "text-primary dark:text-pink-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}
         >
-          <div
-            className={`py-2 px-3 rounded-3xl ${
-              isLiked ? "bg-pink-200" : ""
-            } transition-colors duration-200`}
-          >
-            <i className={`${isLiked ? "fas" : "far"} fa-thumbs-up mr-2`}></i>
-            <span>{isLiked ? "Liked" : "Like"}</span>
-          </div>
-          <span
-            className={`ml-1 ${
-              isLiked
-                ? "bg-pink-200 text-primary px-2 py-1 rounded-full"
-                : "text-gray-400"
-            }`}
-          >
-            {likesCount} {/* Hiển thị số lượt like từ state */}
+          <i className={`${isLiked ? "fas" : "far"} fa-thumbs-up`}></i>
+          <span>
+            {likesCount} {isLiked ? "Liked" : "Like"}
           </span>
         </button>
-
         {/* cmt */}
-        <button className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+        <button
+          onClick={() => setIsDetailModalOpen(true)}
+          className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+        >
           <div className="p-2 rounded-md">
             <i className="far fa-comment-alt mr-2"></i>
             <span>Comment</span>
@@ -275,26 +272,15 @@ const Post: React.FC<PostProps> = ({ post }) => {
         {/* share */}
         <button
           onClick={handleShare}
-          className={`flex items-center ${
-            isShared ? "text-primary" : "text-gray-400"
-          } hover:text-opacity-80 `}
+          className={`flex items-center space-x-1 hover:text-opacity-80 ${
+            isShared
+              ? "text-primary dark:text-pink-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}
         >
-          <div
-            className={`py-2 px-3 rounded-3xl ${
-              isShared ? "bg-pink-200" : ""
-            } transition-colors duration-200`}
-          >
-            <i className={`fas fa-share mr-2`}></i>
-            <span>{isShared ? "Shared" : "Share"}</span>
-          </div>
-          <span
-            className={`ml-1 ${
-              isShared
-                ? "bg-pink-200 text-primary px-2 py-1 rounded-full"
-                : "text-gray-400"
-            }`}
-          >
-            {sharesCount}
+          <i className="fas fa-share"></i>
+          <span>
+            {sharesCount} {isShared ? "Shared" : "Share"}
           </span>
         </button>
       </div>
@@ -349,6 +335,57 @@ const Post: React.FC<PostProps> = ({ post }) => {
           </div>
         </div>
       )}
+
+      <DetailPostModal
+        post={{
+          ...post, // Dữ liệu post gốc
+          commentData: [
+            {
+              id: "c1",
+              author: {
+                id: "phan",
+                name: "Phan Giang",
+                avatar:
+                  "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+              },
+              text: "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines.",
+              timestamp: "15 hours ago",
+              likes: 5,
+              replies: [],
+            },
+            {
+              id: "c2",
+              author: {
+                id: "tan",
+                name: "Tấn Dũng",
+                avatar:
+                  "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+              },
+              text: "Ohhh wooo yeee 😎 @PhanGiang",
+              timestamp: "16 hours ago",
+              likes: 2,
+              replies: [
+                {
+                  id: "c3",
+                  author: {
+                    id: "phan",
+                    name: "Phan Giang",
+                    avatar:
+                      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+                  },
+                  text: "Thanks bạn!",
+                  timestamp: "15 hours ago",
+                  likes: 1,
+                  replies: [],
+                },
+              ],
+            },
+          ],
+        }}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        currentUserAvatar={currentUser.avatar} // Truyền avatar người dùng hiện tại
+      />
     </div>
   );
 };
