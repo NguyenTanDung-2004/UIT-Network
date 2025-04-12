@@ -19,7 +19,7 @@ public class MessageController {
 
     @PostMapping("")
     public ResponseEntity createMessage(@RequestBody RequestCreateMessage requestCreateMessage, @RequestHeader("Authorization") String authorizationHeader) {
-        return ResponseEntity.ok(messageService.createMessage(requestCreateMessage));
+        return messageService.createMessage(requestCreateMessage, authorizationHeader);
         
     }
 }

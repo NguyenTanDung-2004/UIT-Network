@@ -1,12 +1,28 @@
 package com.example.ChatService.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.example.ChatService.entity.Group;
 
 public interface GroupRepository extends JpaRepository<Group, String> {
-    // Custom query methods can be defined here if needed
-    // For example, to find groups by a specific attribute
-    // List<Group> findByAttribute(String attribute);
+
+    @Query(value = 
+    """
+        SELECT g.id
+        FROM chatgroup g 
+            JOIN user_group ug
+            ON g.id = ug.groupid
+        WHERE g.type = 2
+            AND ug.userid IN (:userid1, :userid2)
+            AND g.status = 'ACTIVE'
+            AND ug.status = 'ACTIVE'
+        GROUP BY g.id
+        HAVING count(*) = 2  
+    """, nativeQuery = true)      
+    String findGroup2User(String userid1, String userid2);
+    
     
 }

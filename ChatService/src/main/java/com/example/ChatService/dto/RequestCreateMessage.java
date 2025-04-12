@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestCreateMessage {
+    private String receiverid; // if it is not from group, we need to attached other user
     private String message; // convert from json to string if it is file
     private String tags;
     private String groupid;

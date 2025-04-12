@@ -1,23 +1,53 @@
 package com.example.ChatService.service;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.example.ChatService.dto.RequestCreateMessage;
+import com.example.ChatService.entity.Group;
+import com.example.ChatService.entity.Message;
+import com.example.ChatService.entity.UserGroup;
 import com.example.ChatService.enums.EnumGroupType;
+import com.example.ChatService.enums.EnumStatus;
 import com.example.ChatService.exception.EnumException;
 import com.example.ChatService.exception.ExternalException;
 import com.example.ChatService.exception.UserException;
+import com.example.ChatService.mapper.Mapper;
+import com.example.ChatService.mapper.MessageMapper;
+import com.example.ChatService.repository.GroupRepository;
+import com.example.ChatService.repository.MessageRepository;
 import com.example.ChatService.repository.httpclient.UserClient;
+import com.example.ChatService.response.ApiResponse;
+import com.example.ChatService.response.EnumResponse;
 
 import feign.FeignException;
+import jakarta.transaction.Transactional;
 
 @Service
 public class MessageService {
 
     @Autowired
     private UserClient userClient;
+
+    @Autowired
+    private GroupRepository groupRepository;
+
+    @Autowired
+    private UserGroupService userGroupService;
+
+    @Autowired
+    private Mapper messageMapper;
+
+    @Autowired
+    private MessageRepository messageRepository;
+
 
     private String getUserId(String authorizationHeader) {
         // get userId
@@ -35,6 +65,7 @@ public class MessageService {
         return userId;
     }
 
+    @Transactional(rollbackOn = { Exception.class })
     public ResponseEntity createMessage(RequestCreateMessage requestCreateMessage, String authorizationHeader) {
         // get user id from authorizationHeader
         String userId = getUserId(authorizationHeader);
@@ -42,9 +73,29 @@ public class MessageService {
         // check if this message is not in group
         EnumGroupType groupType = EnumGroupType.fromTypeId(requestCreateMessage.getGrouptype());
 
+        String groupId = requestCreateMessage.getGroupid();
+
         switch (groupType) {
             case IsUser:
-                // check if group is exist
+                // create groupid
+                groupId = groupRepository.findGroup2User(userId, requestCreateMessage.getReceiverid());
+
+                if (groupId == null) {
+                    // create group
+                    Group group = new Group();
+                    group.setId(groupId);
+                    group.setType(EnumGroupType.IsUser.getId());
+                    group.setStatus(EnumStatus.ACTIVE.getValue());
+                    group.setCreateddate(new Date());
+                    group.setModifieddate(new Date());
+                    // save group
+                    group = groupRepository.save(group);
+                    groupId = group.getId();
+
+                    // save user_group
+                    this.userGroupService.createUserGroup(List.of(userId, requestCreateMessage.getReceiverid()), groupId);
+                }
+
                 break;
 
             case IsGroup:
@@ -53,7 +104,21 @@ public class MessageService {
                 break;
         }
 
+        // create message
+        String parentid = UUID.randomUUID().toString(); // create parentid
+        Map<String, Object> extraFields = Map.of("parentid", parentid, "senderid", userId); // create extra field
+        Message message = (Message) messageMapper.toEntity(requestCreateMessage, extraFields);
+        message.setGroupid(groupId); // set group id
 
+        message = messageRepository.save(message); // save message
+
+        // create response
+        ApiResponse response = ApiResponse.builder()
+                .object(message)
+                .enumResponse(EnumResponse.toJson(EnumResponse.CREATE_MESSAGE_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(response);
     }
     
 }

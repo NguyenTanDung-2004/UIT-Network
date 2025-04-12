@@ -14,7 +14,8 @@ import lombok.Getter;
 public enum EnumMessageType {
     TEXT(1, "text", "Text message"),
     IMAGE(2, "image", "Image message"),
-    REPLY(3, "reply", "Reply message"),;
+    REPLY(3, "reply", "Reply message"),
+    FILE(4, "file", "File message");
 
     private final int id;
     private final String typeName;

@@ -16,7 +16,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum EnumResponse {
-    CREATE_POST_SUCCESS("s_01_post", "Create post successfully!", HttpStatus.OK),;
+    CREATE_MESSAGE_SUCCESS("s_01_chat", "Create message success", HttpStatus.OK),;
     String code;
     String message;
     HttpStatusCode httpStatus;
