@@ -1,6 +1,8 @@
 package com.example.ChatService.repository;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -35,6 +37,33 @@ public interface GroupRepository extends JpaRepository<Group, String> {
             AND ug.status = 'ACTIVE'
     """, nativeQuery = true)
     void removeUserGroup(List<String> memberids, String groupid);
+
+
+    @Query(value = 
+    """
+        SELECT g.*
+        FROM chatgroup g 
+            JOIN user_group ug
+            ON g.id = ug.groupid
+        WHERE g.type = 2
+            AND ug.userid = :userId
+            AND ug.groupid = :groupid
+            AND g.status = 'ACTIVE'
+            AND ug.status = 'ACTIVE'
+    """, nativeQuery = true)
+    Group findGroup(String userId, String groupid);
+
+
+    @Modifying
+    @Query(value = 
+    """
+        UPDATE user_group ug
+        SET ug.seendate = :date
+        WHERE ug.groupid = :groupid
+            AND ug.userid = :userId
+            AND ug.status = 'ACTIVE'
+    """, nativeQuery = true)
+    void updateSeenMessage(String groupid, String userId, Date date);
     
     
 }

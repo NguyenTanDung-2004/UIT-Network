@@ -26,4 +26,5 @@ public class UserGroup {
     private String status;
     private Date createddate;
     private Date modifieddate;
+    private Date seendate;
 }
