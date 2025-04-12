@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.example.ChatService.dto.RequestCallGeminiAPI;
+import com.example.ChatService.dto.RequestCreateAIMessage;
 import com.example.ChatService.dto.RequestCreateMessage;
 import com.example.ChatService.entity.Group;
 import com.example.ChatService.entity.Message;
@@ -23,9 +25,11 @@ import com.example.ChatService.mapper.Mapper;
 import com.example.ChatService.mapper.MessageMapper;
 import com.example.ChatService.repository.GroupRepository;
 import com.example.ChatService.repository.MessageRepository;
+import com.example.ChatService.repository.httpclient.GeminiAPI;
 import com.example.ChatService.repository.httpclient.UserClient;
 import com.example.ChatService.response.ApiResponse;
 import com.example.ChatService.response.EnumResponse;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import feign.FeignException;
 import jakarta.transaction.Transactional;
@@ -47,6 +51,9 @@ public class MessageService {
 
     @Autowired
     private MessageRepository messageRepository;
+
+    @Autowired
+    private GeminiAPI geminiAPI;
 
 
     private String getUserId(String authorizationHeader) {
@@ -119,6 +126,26 @@ public class MessageService {
                 .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity createAIMessage(RequestCreateAIMessage request, String authorizationHeader) {
+        // create request call gemini API
+        RequestCallGeminiAPI requestCall = new RequestCallGeminiAPI(request.getQuestion());
+
+        Object object = this.geminiAPI.createAIMessage(requestCall);
+
+        Map<String, Object> response = (Map<String, Object>) object;
+        List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+        Map<String, Object> firstCandidate = candidates.get(0);
+        Map<String, Object> content = (Map<String, Object>) firstCandidate.get("content");
+        List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+        String text = (String) parts.get(0).get("text");
+
+        // create requestCreateMessage
+        RequestCreateMessage requestCreateMessage = new RequestCreateMessage(request);
+        requestCreateMessage.setMessage(text);
+        
+        return createMessage(requestCreateMessage, authorizationHeader);
     }
     
 }

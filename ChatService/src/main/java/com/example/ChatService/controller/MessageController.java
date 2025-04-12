@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.ChatService.dto.RequestCreateAIMessage;
 import com.example.ChatService.dto.RequestCreateMessage;
 import com.example.ChatService.service.MessageService;
 
@@ -20,6 +21,10 @@ public class MessageController {
     @PostMapping("")
     public ResponseEntity createMessage(@RequestBody RequestCreateMessage requestCreateMessage, @RequestHeader("Authorization") String authorizationHeader) {
         return messageService.createMessage(requestCreateMessage, authorizationHeader);
-        
+    }
+
+    @PostMapping("/AI")
+    public ResponseEntity createAIMessage(@RequestBody RequestCreateAIMessage request, @RequestHeader("Authorization") String authorizationHeader) {
+        return messageService.createAIMessage(request, authorizationHeader);
     }
 }

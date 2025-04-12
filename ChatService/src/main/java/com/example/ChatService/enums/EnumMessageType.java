@@ -15,7 +15,8 @@ public enum EnumMessageType {
     TEXT(1, "text", "Text message"),
     IMAGE(2, "image", "Image message"),
     REPLY(3, "reply", "Reply message"),
-    FILE(4, "file", "File message");
+    FILE(4, "file", "File message"),
+    AI(5, "ai", "AI message"),;
 
     private final int id;
     private final String typeName;

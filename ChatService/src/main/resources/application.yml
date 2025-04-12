@@ -16,6 +16,9 @@ app:
     group: http://localhost:8084/group
     friend: http://localhost:8082/friend
     fanpage: http://localhost:8084/fanpage
+  external-api:
+    gemini: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBhkq0H4KCQcClpWAaMI8LdheIzlajxYM8
 
 server:
   port: 8085
+

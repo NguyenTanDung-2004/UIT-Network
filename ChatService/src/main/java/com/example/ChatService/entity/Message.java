@@ -2,6 +2,7 @@ package com.example.ChatService.entity;
 
 import java.util.Date;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +25,8 @@ public class Message {
     private String id;
     private String parentid;
     private String senderid;
+
+    @Column(columnDefinition = "TEXT")
     private String message; 
     private String tags;
     private Integer type; 

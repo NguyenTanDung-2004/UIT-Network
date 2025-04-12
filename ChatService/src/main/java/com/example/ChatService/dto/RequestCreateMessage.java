@@ -19,4 +19,13 @@ public class RequestCreateMessage {
     private String groupid;
     private Integer messagetype;
     private Integer grouptype;
+
+    public RequestCreateMessage(RequestCreateAIMessage requestCreateAIMessage) {
+        this.receiverid = requestCreateAIMessage.getReceiverid();
+        this.message = requestCreateAIMessage.getQuestion();
+        this.tags = requestCreateAIMessage.getTags();
+        this.groupid = requestCreateAIMessage.getGroupid();
+        this.messagetype = requestCreateAIMessage.getMessagetype();
+        this.grouptype = requestCreateAIMessage.getGrouptype();
+    }
 }

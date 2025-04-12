@@ -32,4 +32,5 @@ public class UserGroupService {
             this.userGroupRepository.save(userGroup);
         }
     }
+
 }
