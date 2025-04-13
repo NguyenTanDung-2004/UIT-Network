@@ -38,7 +38,7 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
   return (
     <div className="flex items-center justify-between px-10 py-2.5 bg-white border-b dark:bg-gray-800 dark:border-gray-700">
       {/* Logo */}
-      <Link href="/" className="flex items-center">
+      <Link href="/home" className="flex items-center">
         <div className="flex items-center">
           <Image
             src="/icon.ico"

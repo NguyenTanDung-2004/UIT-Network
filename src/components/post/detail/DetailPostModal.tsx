@@ -458,15 +458,18 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
             </div>
             {/* End Scrollable Content Area */}
             {/* === Phần nhập Comment === */}
-            <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+            <div className="p-4 border-t  bg-gray-50 dark:bg-gray-800 dark:shadow-gray-700 dark:border-t-gray-500">
               <form
                 onSubmit={handleAddComment}
                 className="flex items-center space-x-2"
               >
                 {/* Avatar người dùng hiện tại */}
-                <div className="w-8 h-8 relative rounded-full overflow-hidden flex-shrink-0 border dark:border-gray-600">
+                <div className="w-8 h-8 relative rounded-full overflow-hidden flex-shrink-0 border dark:bg-gray-800 dark:shadow-gray-700">
                   <Image
-                    src={currentUserAvatar || "/images/default-avatar.png"} // Provide a fallback avatar
+                    src={
+                      currentUserAvatar ||
+                      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg"
+                    } // Provide a fallback avatar
                     alt="Your avatar"
                     fill
                     className="object-cover"

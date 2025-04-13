@@ -13,7 +13,8 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
         primary: "#FF70D9",
-        primaryLight: "FFE6F8",
+        primaryLight: "#FFE6F8",
+        ghostWhite: "#FFF8FD",
       },
       keyframes: {
         "toast-progress": {
@@ -30,5 +31,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("tailwind-scrollbar")],
 } satisfies Config;

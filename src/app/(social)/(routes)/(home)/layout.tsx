@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import NavBar from "@/components/layout/NavBar";
 import LeftBar from "@/components/home/layout/LeftBar";
 import RightBar from "@/components/home/layout/RightBar";
 
@@ -14,12 +13,6 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Sample data for testing
-  const user = {
-    name: "Phan Giang",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-  };
-
   const groups = [
     { id: "rubik-club", name: "Rubik Club" },
     { id: "taekwondo-judo", name: "Taekwondo & Judo" },
@@ -116,10 +109,7 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F3F3F3] overflow-x-hidden dark:bg-gray-700">
-      {/* Navigation Bar */}
-      <NavBar user={user} />
-
+    <>
       {/* Mobile Toggle Buttons*/}
       <div className="lg:hidden  flex  px-4 py-2 bg-white border-b">
         <button onClick={toggleLeftSidebar} className="text-gray-600 md:hidden">
@@ -175,7 +165,7 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
           }}
         ></div>
       )}
-    </div>
+    </>
   );
 };
 
