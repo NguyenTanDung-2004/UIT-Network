@@ -28,8 +28,10 @@ export default function UserListItem({
       onClick={onClick}
       className={`w-full flex items-center px-3 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors duration-150 ease-in-out cursor-pointer
         ${
-          isSelected ? "bg-gray-100" : "bg-white dark:bg-gray-800"
-        } hover:bg-gray-100
+          isSelected
+            ? "bg-gray-100 dark:bg-gray-700"
+            : "bg-white dark:bg-gray-800"
+        } hover:bg-gray-100 dark:hover:bg-gray-700
       `}
     >
       <Image
