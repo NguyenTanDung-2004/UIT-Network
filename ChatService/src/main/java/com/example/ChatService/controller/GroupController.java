@@ -51,4 +51,16 @@ public class GroupController {
     public ResponseEntity seenMessage(@PathVariable(name = "groupid") String groupid, @RequestHeader("Authorization") String authorizationHeader) {
         return groupService.seenMessage(groupid, authorizationHeader);
     }
+
+    /*
+     * this api is used to get list group of user
+     * - groupid
+     * - avt
+     * - groupname
+     * - seen
+     */
+    @GetMapping("/list")
+    public ResponseEntity getListGroup(@RequestHeader("Authorization") String authorizationHeader) {
+        return groupService.getListGroup(authorizationHeader);
+    }
 }

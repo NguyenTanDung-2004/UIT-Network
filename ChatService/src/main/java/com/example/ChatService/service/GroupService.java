@@ -1,5 +1,6 @@
 package com.example.ChatService.service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -9,8 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.example.ChatService.dto.ExternalUserInfo;
 import com.example.ChatService.dto.RequestAddMember;
 import com.example.ChatService.dto.RequestCreateGroup;
+import com.example.ChatService.dto.ResponseListGroup;
 import com.example.ChatService.entity.Group;
 import com.example.ChatService.enums.EnumGroupType;
 import com.example.ChatService.enums.EnumStatus;
@@ -19,6 +22,8 @@ import com.example.ChatService.repository.GroupRepository;
 import com.example.ChatService.repository.httpclient.UserClient;
 import com.example.ChatService.response.ApiResponse;
 import com.example.ChatService.response.EnumResponse;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.transaction.Transactional;
 
@@ -132,5 +137,101 @@ public class GroupService {
                 .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    /*
+     * this api is used to get list group of user
+     * - groupid
+     * - avt
+     * - groupname
+     * - seen
+     */
+    public ResponseEntity getListGroup(String authorizationHeader) {
+        // get user id from authorizationHeader
+        String userId = (String) userClient.getUserId(authorizationHeader);
+
+        // get list group of user
+        List<Object[]> results = this.groupRepository.findListGroup(userId);
+
+        List<ResponseListGroup> groups = new ArrayList<>();
+
+        for (Object[] row : results) {
+            ResponseListGroup group = new ResponseListGroup();
+            group.setId((String) row[0]);
+            group.setType(((Number) row[1]).intValue());          // fix
+            group.setName((String) row[2]);
+            group.setOwnerid((String) row[3]);
+            group.setStatus((String) row[4]);
+            group.setCreateddate((Date) row[5]);
+            group.setModifieddate((Date) row[6]);
+            group.setAvturl((String) row[7]);
+            group.setOtheruserid((String) row[8]);
+            group.setIsdisplay(((Number) row[9]).intValue());     // fix
+            group.setIsseen(((Number) row[10]).intValue());       // fix
+            groups.add(group);
+        }
+        
+
+        if (groups == null || groups.size() == 0) {
+            groups = new ArrayList<>();
+        }
+        else{
+            // get avturl
+            getAvtURL(groups);
+        }
+
+        // create response
+        ApiResponse response = ApiResponse.builder()
+                .object(groups)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_GROUP_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    private void getAvtURL(List<ResponseListGroup> groups) {
+        List<String> userids = new ArrayList<>();
+
+        groups.stream().forEach(group -> {
+            if (group.getType() == EnumGroupType.IsUser.getId()) {
+                userids.add(group.getOtheruserid());
+            } else {
+                userids.add(group.getId());
+            }
+        });
+
+        if (userids != null && userids.size() > 0){
+            // convert list to string
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < userids.size(); i++) {
+                sb.append(userids.get(i));
+                if (i != userids.size() - 1) {
+                    sb.append(",");
+                }
+            }
+            String userIds = sb.toString();
+
+            // get user info
+            Object listUserInfos = this.userClient.getListUserInfos(userIds);
+            List<ExternalUserInfo> externalUserInfos = new ObjectMapper().convertValue(listUserInfos, 
+                new TypeReference<List<ExternalUserInfo>>() {});
+
+            // map userid to avturl
+            Map<String, ExternalUserInfo> avtUrls = new HashMap<>();
+            externalUserInfos.stream().forEach(userInfo -> {
+                avtUrls.put(userInfo.getUserId(), userInfo);
+            });
+
+            // set avturl to group
+            groups.stream().forEach(group -> {
+                if (group.getType() == EnumGroupType.IsUser.getId()) {
+                    group.setAvturl(avtUrls.get(group.getOtheruserid()).getAvtURL());
+                    group.setName(avtUrls.get(group.getOtheruserid()).getUserName() == null ? avtUrls.get(group.getOtheruserid()).getStudentId()
+                            : avtUrls.get(group.getOtheruserid()).getUserName());
+                }
+            });
+        }
+
+
     }
 }
