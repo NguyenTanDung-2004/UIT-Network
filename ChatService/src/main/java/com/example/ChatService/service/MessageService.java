@@ -73,19 +73,19 @@ public class MessageService {
     }
 
     @Transactional(rollbackOn = { Exception.class })
-    public ResponseEntity createMessage(RequestCreateMessage requestCreateMessage, String authorizationHeader) {
+    public ResponseEntity createMessage(List<RequestCreateMessage> requestCreateMessage, String authorizationHeader) {
         // get user id from authorizationHeader
         String userId = getUserId(authorizationHeader);
 
         // check if this message is not in group
-        EnumGroupType groupType = EnumGroupType.fromTypeId(requestCreateMessage.getGrouptype());
+        EnumGroupType groupType = EnumGroupType.fromTypeId(requestCreateMessage.get(0).getGrouptype());
 
-        String groupId = requestCreateMessage.getGroupid();
+        String groupId = requestCreateMessage.get(0).getGroupid();
 
         switch (groupType) {
             case IsUser:
                 // create groupid
-                groupId = groupRepository.findGroup2User(userId, requestCreateMessage.getReceiverid());
+                groupId = groupRepository.findGroup2User(userId, requestCreateMessage.get(0).getReceiverid());
 
                 if (groupId == null) {
                     // create group
@@ -100,7 +100,7 @@ public class MessageService {
                     groupId = group.getId();
 
                     // save user_group
-                    this.userGroupService.createUserGroup(List.of(userId, requestCreateMessage.getReceiverid()), groupId);
+                    this.userGroupService.createUserGroup(List.of(userId, requestCreateMessage.get(0).getReceiverid()), groupId);
                 }
 
                 break;
@@ -114,14 +114,21 @@ public class MessageService {
         // create message
         String parentid = UUID.randomUUID().toString(); // create parentid
         Map<String, Object> extraFields = Map.of("parentid", parentid, "senderid", userId); // create extra field
-        Message message = (Message) messageMapper.toEntity(requestCreateMessage, extraFields);
-        message.setGroupid(groupId); // set group id
 
-        message = messageRepository.save(message); // save message
+        // result 
+        List<Message> listMessage = new ArrayList<>();
+        
+        for (int i = 0; i < requestCreateMessage.size(); i++) {
+            Message message = (Message) messageMapper.toEntity(requestCreateMessage.get(i), extraFields);
+            message.setGroupid(groupId); // set group id
+            // save message
+            message = messageRepository.save(message);
+            listMessage.add(message);
+        }
 
         // create response
         ApiResponse response = ApiResponse.builder()
-                .object(message)
+                .object(listMessage)
                 .enumResponse(EnumResponse.toJson(EnumResponse.CREATE_MESSAGE_SUCCESS))
                 .build();
 
@@ -142,10 +149,22 @@ public class MessageService {
         String text = (String) parts.get(0).get("text");
 
         // create requestCreateMessage
-        RequestCreateMessage requestCreateMessage = new RequestCreateMessage(request);
-        requestCreateMessage.setMessage(text);
+        RequestCreateMessage requestCreateMessage1 = new RequestCreateMessage(request);
+        requestCreateMessage1.setMessage(request.getQuestion());
+        RequestCreateMessage requestCreateMessage2 = new RequestCreateMessage(request);
+        requestCreateMessage2.setMessage(text);
         
-        return createMessage(requestCreateMessage, authorizationHeader);
+        return createMessage(List.of(requestCreateMessage1, requestCreateMessage2), authorizationHeader);
+    }
+
+    public ResponseEntity getMessage(String groupid, String authorizationHeader) {
+        // get user id from authorizationHeader
+        String userId = getUserId(authorizationHeader);
+
+        // get list  message
+        List<Message> listMessage = messageRepository.findByGroupid(groupid);
+
+        
     }
     
 }
