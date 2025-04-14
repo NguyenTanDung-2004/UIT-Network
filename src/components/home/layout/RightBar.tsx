@@ -29,7 +29,7 @@ const RightBar: React.FC<RightBarProps> = ({
   onlineContacts,
 }) => {
   return (
-    <div className="w-full h-screen overflow-y-auto bg-white pt-4 pb-20 border-l dark:bg-gray-800 dark:border-gray-700">
+    <div className="w-full h-screen overflow-y-auto  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 bg-white pt-4 pb-20 border-l dark:bg-gray-800 dark:border-gray-700">
       {/* Community Chats */}
       <div className="px-4 mb-4">
         <h3 className="text-base font-semibold mb-3 dark:text-gray-200">

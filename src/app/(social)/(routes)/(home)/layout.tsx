@@ -135,7 +135,7 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
           <div className="max-w-5xl mx-auto py-4 px-4">{children}</div>
         </div>
 

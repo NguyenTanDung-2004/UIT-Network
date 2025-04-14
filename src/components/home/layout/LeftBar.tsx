@@ -32,7 +32,7 @@ const LeftBar: React.FC<LeftBarProps> = ({ groups }) => {
       id: "profile",
       icon: <i className="fas fa-user"></i>,
       label: "Profile",
-      href: "/profile",
+      href: "/profiles/me",
     },
     {
       id: "favorites",
@@ -105,7 +105,7 @@ const LeftBar: React.FC<LeftBarProps> = ({ groups }) => {
   ];
 
   return (
-    <div className="w-full h-screen overflow-y-auto bg-white pt-4 pb-20 border-r  dark:bg-gray-800 dark:border-gray-700">
+    <div className="w-full h-screen overflow-y-auto  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 bg-white pt-4 pb-20 border-r  dark:bg-gray-800 dark:border-gray-700">
       {/* Main Menu */}
       <div className="px-4">
         <ul>

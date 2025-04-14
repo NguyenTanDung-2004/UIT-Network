@@ -265,7 +265,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-grow p-4 overflow-y-auto">
+        <div className="flex-grow p-4 overflow-y-auto  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
           <textarea
             value={content}
             onChange={handleInputChange}
@@ -284,7 +284,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               {selectedMedia.map((media) => (
                 <div
                   key={media.id}
-                  className="rounded-lg overflow-hidden relative aspect-video bg-gray-200 dark:bg-gray-700 group"
+                  className="rounded-lg overflow-hidden  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 relative aspect-video bg-gray-200 dark:bg-gray-700 group"
                 >
                   {media.type === "image" && (
                     <img
@@ -331,7 +331,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               className="mt-3 border rounded-md shadow-sm p-3 w-full flex items-center justify-between cursor-pointer dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
               onClick={handleViewFile}
             >
-              <div className="flex items-center overflow-hidden mr-2">
+              <div className="flex items-center overflow-hidden mr-2 ">
                 <img
                   src={getFileIcon(uploadedFile.type)}
                   alt="File Icon"

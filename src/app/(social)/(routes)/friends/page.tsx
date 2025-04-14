@@ -80,7 +80,7 @@ const FriendsHomePage = () => {
     console.log("Delete request/suggestion:", userId);
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-8 overflow-y-auto">
+    <div className="p-4 md:p-6 lg:p-8 space-y-8 overflow-y-auto  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">

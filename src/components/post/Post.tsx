@@ -8,14 +8,14 @@ import DetailPostModal from "./detail/DetailPostModal";
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
-interface UploadedFile {
+export interface UploadedFile {
   name: string;
   size: number;
   url: string;
   type: string;
 }
 
-interface AuthorInfo {
+export interface AuthorInfo {
   id: string;
   name: string;
   avatar: string;
