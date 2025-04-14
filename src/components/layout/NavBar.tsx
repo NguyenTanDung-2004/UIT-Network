@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "@/provider/darkmode/ThemeProvider";
 import { useRouter } from "next/navigation";
+import { History } from "lucide-react";
 
 interface NavBarProps {
   user: {
@@ -12,23 +13,53 @@ interface NavBarProps {
   };
 }
 
+const MAX_SEARCH_HISTORY = 10;
+const SEARCH_HISTORY_KEY = "STUDY_BUDDY_SEARCH_HISTORY";
+
 const NavBar: React.FC<NavBarProps> = ({ user }) => {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const { darkMode, toggleDarkMode } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
   const router = useRouter();
 
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem(SEARCH_HISTORY_KEY);
+      if (storedHistory) {
+        setSearchHistory(JSON.parse(storedHistory));
+      }
+    } catch (error) {
+      console.error("Failed loading search history:", error);
+      setSearchHistory([]);
+    }
+  }, []);
+
+  const toggleProfileDropdown = () => {
+    setShowProfileDropdown(!showProfileDropdown);
+    if (!showProfileDropdown) {
+      setShowSearchSuggestions(false);
+    }
   };
 
   const handleClickOutside = (event: MouseEvent) => {
     if (
-      dropdownRef.current &&
-      !dropdownRef.current.contains(event.target as Node)
+      profileDropdownRef.current &&
+      !profileDropdownRef.current.contains(event.target as Node)
     ) {
-      setShowDropdown(false);
+      setShowProfileDropdown(false);
+    }
+
+    if (
+      searchContainerRef.current &&
+      !searchContainerRef.current.contains(event.target as Node)
+    ) {
+      setShowSearchSuggestions(false);
     }
   };
 
@@ -39,10 +70,56 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
     };
   }, []);
 
-  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search/top?q=${encodeURIComponent(searchQuery.trim())}`);
+  // SEARCH HISTORY DROPDOWN
+  const addSearchTermToHistory = (term: string) => {
+    const trimmedTerm = term.trim();
+    if (!trimmedTerm) return;
+
+    setSearchHistory((prevHistory) => {
+      const newHistory = [
+        trimmedTerm,
+        ...prevHistory.filter((item) => item !== trimmedTerm),
+      ].slice(0, MAX_SEARCH_HISTORY);
+
+      try {
+        localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+      } catch (error) {
+        console.error("Failed saving search history:", error);
+      }
+
+      return newHistory;
+    });
+  };
+
+  const handleSearchSubmit = (
+    event?: React.FormEvent<HTMLFormElement>,
+    queryOverride?: string
+  ) => {
+    event?.preventDefault();
+    const termToSearch = (queryOverride || searchQuery).trim();
+
+    if (termToSearch) {
+      addSearchTermToHistory(termToSearch);
+      setShowSearchSuggestions(false);
+      router.push(`/search/top?q=${encodeURIComponent(termToSearch.trim())}`);
+    }
+  };
+
+  const handleSuggestionClick = (term: string) => {
+    setSearchQuery(term);
+    addSearchTermToHistory(term);
+    setShowSearchSuggestions(false);
+    router.push(`/search/top?q=${encodeURIComponent(term.trim())}`);
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+    setShowSearchSuggestions(true);
+  };
+
+  const handleInputFocus = () => {
+    if (searchHistory.length > 0 || searchQuery) {
+      setShowSearchSuggestions(true);
     }
   };
 
@@ -69,23 +146,48 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
       </Link>
 
       {/* Search Bar */}
-      <div className="flex-1 max-w-2xl mx-4 relative">
+      <div ref={searchContainerRef} className="flex-1 max-w-2xl mx-4 relative">
         <form onSubmit={handleSearchSubmit} className="relative">
           <input
             type="text"
             placeholder="Search ..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
             className="w-full py-2 pl-11 pr-5 bg-[#f3f3f3] rounded-3xl focus:outline-none text-[#838383] dark:bg-gray-700 dark:text-gray-300"
           />
           <i className="fas fa-search absolute left-4 top-3 text-[#838383] dark:text-gray-300"></i>
           <button
             type="submit"
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#838383] dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 hidden" // Giữ ẩn
+            className="hidden" // Ẩn
           >
             Search
           </button>
         </form>
+
+        {showSearchSuggestions && (
+          <div className="absolute top-full left-0 right-0 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg border border-gray-200 dark:border-gray-600 z-40 max-h-60 overflow-y-auto scrollbar-thin">
+            {searchHistory.length > 0
+              ? searchHistory.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(item)}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
+                  >
+                    <History
+                      className="mr-2 text-gray-400 dark:text-gray-500"
+                      size={16}
+                    />
+                    {item}
+                  </button>
+                ))
+              : searchQuery && (
+                  <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                    No recent searches.
+                  </div>
+                )}
+          </div>
+        )}
       </div>
 
       {/* Notification, Messages and Profile */}
@@ -130,8 +232,8 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
             </span>
           </Link>
         </div>
-        <div className="relative mx-2 mr-4" ref={dropdownRef}>
-          <button onClick={toggleDropdown} className="flex items-center">
+        <div className="relative mx-2 mr-4" ref={profileDropdownRef}>
+          <button onClick={toggleProfileDropdown} className="flex items-center">
             <span className="font-medium hidden md:block mr-3 dark:text-gray-300">
               {user.name}
             </span>
@@ -150,7 +252,7 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
           </button>
 
           {/* Dropdown Menu */}
-          {showDropdown && (
+          {showProfileDropdown && (
             <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-[0px_0px_14px_0px_rgba(0,0,0,0.2)] overflow-hidden z-30 dark:bg-gray-800 dark:shadow-[0px_0px_14px_0px_rgba(0,0,0,0.4)]">
               <div className="py-4 px-6 border-b dark:border-gray-700">
                 <div className="flex items-center mb-2">
