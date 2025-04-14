@@ -1,7 +1,9 @@
+"use client";
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "@/provider/darkmode/ThemeProvider";
+import { useRouter } from "next/navigation";
 
 interface NavBarProps {
   user: {
@@ -14,6 +16,8 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { darkMode, toggleDarkMode } = useTheme();
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
@@ -34,6 +38,13 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search/top?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between px-10 py-2.5 bg-white border-b dark:bg-gray-800 dark:border-gray-700">
@@ -59,14 +70,22 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
 
       {/* Search Bar */}
       <div className="flex-1 max-w-2xl mx-4 relative">
-        <div className="relative">
+        <form onSubmit={handleSearchSubmit} className="relative">
           <input
             type="text"
             placeholder="Search ..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full py-2 pl-11 pr-5 bg-[#f3f3f3] rounded-3xl focus:outline-none text-[#838383] dark:bg-gray-700 dark:text-gray-300"
           />
           <i className="fas fa-search absolute left-4 top-3 text-[#838383] dark:text-gray-300"></i>
-        </div>
+          <button
+            type="submit"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#838383] dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 hidden" // Giữ ẩn
+          >
+            Search
+          </button>
+        </form>
       </div>
 
       {/* Notification, Messages and Profile */}

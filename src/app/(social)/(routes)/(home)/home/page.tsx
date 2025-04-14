@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import CreatePost from "@/components/post/CreatePost";
 import Post from "@/components/post/Post";
+import { PostDataType } from "@/components/post/Post";
 import {
   PeopleToConnectWidget,
   GroupsToJoinWidget,
@@ -9,6 +10,9 @@ import {
 } from "@/components/home/Connect";
 import CreatePostModal from "@/components/post/create/CreatePostModal";
 import { UploadedFile } from "@/components/post/create/CreatePostModal";
+
+const DEFAULT_AVATAR =
+  "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
 const HomePage = () => {
   // Mock user data
@@ -81,43 +85,13 @@ const HomePage = () => {
   ]);
 
   // Mock posts data
-  const [posts, setPosts] = useState([
+  const [posts, setPosts] = useState<PostDataType[]>([
     {
       id: "post1",
       author: {
         id: "author1",
         name: "Phan Nguyễn Trà Giang",
-        avatar:
-          "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      },
-      content:
-        "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and ...",
-      fullContent:
-        "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and tourism. With a population of about 97 million people, Vietnam is one of the most populous countries in the world. The country's cuisine is renowned globally for its fresh ingredients, vibrant flavors, and healthy cooking techniques.",
-      date: "Fri, February 7, 2025",
-      time: "10:58 AM",
-      mediaList: [
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-      ],
-
-      likes: 293,
-      comments: 18,
-      shares: 10,
-    },
-    {
-      id: "post2",
-      author: {
-        id: "author1",
-        name: "Phan Nguyễn Trà Giang",
-        avatar:
-          "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+        avatar: DEFAULT_AVATAR,
       },
       content:
         "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and ...",
@@ -147,9 +121,71 @@ const HomePage = () => {
           type: "image",
         },
       ],
+      likes: 293,
+      comments: 18,
+      shares: 10,
+    },
+    {
+      id: "post-page1",
+      author: {
+        id: "pageJavaDev",
+        name: "CLB Java Developer",
+        avatar: DEFAULT_AVATAR,
+      },
+      origin: {
+        type: "page",
+        pageInfo: {
+          isFollowing: false,
+        },
+      },
+      content: "Exciting news about our upcoming Java workshop!",
+      date: "Thu, February 6, 2025",
+      time: "02:30 PM",
+      mediaList: [
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
+      ],
       likes: 150,
       comments: 22,
       shares: 5,
+    },
+    {
+      id: "post-group1",
+      author: {
+        id: "userTanDung",
+        name: "Nguyễn Tấn Dũng",
+        avatar: DEFAULT_AVATAR,
+      },
+      origin: {
+        type: "group",
+        groupInfo: {
+          id: "groupUITK22",
+          name: "UIT K22",
+          isJoined: true,
+        },
+      },
+      content: "Anyone have notes for the last Algorithms lecture?",
+      date: "Wed, February 5, 2025",
+      time: "09:00 AM",
+      mediaList: [
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
+        {
+          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
+          type: "image",
+        },
+      ],
+      likes: 45,
+      comments: 8,
+      shares: 2,
     },
   ]);
 
