@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import com.example.ChatService.entity.Message;
 public interface MessageRepository extends JpaRepository<Message, String> {
 
-    @Query("SELECT m FROM Message m WHERE m.groupid = :groupid")
+    @Query(value = "SELECT * FROM message m WHERE m.groupid = :groupid ORDER BY m.createddate DESC", nativeQuery = true)
     List<Message> findByGroupid(String groupid);
 
     
