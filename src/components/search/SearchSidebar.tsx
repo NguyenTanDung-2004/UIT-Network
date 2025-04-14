@@ -22,7 +22,6 @@ const mainSidebarItems = [
   { name: "Groups", href: "/search/groups", icon: Building },
 ];
 
-// Định nghĩa các bộ lọc cho People
 const peopleFilters = [
   {
     id: "friend_status",
@@ -53,263 +52,289 @@ export default function SearchSidebar() {
   const currentQuery = searchParams.get("q") || "";
   const currentType = pathname.split("/").pop() || "top";
 
-  // Posts Filters
-  const [showRecentPosts, setShowRecentPosts] = useState(false); // Ví dụ state cho toggle
+  const [showRecentPosts, setShowRecentPosts] = useState(false);
   const [showPostsSeen, setShowPostsSeen] = useState(false);
-
-  const [selectedFilters, setSelectedFilters] = useState<
+  const [selectedPeopleFilters, setSelectedPeopleFilters] = useState<
     Record<string, string>
   >({});
-  // State để quản lý việc mở/đóng dropdown
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [expandedPeopleFilterDropdown, setExpandedPeopleFilterDropdown] =
+    useState<string | null>(null);
 
-  // Cập nhật selectedFilters từ URL khi component mount hoặc URL thay đổi
   useEffect(() => {
     const initialFilters: Record<string, string> = {};
     peopleFilters.forEach((filter) => {
       const value = searchParams.get(filter.id);
-      if (value) {
+      if (value && value !== "Any") {
         initialFilters[filter.id] = value;
       }
     });
-    setSelectedFilters(initialFilters);
-
-    // Lấy các filter khác từ URL (ví dụ: posts filter)
+    setSelectedPeopleFilters(initialFilters);
     setShowRecentPosts(searchParams.get("sort") === "recent");
     setShowPostsSeen(searchParams.get("filter") === "seen");
   }, [searchParams]);
 
-  // Hàm cập nhật URL với filter mới
-  const updateUrlParams = (newParams: Record<string, string | null>) => {
+  const updateUrlParams = (
+    newParams: Record<string, string | boolean | null>
+  ) => {
     const currentParams = new URLSearchParams(searchParams.toString());
+    let changed = false;
     Object.entries(newParams).forEach(([key, value]) => {
-      if (value === null || value === "Any" || value === "") {
-        // Xóa param nếu giá trị là null, 'Any' hoặc rỗng
-        currentParams.delete(key);
+      const currentValue = currentParams.get(key);
+      let newValueString: string | null = null;
+      if (
+        value === null ||
+        value === "Any" ||
+        value === "" ||
+        value === false
+      ) {
+        if (currentValue !== null) {
+          currentParams.delete(key);
+          changed = true;
+        }
+      } else if (typeof value === "boolean") {
+        if (key === "sort" && value === true) newValueString = "recent";
+        else if (key === "filter" && value === true) newValueString = "seen";
+        else newValueString = "true";
+        if (currentValue !== newValueString) {
+          if (newValueString) currentParams.set(key, newValueString);
+          else currentParams.delete(key);
+          changed = true;
+        }
       } else {
-        currentParams.set(key, value);
+        newValueString = value;
+        if (currentValue !== newValueString) {
+          currentParams.set(key, newValueString);
+          changed = true;
+        }
       }
     });
-    // Giữ lại param 'q'
     if (currentQuery) {
-      currentParams.set("q", currentQuery);
+      if (currentParams.get("q") !== currentQuery) {
+        currentParams.set("q", currentQuery);
+        changed = true;
+      }
     } else {
-      currentParams.delete("q");
+      if (currentParams.has("q")) {
+        currentParams.delete("q");
+        changed = true;
+      }
     }
-
-    router.push(`${pathname}?${currentParams.toString()}`);
+    if (changed) {
+      router.push(`${pathname}?${currentParams.toString()}`, { scroll: false });
+    }
   };
 
-  // Handler cho thay đổi toggle Posts
   const handlePostsToggleChange = (
     filterType: "recent" | "seen",
     isChecked: boolean
   ) => {
     if (filterType === "recent") {
       setShowRecentPosts(isChecked);
-      updateUrlParams({ sort: isChecked ? "recent" : null });
+      updateUrlParams({ sort: isChecked });
     } else if (filterType === "seen") {
       setShowPostsSeen(isChecked);
-      updateUrlParams({ filter: isChecked ? "seen" : null });
+      updateUrlParams({ filter: isChecked });
     }
   };
 
-  // Handler cho thay đổi dropdown People
   const handlePeopleFilterChange = (filterId: string, value: string) => {
-    const newSelectedFilters = { ...selectedFilters, [filterId]: value };
-    setSelectedFilters(newSelectedFilters);
+    const newSelectedFilters = { ...selectedPeopleFilters };
+    if (value === "Any") {
+      delete newSelectedFilters[filterId];
+    } else {
+      newSelectedFilters[filterId] = value;
+    }
+    setSelectedPeopleFilters(newSelectedFilters);
     updateUrlParams({ [filterId]: value });
-    setOpenDropdown(null);
+    setExpandedPeopleFilterDropdown(null);
   };
 
-  // Toggle dropdown
-  const toggleDropdown = (filterId: string) => {
-    setOpenDropdown(openDropdown === filterId ? null : filterId);
+  const togglePeopleFilterDropdown = (filterId: string) => {
+    setExpandedPeopleFilterDropdown(
+      expandedPeopleFilterDropdown === filterId ? null : filterId
+    );
   };
 
   return (
-    <div className="p-4 h-full flex flex-col">
-      <h2 className="text-xl font-bold mb-5 text-gray-900 dark:text-gray-100 px-2">
+    <div className="pt-10 p-4 h-full flex flex-col">
+      <h2 className=" text-xl font-bold mb-5 text-gray-900 dark:text-gray-100 px-2">
         Search Results
       </h2>
-
-      <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 px-2 uppercase">
-        Filter
+      <h3 className="text-base font-semibold text-gray-500 dark:text-gray-400 mb-2 px-2 uppercase">
+        Filters
       </h3>
-
-      {/* Main Filter Links */}
-      <nav className="space-y-1 mb-6">
+      <nav className="space-y-1 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 pb-4">
         {mainSidebarItems.map((item) => {
-          // Check if the current pathname ENDS with the item's href segment
-          // (e.g., /search/posts ends with /posts which matches href /search/posts)
           const itemType = item.href.split("/").pop();
           const isActive = currentType === itemType;
           const hrefWithQuery = `${item.href}?q=${encodeURIComponent(
             currentQuery
           )}`;
+          const showSubFilters =
+            isActive && (item.name === "Posts" || item.name === "People");
 
           return (
-            <Link
-              key={item.name}
-              href={hrefWithQuery}
-              className={`group flex items-center px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 ease-in-out ${
-                isActive
-                  ? "bg-primary/10"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-700/50"
-              }`}
-            >
-              <div
-                className={`flex-shrink-0 mr-4 p-2 rounded-full transition-colors duration-150 ease-in-out ${
+            <div key={item.name}>
+              <Link
+                href={hrefWithQuery}
+                scroll={false}
+                className={`group flex items-center px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 ease-in-out ${
                   isActive
-                    ? "bg-primary"
-                    : "bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600" // Icon background
+                    ? "bg-primary/10"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-700/50"
                 }`}
               >
-                <item.icon
-                  className={`h-5 w-5 transition-colors duration-150 ease-in-out ${
+                <div
+                  className={`flex-shrink-0 mr-4 p-2 rounded-full transition-colors duration-150 ease-in-out ${
                     isActive
-                      ? "text-white"
-                      : "text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300" // Icon color
+                      ? "bg-primary"
+                      : "bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600"
                   }`}
-                  aria-hidden="true"
-                />
-              </div>
-              <span
-                className={`flex-1 font-semibold ${
-                  isActive
-                    ? "text-primary dark:text-primary"
-                    : "text-gray-800 dark:text-gray-200"
-                }`}
-              >
-                {item.name}
-              </span>
-            </Link>
+                >
+                  <item.icon
+                    className={`h-5 w-5 transition-colors duration-150 ease-in-out ${
+                      isActive
+                        ? "text-white"
+                        : "text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                    }`}
+                    aria-hidden="true"
+                  />
+                </div>
+                <span
+                  className={`flex-1 font-semibold ${
+                    isActive
+                      ? "text-primary dark:text-primary"
+                      : "text-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  {item.name}
+                </span>
+              </Link>
+
+              {showSubFilters && (
+                <div className="pl-8 pr-2 pt-2 pb-1 space-y-3 mt-1 ml-3 border-l border-gray-200 dark:border-gray-700">
+                  {item.name === "Posts" && (
+                    <div className="space-y-3 pl-2 py-1">
+                      <div className="flex items-center justify-between">
+                        <label
+                          htmlFor="recentPosts"
+                          className="text-base text-gray-700 dark:text-gray-300 font-medium"
+                        >
+                          Recent Posts
+                        </label>
+                        <button
+                          id="recentPosts"
+                          onClick={() =>
+                            handlePostsToggleChange("recent", !showRecentPosts)
+                          }
+                          className={`relative inline-flex items-center h-5 w-9 transition-colors duration-200 ease-in-out rounded-full focus:outline-none ${
+                            showRecentPosts
+                              ? "bg-primary"
+                              : "bg-gray-300 dark:bg-gray-600"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block w-3 h-3 transform bg-white rounded-full transition-transform duration-200 ease-in-out ${
+                              showRecentPosts
+                                ? "translate-x-5"
+                                : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label
+                          htmlFor="postsSeen"
+                          className="text-base text-gray-700 dark:text-gray-300 font-medium"
+                        >
+                          Posts you've seen
+                        </label>
+                        <button
+                          id="postsSeen"
+                          onClick={() =>
+                            handlePostsToggleChange("seen", !showPostsSeen)
+                          }
+                          className={`relative inline-flex items-center h-5 w-9 transition-colors duration-200 ease-in-out rounded-full focus:outline-none ${
+                            showPostsSeen
+                              ? "bg-primary"
+                              : "bg-gray-300 dark:bg-gray-600"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block w-3 h-3 transform bg-white rounded-full transition-transform duration-200 ease-in-out ${
+                              showPostsSeen ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {item.name === "People" && (
+                    <div className="space-y-2 pl-2 py-1">
+                      {peopleFilters.map((filter) => (
+                        <div key={filter.id} className="relative">
+                          <button
+                            onClick={() =>
+                              togglePeopleFilterDropdown(filter.id)
+                            }
+                            className="w-full flex justify-between items-center py-1.5 text-left focus:outline-none"
+                          >
+                            <span className="text-base text-gray-800 dark:text-gray-200 font-medium">
+                              {filter.name}
+                            </span>
+                            {expandedPeopleFilterDropdown === filter.id ? (
+                              <ChevronUp className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                            )}
+                          </button>
+                          {expandedPeopleFilterDropdown === filter.id && (
+                            <div className="pt-1 pb-1 pl-2 space-y-1 absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg border dark:border-gray-700 max-h-48 overflow-y-auto scrollbar-thin">
+                              {filter.options.map((option) => {
+                                const isSelected =
+                                  selectedPeopleFilters[filter.id] === option ||
+                                  (!selectedPeopleFilters[filter.id] &&
+                                    option === "Any");
+                                return (
+                                  <button
+                                    key={option}
+                                    onClick={() =>
+                                      handlePeopleFilterChange(
+                                        filter.id,
+                                        option
+                                      )
+                                    }
+                                    className={`w-full text-left px-2 py-1.5 rounded text-base flex items-center justify-between ${
+                                      isSelected
+                                        ? "bg-primary/10 text-primary font-medium"
+                                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                                    }`}
+                                  >
+                                    {option}
+                                    {isSelected && option !== "Any" && (
+                                      <Check className="h-3.5 w-3.5 text-primary ml-1" />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {selectedPeopleFilters[filter.id] &&
+                            selectedPeopleFilters[filter.id] !== "Any" && (
+                              <div className="mt-0.5 pl-1 text-sm text-primary dark:text-primary-light">
+                                {selectedPeopleFilters[filter.id]}
+                              </div>
+                            )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>
-
-      {/* Divider */}
-      <hr className="border-gray-200 dark:border-gray-700 my-1 mx-3" />
-
-      <div className="mt-4 px-3 space-y-4 flex-1 overflow-y-auto scrollbar-thin">
-        {/* --- Posts Filters --- */}
-        {currentType === "posts" && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="recentPosts"
-                className="text-gray-700 dark:text-gray-300 font-medium"
-              >
-                Recent Posts
-              </label>
-              <button
-                id="recentPosts"
-                onClick={() =>
-                  handlePostsToggleChange("recent", !showRecentPosts)
-                }
-                className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-200 ease-in-out focus:outline-none ${
-                  showRecentPosts
-                    ? "bg-primary"
-                    : "bg-gray-300 dark:bg-gray-600"
-                }`}
-              >
-                <span
-                  className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-200 ease-in-out ${
-                    showRecentPosts ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="postsSeen"
-                className="text-gray-700 dark:text-gray-300 font-medium"
-              >
-                Posts you've seen
-              </label>
-              <button
-                id="postsSeen"
-                onClick={() => handlePostsToggleChange("seen", !showPostsSeen)}
-                className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-200 ease-in-out focus:outline-none ${
-                  showPostsSeen ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
-                }`}
-              >
-                <span
-                  className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-200 ease-in-out ${
-                    showPostsSeen ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* --- People Filters --- */}
-        {currentType === "people" && (
-          <div className="space-y-3">
-            {peopleFilters.map((filter) => (
-              <div key={filter.id} className="relative">
-                <button
-                  onClick={() => toggleDropdown(filter.id)}
-                  className="w-full flex justify-between items-center px-4 py-2 text-left bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none"
-                >
-                  <span className="text-gray-800 dark:text-gray-200 font-medium">
-                    {filter.name}
-                  </span>
-                  {openDropdown === filter.id ? (
-                    <ChevronUp className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-gray-500" />
-                  )}
-                </button>
-                {openDropdown === filter.id && (
-                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg border dark:border-gray-700 max-h-48 overflow-y-auto">
-                    {filter.options.map((option) => (
-                      <button
-                        key={option}
-                        onClick={() =>
-                          handlePeopleFilterChange(filter.id, option)
-                        }
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
-                      >
-                        {option}
-                        {selectedFilters[filter.id] === option && (
-                          <Check className="h-4 w-4 text-primary" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {selectedFilters[filter.id] &&
-                  selectedFilters[filter.id] !== "Any" && (
-                    <div className="mt-1 px-1 text-xs text-primary dark:text-primary-light">
-                      Selected: {selectedFilters[filter.id]}
-                    </div>
-                  )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* --- Pages Filters --- */}
-        {currentType === "pages" && (
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No additional filters for Pages.
-            </p>
-          </div>
-        )}
-
-        {/* --- Groups Filters --- */}
-        {currentType === "groups" && (
-          <div>
-            {/* Groups không có filter con theo yêu cầu */}
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No additional filters for Groups.
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

@@ -40,7 +40,7 @@ const PageCard: React.FC<PageCardProps> = ({ page }) => {
         </Link>
         <div className="min-w-0">
           <Link href={`/pages/${page.id}`} className="cursor-pointer">
-            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate hover:text-pink-500 dark:hover:text-pink-400">
+            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate hover:text-primary dark:hover:text-primary">
               {page.name}
             </h4>
           </Link>
@@ -58,10 +58,10 @@ const PageCard: React.FC<PageCardProps> = ({ page }) => {
       <div className="flex-shrink-0">
         <button
           onClick={handleAction}
-          className={`px-5 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200 ${
+          className={`min-w-32 px-5 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200 ${
             page.isFollowing
               ? "bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-              : "bg-pink-100 dark:bg-pink-800/30 text-pink-600 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-800/50"
+              : "bg-pink-100 text-primary hover:bg-pink-200   hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80"
           }`}
         >
           {page.isFollowing ? "Following" : "Follow"}

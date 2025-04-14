@@ -7,7 +7,7 @@ import Link from "next/link";
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
-interface PersonData {
+export interface PersonData {
   id: string;
   name: string;
   avatar?: string;
@@ -40,7 +40,7 @@ const PeopleCard: React.FC<PeopleCardProps> = ({ person }) => {
         </Link>
         <div className="min-w-0">
           <Link href={`/profile/${person.id}`} className="cursor-pointer">
-            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate hover:text-pink-500 dark:hover:text-pink-400">
+            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate hover:text-primary dark:hover:text-primary">
               {person.name}
             </h4>
           </Link>
@@ -54,10 +54,10 @@ const PeopleCard: React.FC<PeopleCardProps> = ({ person }) => {
       <div className="flex-shrink-0">
         <button
           onClick={handleAction}
-          className={`px-5 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200 ${
+          className={`min-w-32 px-5 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200 ${
             person.isFriend
               ? "bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-              : "bg-pink-100 dark:bg-pink-800/30 text-pink-600 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-800/50"
+              : "bg-pink-100 text-primary hover:bg-pink-200   hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80"
           }`}
         >
           {person.isFriend ? "Unfriend" : "Add friend"}
