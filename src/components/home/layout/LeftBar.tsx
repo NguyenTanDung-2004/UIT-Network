@@ -34,12 +34,12 @@ const LeftBar: React.FC<LeftBarProps> = ({ groups }) => {
       label: "Profile",
       href: "/profiles/me",
     },
-    {
-      id: "favorites",
-      icon: <i className="fas fa-star"></i>,
-      label: "Favorites",
-      href: "/favorites",
-    },
+    // {
+    //   id: "favorites",
+    //   icon: <i className="fas fa-star"></i>,
+    //   label: "Favorites",
+    //   href: "/favorites",
+    // },
     {
       id: "chat",
       icon: <MessagesSquare className="w-4 h-4" strokeWidth={3} />,

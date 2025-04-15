@@ -16,7 +16,7 @@ const SocialLayout: React.FC<SocialLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col h-screen bg-[#F3F3F3] dark:bg-gray-800 overflow-hidden">
       <NavBar user={user} />
-      <div className="flex-1 flex overflow-hidden">{children}</div>
+      <div className="flex-1 flex-col flex overflow-hidden">{children}</div>
     </div>
   );
 };

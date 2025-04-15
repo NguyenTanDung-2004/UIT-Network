@@ -1,4 +1,3 @@
-// app/(social)/(routes)/search/[type]/page.tsx
 "use client";
 
 import React, { useEffect, useState, use } from "react";
@@ -6,6 +5,7 @@ import Post from "@/components/post/Post";
 import PeopleCard from "@/components/search/PeopleCard";
 import PageCard from "@/components/search/PageCard";
 import GroupCard from "@/components/search/GroupCard";
+import { ClipLoader } from "react-spinners";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
@@ -324,8 +324,13 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="text-center p-10 text-gray-500 dark:text-gray-400">
-          Loading...
+        <div className="p-10 flex justify-center items-center w-full h-[500px]">
+          <ClipLoader
+            color="#2A88F5"
+            loading={true}
+            size={30}
+            aria-label="Loading Profile Content"
+          />
         </div>
       );
     }

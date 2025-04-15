@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import SearchSidebar from "@/components/search/SearchSidebar"; // Điều chỉnh đường dẫn nếu cần
+import ConnectSidebar from "@/components/connect/ConnectSidebar"; // Điều chỉnh đường dẫn nếu cần
 import { Filter, X } from "lucide-react"; // Icon để toggle sidebar
 
-interface SearchLayoutProps {
+interface ConnectLayoutProps {
   children: React.ReactNode;
 }
 
-const SearchLayout: React.FC<SearchLayoutProps> = ({ children }) => {
+const ConnectLayout: React.FC<ConnectLayoutProps> = ({ children }) => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
@@ -53,11 +53,11 @@ const SearchLayout: React.FC<SearchLayoutProps> = ({ children }) => {
           md:relative md:inset-auto md:z-auto md:translate-x-0
         `}
       >
-        <SearchSidebar />
+        <ConnectSidebar />
       </aside>
 
       {/* Main Content Area */}
-      <main className="md:mt-10 flex-1 h-full overflow-y-auto pr-1 md:pr-5 pb-5 pl-1 md:pl-0 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 pt-12 md:pt-0">
+      <main className=" flex-1 h-full overflow-y-auto pr-1 md:pr-5 pb-5 pl-1 md:pl-0 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 pt-12 md:pt-0 ">
         {children}
       </main>
 
@@ -72,4 +72,4 @@ const SearchLayout: React.FC<SearchLayoutProps> = ({ children }) => {
   );
 };
 
-export default SearchLayout;
+export default ConnectLayout;

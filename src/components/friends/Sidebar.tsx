@@ -14,8 +14,8 @@ const sidebarItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   return (
-    <div className=" p-4">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100 px-2">
+    <div className="px-4">
+      <h2 className="text-2xl font-bold mb-5 text-gray-900 dark:text-gray-100 px-4">
         Friends
       </h2>
       {/* Consistent spacing */}

@@ -11,7 +11,7 @@ export interface PersonData {
   id: string;
   name: string;
   avatar?: string;
-  followers?: number;
+  bio: string;
   isFriend: boolean;
 }
 
@@ -25,7 +25,7 @@ const PeopleCard: React.FC<PeopleCardProps> = ({ person }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center justify-between space-x-4 border border-gray-100 dark:border-gray-700">
+    <div className=" bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center justify-between space-x-4 border border-gray-100 dark:border-gray-700">
       <div className="flex items-center space-x-3 flex-1 min-w-0">
         <Link href={`/profiles/${person.id}`} className="flex-shrink-0">
           <div className="w-14 h-14 relative rounded-full overflow-hidden cursor-pointer">
@@ -44,11 +44,9 @@ const PeopleCard: React.FC<PeopleCardProps> = ({ person }) => {
               {person.name}
             </h4>
           </Link>
-          {person.followers !== undefined && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {person.followers} follower{person.followers !== 1 ? "s" : ""}
-            </p>
-          )}
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {person.bio}
+          </p>
         </div>
       </div>
       <div className="flex-shrink-0">
