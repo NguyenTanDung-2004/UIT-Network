@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "@/provider/darkmode/ThemeProvider";
 import { useRouter } from "next/navigation";
-import { History } from "lucide-react";
+import { History, MessagesSquare } from "lucide-react";
 
 interface NavBarProps {
   user: {
@@ -193,32 +193,12 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
       {/* Notification, Messages and Profile */}
       <div className="flex items-center">
         <div className="relative mx-2 mr-3.5">
-          <Link href="/messages">
-            <svg
-              width="24px"
-              height="24px"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="hover:dark:stroke-gray-100 hover:stroke-gray-100 transition-all duration-200 cursor-pointer dark:text-gray-300"
-            >
-              <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-              <g
-                id="SVGRepo_tracerCarrier"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              ></g>
-              <g id="SVGRepo_iconCarrier">
-                <path
-                  d="M19.4003 18C19.7837 17.2499 20 16.4002 20 15.5C20 12.4624 17.5376 10 14.5 10C11.4624 10 9 12.4624 9 15.5C9 18.5376 11.4624 21 14.5 21L21 21C21 21 20 20 19.4143 18.0292M18.85 12C18.9484 11.5153 19 11.0137 19 10.5C19 6.35786 15.6421 3 11.5 3C7.35786 3 4 6.35786 4 10.5C4 11.3766 4.15039 12.2181 4.42676 13C5.50098 16.0117 3 18 3 18H9.5"
-                  stroke="#000000"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="dark:stroke-gray-300 hover:dark:stroke-gray-100 hover:stroke-gray-100"
-                ></path>
-              </g>
-            </svg>
+          <Link href="/chat">
+            <MessagesSquare
+              className="w-5 h-5 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors duration-200 cursor-pointer"
+              strokeWidth={2}
+            />
+
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
               1
             </span>

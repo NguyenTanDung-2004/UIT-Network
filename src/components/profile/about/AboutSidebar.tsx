@@ -1,24 +1,45 @@
+"use client";
 import React from "react";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { User, Phone, Heart, Briefcase } from "lucide-react";
 
-interface AboutSidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+interface SidebarItem {
+  id: string;
+  name: string;
+  icon: React.ElementType;
+  hrefSuffix?: string;
 }
 
 const sidebarItems = [
   { id: "overview", name: "Overview", icon: User },
-  { id: "contact", name: "Contact and Basic Info", icon: Phone },
-  { id: "hobbies", name: "Hobbies and Interests", icon: Heart },
-  { id: "education", name: "Education and Work", icon: Briefcase },
+  {
+    id: "contact",
+    name: "Contact and Basic Info",
+    icon: Phone,
+    hrefSuffix: "contact",
+  },
+  {
+    id: "hobbies",
+    name: "Hobbies and Interests",
+    icon: Heart,
+    hrefSuffix: "hobbies",
+  },
+  {
+    id: "education",
+    name: "Education and Work",
+    icon: Briefcase,
+    hrefSuffix: "education",
+  },
 ];
 
-const AboutSidebar: React.FC<AboutSidebarProps> = ({
-  activeTab,
-  onTabChange,
-}) => {
+const AboutSidebar: React.FC = ({}) => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
+
   return (
-    <div className="w-full sm:w-64 md:w-80 lg:w-96 flex-shrink-0 p-4">
+    <div className="w-full sm:w-64 md:w-80 lg:w-96 flex-shrink-0 p-6">
       <h3 className="text-xl font-bold mb-4 text-black dark:text-gray-100">
         About
       </h3>
@@ -27,15 +48,21 @@ const AboutSidebar: React.FC<AboutSidebarProps> = ({
         {sidebarItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
+
+          const href = item.hrefSuffix
+            ? `${pathname}?tab=${item.hrefSuffix}`
+            : pathname;
+
           return (
-            <button
+            <Link
+              href={href}
               key={item.id}
-              className={`w-full group flex gap-4 items-center justify-start px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 ease-in-out ${
+              scroll={false}
+              className={`group flex items-center w-full px-3 py-2.5 rounded-lg text-base font-medium text-left transition-colors duration-150 ease-in-out ${
                 isActive
                   ? "bg-primary/10"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700/50"
               }`}
-              onClick={() => onTabChange(item.id)}
             >
               <div
                 className={`flex-shrink-0 mr-4 p-2 rounded-full transition-colors duration-150 ease-in-out ${
@@ -62,7 +89,7 @@ const AboutSidebar: React.FC<AboutSidebarProps> = ({
               >
                 {item.name}
               </span>
-            </button>
+            </Link>
           );
         })}
       </nav>

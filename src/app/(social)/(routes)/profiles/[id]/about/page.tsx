@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, Suspense, use } from "react"; // Thêm Suspense
+import { useParams, useSearchParams } from "next/navigation"; // Thêm useSearchParams
 import ClipLoader from "react-spinners/ClipLoader";
 
 import AboutSidebar from "@/components/profile/about/AboutSidebar";
@@ -55,8 +56,6 @@ async function fetchProfileAboutData(
   await new Promise((res) => setTimeout(res, 600)); // Simulate network delay
   const isMe = id === "me";
   try {
-    // Replace with actual API call
-    // This mock data tries to resemble the screenshots
     const data: ProfileAboutData = {
       overview: {
         bio: "He moonlights difficult engrossed it, sportsmen. Interested has all Devonshire difficulty gay assistance joy. Handsome met debating sir dwelling age material. As style lived he worse dried. Offered related so visitors we private removed. Moderate do subjects to distance.",
@@ -70,26 +69,17 @@ async function fetchProfileAboutData(
       contact: {
         phone: "0925xxxX10",
         email: "abc@gmail.com",
-        githubLink: isMe ? null : "https://github.com/someuser", // Only show if not 'me' for demo
+        githubLink: isMe ? null : "https://github.com/someuser",
         socialLinks: isMe
           ? []
           : [
-              // Only show if not 'me' for demo
               { id: "fb", platform: "Facebook", url: "https://facebook.com" },
               { id: "ig", platform: "Instagram", url: "https://instagram.com" },
               { id: "li", platform: "Linkedin", url: "https://linkedin.com" },
             ],
-        websites: isMe
-          ? []
-          : [
-              // Only show if not 'me' for demo
-              { id: "uit", url: "https://se.uit.edu.vn/vi/" },
-            ],
+        websites: isMe ? [] : [{ id: "uit", url: "https://se.uit.edu.vn/vi/" }],
       },
-      basicInfo: {
-        born: "29/03/2004",
-        gender: "Female",
-      },
+      basicInfo: { born: "29/03/2004", gender: "Female" },
       hobbies: [
         {
           id: "cook",
@@ -163,18 +153,18 @@ async function fetchProfileAboutData(
     return null;
   }
 }
+// --- Kết thúc các hàm fetch và constant ---
 
-const ProfileAboutPage: React.FC<{ params: Promise<{ id: string }> }> = ({
-  params: paramsPromise,
+const ProfileAboutPageContent: React.FC<{ profileId: string }> = ({
+  profileId,
 }) => {
-  const params = use(paramsPromise);
-  const profileId = params.id;
+  const searchParams = useSearchParams(); // Lấy searchParams
+  const activeTab = searchParams.get("tab") || "overview"; // Lấy tab từ URL
 
   const [headerData, setHeaderData] = useState<ProfileHeaderData | null>(null);
   const [aboutData, setAboutData] = useState<ProfileAboutData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("overview"); // Default tab
 
   useEffect(() => {
     const loadData = async () => {
@@ -206,7 +196,7 @@ const ProfileAboutPage: React.FC<{ params: Promise<{ id: string }> }> = ({
     };
 
     loadData();
-  }, [profileId]);
+  }, [profileId]); // Chỉ fetch lại data khi profileId thay đổi
 
   const isOwnProfile = headerData?.friendshipStatus === "self";
 
@@ -214,13 +204,6 @@ const ProfileAboutPage: React.FC<{ params: Promise<{ id: string }> }> = ({
     if (!aboutData) return null;
 
     switch (activeTab) {
-      case "overview":
-        return (
-          <OverviewContent
-            data={aboutData.overview}
-            isOwnProfile={isOwnProfile}
-          />
-        );
       case "contact":
         return (
           <ContactInfoContent
@@ -243,6 +226,7 @@ const ProfileAboutPage: React.FC<{ params: Promise<{ id: string }> }> = ({
             isOwnProfile={isOwnProfile}
           />
         );
+      case "overview":
       default:
         return (
           <OverviewContent
@@ -271,11 +255,35 @@ const ProfileAboutPage: React.FC<{ params: Promise<{ id: string }> }> = ({
 
   return (
     <div className="flex flex-col md:flex-row bg-white dark:bg-gray-800 rounded-lg shadow-sm md:mb-16 mb-8">
-      <AboutSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <AboutSidebar />
       <div className="flex-1 p-6 md:border-l border-gray-200 dark:border-gray-700 min-w-0">
         {renderContent()}
       </div>
     </div>
+  );
+};
+
+const ProfileAboutPage: React.FC<{ params: Promise<{ id: string }> }> = ({
+  params: paramsPromise,
+}) => {
+  const params = use(paramsPromise);
+  const profileId = params.id;
+
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center w-full h-[400px]">
+          <ClipLoader color="#F472B6" loading={true} size={35} />
+        </div>
+      }
+    >
+      {profileId && <ProfileAboutPageContent profileId={profileId} />}
+      {!profileId && (
+        <div className="text-center mt-8 text-red-600 dark:text-red-400 font-semibold p-4 bg-red-100 dark:bg-red-900/20 rounded-md max-w-md mx-auto">
+          Invalid profile ID.
+        </div>
+      )}
+    </Suspense>
   );
 };
 
