@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import DetailPostModal from "./detail/DetailPostModal";
+import MediaViewerModal from "../profile/media/MediaViewerModal";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
@@ -127,12 +128,6 @@ const Post: React.FC<PostProps> = ({ post }) => {
     setShowMediaViewer(true);
   };
   const closeMediaViewer = () => setShowMediaViewer(false);
-  const gotoPreviousMedia = () =>
-    setCurrentMediaIndex((prev) => Math.max(0, prev - 1));
-  const gotoNextMedia = () =>
-    setCurrentMediaIndex((prev) =>
-      Math.min((post.mediaList?.length || 1) - 1, prev + 1)
-    );
 
   const limitedMediaList = post.mediaList?.slice(0, 4);
   const hasMoreMedia = (post.mediaList?.length || 0) > 4;
@@ -413,51 +408,13 @@ const Post: React.FC<PostProps> = ({ post }) => {
         </button>
       </div>
 
-      {showMediaViewer && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[999]">
-          <button
-            onClick={closeMediaViewer}
-            className="absolute top-5 right-5 text-gray-300 hover:text-white z-[1001]"
-          >
-            <i className="fas fa-times text-3xl"></i>
-          </button>
-          {post.mediaList && currentMediaIndex > 0 && (
-            <button
-              onClick={gotoPreviousMedia}
-              className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white z-[1001]"
-            >
-              <i className="fas fa-chevron-left text-3xl"></i>
-            </button>
-          )}
-          {post.mediaList &&
-            currentMediaIndex < (post.mediaList?.length ?? 0) - 1 && (
-              <button
-                onClick={gotoNextMedia}
-                className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white z-[1001]"
-              >
-                <i className="fas fa-chevron-right text-3xl"></i>
-              </button>
-            )}
-          <div className="relative w-[90%] h-[90%] max-w-screen-lg max-h-screen-lg">
-            {post.mediaList &&
-              post.mediaList[currentMediaIndex] &&
-              (post.mediaList[currentMediaIndex].type === "image" ? (
-                <Image
-                  src={post.mediaList[currentMediaIndex].url}
-                  alt="Media"
-                  layout="fill"
-                  objectFit="contain"
-                />
-              ) : (
-                <video
-                  src={post.mediaList[currentMediaIndex].url}
-                  controls
-                  className="w-full h-full object-contain"
-                  autoPlay
-                />
-              ))}
-          </div>
-        </div>
+      {showMediaViewer && post.mediaList && (
+        <MediaViewerModal
+          isOpen={showMediaViewer}
+          onClose={closeMediaViewer}
+          mediaList={post.mediaList}
+          startIndex={currentMediaIndex}
+        />
       )}
 
       {isDetailModalOpen && (
