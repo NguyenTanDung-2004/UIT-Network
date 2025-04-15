@@ -10,7 +10,7 @@ import {
   UserCheck,
   UserX,
 } from "lucide-react";
-import { ProfileHeaderData } from "@/type/profile/ProfileData";
+import { ProfileHeaderData } from "@/types/profile/ProfileData";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
@@ -31,7 +31,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profileData }) => {
   const renderActionButtons = () => {
     if (profileData.friendshipStatus === "self") {
       return (
-        <button className="min-w-32 flex items-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+        <button className="min-w-28 flex items-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
           <Edit size={16} className="mr-1.5" />
           Edit profile
         </button>
@@ -41,7 +41,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profileData }) => {
     let friendButtonText = "Add Friend";
     let friendButtonIcon = <UserPlus size={16} className="mr-2" />;
     let friendButtonStyle =
-      "min-w-32 px-5 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500";
+      " duration-200 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500";
 
     let isFriendActionDisabled = false;
 
@@ -50,15 +50,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profileData }) => {
         friendButtonText = "Friend";
         friendButtonIcon = <UserCheck size={16} className="mr-2" />;
         friendButtonStyle =
-          "min-w-32 px-5 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200 bg-pink-100 text-primary hover:bg-pink-200   hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80";
+          "duration-200 bg-primary text-white hover:bg-opacity-80";
         break;
       case "pending_sent":
         friendButtonText = "Request Sent";
         friendButtonIcon = <UserX size={16} className="mr-2" />;
+        friendButtonStyle =
+          "duration-200 bg-pink-100 text-primary hover:bg-pink-200   hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80";
+
         break;
       case "pending_received":
         friendButtonText = "Respond";
         friendButtonIcon = <UserPlus size={16} className="mr-2" />;
+        friendButtonStyle =
+          "duration-200 bg-pink-100 text-primary hover:bg-pink-200   hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80";
+
         break;
       case "not_friend":
         break;
@@ -70,14 +76,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profileData }) => {
       <div className="flex items-center space-x-2">
         <button
           onClick={handleFriendAction}
-          className={`min-w-32 flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${friendButtonStyle}`}
+          className={`gap-2 min-w-28 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${friendButtonStyle}`}
         >
           {friendButtonIcon}
           {friendButtonText}
         </button>
         <button
           onClick={handleChatAction}
-          className="min-w-32 px-4 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200 bg-pink-100 text-primary hover:bg-pink-200   hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80"
+          className="gap-2 min-w-28 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200    bg-primary text-white hover:bg-opacity-80"
         >
           <MessageSquare size={16} className="mr-1.5" />
           Chat

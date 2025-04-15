@@ -14,7 +14,7 @@ const FriendLayout: React.FC<FriendLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-1 h-full overflow-hidden">
       {isFriendsHome && (
-        <aside className="w-80 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto hidden md:block  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+        <aside className="pt-4 w-80 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto hidden md:block  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
           <Sidebar />
         </aside>
       )}

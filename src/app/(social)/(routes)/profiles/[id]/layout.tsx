@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileTabs from "@/components/profile/ProfileTabs";
-import { ProfileHeaderData } from "@/type/profile/ProfileData";
+import { ProfileHeaderData } from "@/types/profile/ProfileData";
 import { ClipLoader } from "react-spinners";
 
 const DEFAULT_AVATAR =
@@ -55,9 +55,7 @@ const ProfileLayout = ({
   children: React.ReactNode;
   params: Promise<{ id: string }>;
 }) => {
-  // sfshfhds
-  // dsjfjs
-  const params = React.use(paramsPromise); // Unwrap params Promise
+  const params = React.use(paramsPromise);
   const { id: currentProfileId } = params;
 
   const [profileData, setProfileData] = useState<ProfileHeaderData | null>(
@@ -130,7 +128,7 @@ const ProfileLayout = ({
             <ProfileTabs profileId={profileData.id} />
           </div>
 
-          <div className="pb-4 mt-10">{children}</div>
+          <div className="pb-4 mt-10 mb-10">{children}</div>
         </div>
       </div>
     </div>

@@ -274,7 +274,10 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
                     </p>
                   </div>
                 </div>
-                <button className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-opacity-80 transition-colors duration-200">
+                <button
+                  onClick={() => router.push("/profiles/me")}
+                  className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-opacity-80 transition-colors duration-200"
+                >
                   View profile
                 </button>
               </div>

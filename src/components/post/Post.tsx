@@ -199,7 +199,10 @@ const Post: React.FC<PostProps> = ({ post }) => {
             </button>
           </div>
           <div className="flex items-center">
-            <Link href={`/profile/${post.author.id}`} className="flex-shrink-0">
+            <Link
+              href={`/profiles/${post.author.id}`}
+              className="flex-shrink-0"
+            >
               <div className="w-8 h-8 relative rounded-full overflow-hidden border dark:border-gray-700">
                 <Image
                   src={post.author.avatar || DEFAULT_AVATAR}
@@ -210,7 +213,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
               </div>
             </Link>
             <div className="ml-2">
-              <Link href={`/profile/${post.author.id}`}>
+              <Link href={`/profiles/${post.author.id}`}>
                 <span className="font-medium text-gray-700 text-sm dark:text-gray-400 hover:text-primary">
                   {post.author.name}
                 </span>
@@ -225,7 +228,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
     } else {
       return (
         <div className="flex items-center">
-          <Link href={`/profile/${post.author.id}`} className="flex-shrink-0">
+          <Link href={`/profiles/${post.author.id}`} className="flex-shrink-0">
             <div className="w-10 h-10 relative rounded-full overflow-hidden border dark:border-gray-700">
               <Image
                 src={post.author.avatar || DEFAULT_AVATAR}
@@ -236,7 +239,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
             </div>
           </Link>
           <div className="ml-2">
-            <Link href={`/profile/${post.author.id}`}>
+            <Link href={`/profiles/${post.author.id}`}>
               <span className="font-medium text-gray-900 block dark:text-gray-300 hover:text-primary">
                 {post.author.name}
               </span>

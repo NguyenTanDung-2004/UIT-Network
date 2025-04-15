@@ -1,7 +1,7 @@
 // app/(social)/(routes)/search/[type]/page.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import Post from "@/components/post/Post";
 import PeopleCard from "@/components/search/PeopleCard";
 import PageCard from "@/components/search/PageCard";
@@ -90,16 +90,16 @@ interface GroupData {
 type SearchResultItem = PostDataType | PersonData | PageData | GroupData;
 
 interface SearchResultsPageProps {
-  params: {
-    type: string;
-  };
-  searchParams: { q?: string };
+  params: Promise<{ type: string }>;
+  searchParams: Promise<{ q: string }>;
 }
 
 const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
-  params,
-  searchParams,
+  params: paramsPromise,
+  searchParams: searchParamsPromise,
 }) => {
+  const params = use(paramsPromise);
+  const searchParams = use(searchParamsPromise);
   const { type } = params;
   const { q } = searchParams;
 

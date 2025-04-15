@@ -18,8 +18,8 @@ const MediaSummaryWidget: React.FC<MediaSummaryWidgetProps> = ({
           Photos
         </h3>
         <Link
-          href={`/profiles/${profileId}/photos`}
-          className="text-sm text-primary hover:underline"
+          href={`/profiles/${profileId}/media`}
+          className="text-sm font-medium text-primary hover:underline"
         >
           View all
         </Link>

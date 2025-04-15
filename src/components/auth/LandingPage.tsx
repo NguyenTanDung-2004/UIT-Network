@@ -24,8 +24,7 @@ const LandingPage = () => {
           alt="Vector Shape"
           width={500}
           height={300}
-          layout="responsive"
-          objectFit="cover"
+          style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />
       </div>
 
@@ -35,8 +34,7 @@ const LandingPage = () => {
           alt="Vector Shape"
           width={500}
           height={300}
-          layout="responsive"
-          objectFit="cover"
+          style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />
       </div>
       {/* Header */}
@@ -111,7 +109,7 @@ const LandingPage = () => {
             alt="Study Illustration"
             width={500} // Adjust as needed
             height={500} // Adjust as needed
-            layout="responsive"
+            style={{ width: "100%", height: "auto" }}
           />
         </div>
       </main>

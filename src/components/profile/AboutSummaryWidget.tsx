@@ -8,16 +8,23 @@ interface AboutData {
 
 interface AboutSummaryWidgetProps {
   data: AboutData;
+  profileId: string;
 }
 
-const AboutSummaryWidget: React.FC<AboutSummaryWidgetProps> = ({ data }) => {
+const AboutSummaryWidget: React.FC<AboutSummaryWidgetProps> = ({
+  data,
+  profileId,
+}) => {
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           About
         </h3>
-        <Link href="#" className="text-sm text-primary hover:underline">
+        <Link
+          href={`/profiles/${profileId}/about`}
+          className="text-sm font-medium text-primary hover:underline"
+        >
           View all
         </Link>
       </div>

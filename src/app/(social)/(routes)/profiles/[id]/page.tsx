@@ -10,7 +10,7 @@ import MediaSummaryWidget from "@/components/profile/MediaSummaryWidget";
 import FriendsSummaryWidget from "@/components/profile/FriendsSummaryWidget";
 import { AuthorInfo, UploadedFile, PostDataType } from "@/components/post/Post";
 import ClipLoader from "react-spinners/ClipLoader";
-import { ProfileHeaderData } from "@/type/profile/ProfileData";
+import { ProfileHeaderData } from "@/types/profile/ProfileData";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
@@ -301,7 +301,12 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="flex flex-col lg:flex-row gap-4 px-2 md:px-0 md:mb-16 mb-8">
       <div className="w-full lg:w-2/5 xl:w-1/3 space-y-4 flex-shrink-0 order-2 lg:order-1">
-        {summaries?.about && <AboutSummaryWidget data={summaries.about} />}
+        {summaries?.about && (
+          <AboutSummaryWidget
+            data={summaries.about}
+            profileId={pageProfileData.id}
+          />
+        )}
         {summaries?.photos && summaries.photos.length > 0 && (
           <MediaSummaryWidget
             photos={summaries.photos}

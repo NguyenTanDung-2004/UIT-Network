@@ -6,6 +6,8 @@ import MediaUploader from "./MediaUploader";
 import FileUploader from "./FileUploader";
 import { useToast } from "@/hooks/use-toast";
 
+import { motion } from "framer-motion";
+
 export interface UploadedFile {
   name: string;
   size: number;
@@ -248,8 +250,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-[#b0afaf] bg-opacity-80 flex items-center justify-center z-50 dark:bg-gray-900 dark:bg-opacity-80">
-      <div className="bg-white rounded-xl w-full max-w-md shadow-lg flex flex-col max-h-[90vh] dark:bg-gray-800 dark:shadow-gray-700">
+    <motion.div
+      className="fixed top-0 left-0 w-full h-full bg-[#b0afaf] bg-opacity-80 flex items-center justify-center z-50 dark:bg-gray-900 dark:bg-opacity-80"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-white rounded-xl w-full max-w-md shadow-lg flex flex-col max-h-[90vh] dark:bg-gray-800 dark:shadow-gray-700"
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: -50, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
@@ -450,8 +463,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             )}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

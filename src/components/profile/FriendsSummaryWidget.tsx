@@ -32,7 +32,7 @@ const FriendsSummaryWidget: React.FC<FriendsSummaryWidgetProps> = ({
         </div>
         <Link
           href={`/profiles/${profileId}/friends`}
-          className="text-sm text-primary hover:underline"
+          className="text-sm font-medium text-primary hover:underline"
         >
           View all
         </Link>
