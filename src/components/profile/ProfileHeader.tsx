@@ -76,14 +76,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profileData }) => {
       <div className="flex items-center space-x-2">
         <button
           onClick={handleFriendAction}
-          className={`gap-2 min-w-28 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${friendButtonStyle}`}
+          className={`gap-2 min-w-32 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${friendButtonStyle}`}
         >
           {friendButtonIcon}
           {friendButtonText}
         </button>
         <button
           onClick={handleChatAction}
-          className="gap-2 min-w-28 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200    bg-primary text-white hover:bg-opacity-80"
+          className="gap-2 min-w-32 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200    bg-primary text-white hover:bg-opacity-80"
         >
           <MessagesSquare size={16} className="mr-1.5" />
           Chat
