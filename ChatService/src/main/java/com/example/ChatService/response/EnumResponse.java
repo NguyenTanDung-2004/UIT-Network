@@ -23,7 +23,9 @@ public enum EnumResponse {
     CHECK_USER_GROUP_SUCCESS("s_05_chat", "Check user group success", HttpStatus.OK), 
     SEEN_MESSAGE_SUCCESS("s_06_chat", "Seen message success", HttpStatus.OK), 
     GET_LIST_GROUP_SUCCESS("s_07_chat", "Get list group success", HttpStatus.OK), 
-    GET_MESSAGE_SUCCESS("s_08_chat", "Get message success", HttpStatus.OK),;
+    GET_MESSAGE_SUCCESS("s_08_chat", "Get message success", HttpStatus.OK),
+    
+    CREATE_WORKSHEET_SUCCESS("s_09_chat", "Create worksheet success", HttpStatus.OK);
     String code;
     String message;
     HttpStatusCode httpStatus;
