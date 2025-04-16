@@ -15,7 +15,7 @@ const HobbiesContent: React.FC<HobbiesContentProps> = ({
 
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
+      <div className="min-h-[400px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
         {data.map((hobby) => (
           <div
             key={hobby.id}

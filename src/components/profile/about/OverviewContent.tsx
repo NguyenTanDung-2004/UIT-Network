@@ -13,7 +13,7 @@ const OverviewContent: React.FC<OverviewContentProps> = ({
   isOwnProfile,
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-[400px]">
       {data.bio && (
         <div className="relative group">
           <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">

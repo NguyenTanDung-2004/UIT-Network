@@ -1,13 +1,10 @@
 import React from "react";
-import InfoItemCard from "./InfoItemCard";
-import AddItemButton from "./AddItemButton";
-import { ProfileAboutData } from "@/types/profile/AboutData";
+import { PageAboutData } from "@/types/pages/PageData";
 import { Github, Linkedin, Instagram, Facebook, Globe } from "lucide-react";
+import InfoItemCard from "@/components/profile/about/InfoItemCard";
 
 interface ContactInfoContentProps {
-  contactData: ProfileAboutData["contact"];
-  basicInfoData: ProfileAboutData["basicInfo"];
-  isOwnProfile: boolean;
+  contactData: PageAboutData["contact"];
 }
 
 const SocialIconMap: { [key: string]: React.ElementType } = {
@@ -20,13 +17,7 @@ const SocialIconMap: { [key: string]: React.ElementType } = {
 
 const ContactInfoContent: React.FC<ContactInfoContentProps> = ({
   contactData,
-  basicInfoData,
-  isOwnProfile,
 }) => {
-  const handleAddGithub = () => console.log("Add GitHub link");
-  const handleAddSocial = () => console.log("Add social link");
-  const handleAddWebsite = () => console.log("Add website");
-
   return (
     <div className="space-y-8 min-h-[400px]">
       <div>
@@ -39,15 +30,6 @@ const ContactInfoContent: React.FC<ContactInfoContentProps> = ({
           )}
           {contactData.email && (
             <InfoItemCard icon="far fa-envelope" value={contactData.email} />
-          )}
-          {isOwnProfile && !contactData.githubLink && (
-            <AddItemButton
-              onClick={handleAddGithub}
-              label="Add a github link"
-            />
-          )}
-          {contactData.githubLink && (
-            <InfoItemCard icon="fab fa-github" value={contactData.githubLink} />
           )}
         </div>
       </div>
@@ -76,12 +58,7 @@ const ContactInfoContent: React.FC<ContactInfoContentProps> = ({
               </div>
             );
           })}
-          {isOwnProfile && (
-            <AddItemButton
-              onClick={handleAddSocial}
-              label="Add a social link"
-            />
-          )}
+
           {contactData.websites.map((site) => (
             <div
               key={site.id}
@@ -98,29 +75,6 @@ const ContactInfoContent: React.FC<ContactInfoContentProps> = ({
               </a>
             </div>
           ))}
-          {isOwnProfile && (
-            <AddItemButton onClick={handleAddWebsite} label="Add a website" />
-          )}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">
-          Basic Info
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {basicInfoData.born && (
-            <InfoItemCard
-              icon="far fa-calendar-alt"
-              value={basicInfoData.born}
-            />
-          )}
-          {basicInfoData.gender && (
-            <InfoItemCard
-              icon="fas fa-venus-mars"
-              value={basicInfoData.gender}
-            />
-          )}
         </div>
       </div>
     </div>

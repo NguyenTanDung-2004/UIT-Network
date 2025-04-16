@@ -26,7 +26,7 @@ const EducationContent: React.FC<EducationContentProps> = ({
   const handleEditExperience = () => console.log("Edit Experience");
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-h-[400px]">
       {/* Work Section */}
       <div>
         <h4 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">

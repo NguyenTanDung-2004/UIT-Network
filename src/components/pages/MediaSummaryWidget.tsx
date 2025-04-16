@@ -5,7 +5,7 @@ import { FileImage } from "lucide-react";
 
 interface MediaSummaryWidgetProps {
   photos: { url: string }[];
-  profileId: string;
+  pageId: string;
 }
 
 const imageExtensions = [".jpeg", ".png", ".jpg", ".gif", ".svg", ".webp"];
@@ -34,7 +34,7 @@ const getMediaType = (url: string): "image" | "video" | "unknown" => {
 
 const MediaSummaryWidget: React.FC<MediaSummaryWidgetProps> = ({
   photos,
-  profileId,
+  pageId,
 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
@@ -43,7 +43,7 @@ const MediaSummaryWidget: React.FC<MediaSummaryWidgetProps> = ({
           Media
         </h3>
         <Link
-          href={`/profiles/${profileId}/media`}
+          href={`/pages/${pageId}/media`}
           className="text-sm font-medium text-primary hover:underline"
         >
           View all

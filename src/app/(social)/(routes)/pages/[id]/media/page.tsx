@@ -47,17 +47,17 @@ const getMediaType = (url: string): "image" | "video" | "unknown" => {
   return "unknown";
 };
 
-const ProfileMediaPage: React.FC<{ params: Promise<{ id: string }> }> = ({
+const MediaPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   params: paramsPromise,
 }) => {
   const params = use(paramsPromise);
-  const profileId = params.id;
+  const pageId = params.id;
 
   const mediaItems: MediaItem[] = SAMPLE_MEDIA_URLS.map((url, i) => {
     const type = getMediaType(url);
     if (type === "image" || type === "video") {
       return {
-        id: `media-${profileId}-${i}`,
+        id: `media-${pageId}-${i}`,
         url: url,
         type: type,
       };
@@ -130,4 +130,4 @@ const ProfileMediaPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   );
 };
 
-export default ProfileMediaPage;
+export default MediaPage;

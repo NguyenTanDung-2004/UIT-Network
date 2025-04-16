@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, Suspense, use } from "react"; // Thêm Suspense
-import { useParams, useSearchParams } from "next/navigation"; // Thêm useSearchParams
+import React, { useState, useEffect, Suspense, use } from "react";
+import { useSearchParams } from "next/navigation";
 import ClipLoader from "react-spinners/ClipLoader";
 
 import AboutSidebar from "@/components/profile/about/AboutSidebar";

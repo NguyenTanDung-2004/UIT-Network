@@ -15,6 +15,7 @@ export default {
         primary: "#FF70D9",
         primaryLight: "#FFE6F8",
         ghostWhite: "#FFF8FD",
+        textGray: "838383",
       },
       keyframes: {
         "toast-progress": {

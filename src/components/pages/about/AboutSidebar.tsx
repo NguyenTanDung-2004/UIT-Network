@@ -2,34 +2,26 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { User, Phone, Heart, Briefcase } from "lucide-react";
+import { Phone, Heart } from "lucide-react";
 
 const sidebarItems = [
-  { id: "overview", name: "Overview", icon: User },
   {
     id: "contact",
     name: "Contact and Basic Info",
     icon: Phone,
-    hrefSuffix: "contact",
   },
   {
-    id: "hobbies",
-    name: "Hobbies and Interests",
+    id: "page-transparency",
+    name: "Page Transparency",
     icon: Heart,
-    hrefSuffix: "hobbies",
-  },
-  {
-    id: "education",
-    name: "Education and Work",
-    icon: Briefcase,
-    hrefSuffix: "education",
+    hrefSuffix: "page-transparency",
   },
 ];
 
 const AboutSidebar: React.FC = ({}) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get("tab") || "overview";
+  const activeTab = searchParams.get("tab") || "contact";
 
   return (
     <div className="w-full sm:w-64 md:w-80 lg:w-96 flex-shrink-0 p-6">
