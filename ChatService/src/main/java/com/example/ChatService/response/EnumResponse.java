@@ -25,7 +25,9 @@ public enum EnumResponse {
     GET_LIST_GROUP_SUCCESS("s_07_chat", "Get list group success", HttpStatus.OK), 
     GET_MESSAGE_SUCCESS("s_08_chat", "Get message success", HttpStatus.OK),
     
-    CREATE_WORKSHEET_SUCCESS("s_09_chat", "Create worksheet success", HttpStatus.OK);
+    CREATE_WORKSHEET_SUCCESS("s_09_chat", "Create worksheet success", HttpStatus.OK), 
+    
+    UPDATE_WORKSHEET_SUCCESS("s_10_chat", "Update worksheet success", HttpStatus.OK);
     String code;
     String message;
     HttpStatusCode httpStatus;

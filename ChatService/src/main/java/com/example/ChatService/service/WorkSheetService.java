@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.example.ChatService.dto.worksheet.RequestCreateWorkSheet;
+import com.example.ChatService.dto.worksheet.RequestUpdateWSParent;
 import com.example.ChatService.entity.WorkSheet;
 import com.example.ChatService.enums.EnumStatus;
 import com.example.ChatService.enums.EnumWorkSheetType;
@@ -86,6 +87,33 @@ public class WorkSheetService {
         ApiResponse response = ApiResponse.builder()
                 .object(list)
                 .enumResponse(EnumResponse.toJson(EnumResponse.CREATE_WORKSHEET_SUCCESS))
+                .build();
+        
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity updateWorkSheet(RequestUpdateWSParent request, String authorizationHeader) {
+        // get user id from token
+        String userId = (String) userClient.getUserId(authorizationHeader);
+        
+        // find parent 
+        WorkSheet parent = this.workSheetRepository.findById(request.getId()).get();
+
+        // update 
+        parent.setName(request.getName() == null ? parent.getName() : request.getName());
+        parent.setFromdate(request.getFromdate() == null ? parent.getFromdate() : request.getFromdate());
+        parent.setTodate(request.getTodate() == null ? parent.getTodate() : request.getTodate());
+        parent.setModifiedbyuserid(userId);
+        parent.setModifieddate(new Date());
+        parent.setStatus(request.getStatus() == null ? parent.getStatus() : request.getStatus());
+
+        // save to db
+        parent = this.workSheetRepository.save(parent);
+        
+
+        ApiResponse response = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_WORKSHEET_SUCCESS))
                 .build();
         
         return ResponseEntity.ok(response);
