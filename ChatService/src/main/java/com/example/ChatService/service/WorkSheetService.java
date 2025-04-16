@@ -76,6 +76,7 @@ public class WorkSheetService {
                 .modifiedbyuserid(userId)
                 .createddate(new Date())
                 .modifieddate(new Date())
+                .parentid(parentId)
                 .build();
 
         // add parent to list
@@ -146,6 +147,24 @@ public class WorkSheetService {
         ApiResponse response = ApiResponse.builder()
                 .object(null)
                 .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_WORKSHEET_SUCCESS))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity getWorkSheet(String authorizationHeader, String groupid) {
+        List<WorkSheet> list = this.workSheetRepository.findParents(groupid);
+        ApiResponse response = ApiResponse.builder()
+                .object(list)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_WORKSHEET_SUCCESS))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity getWorkSheetDetail(String authorizationHeader, String wsid) {
+        List<WorkSheet> list = this.workSheetRepository.getWSDetail(wsid);
+        ApiResponse response = ApiResponse.builder()
+                .object(list)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_WORKSHEET_SUCCESS))
                 .build();
         return ResponseEntity.ok(response);
     }
