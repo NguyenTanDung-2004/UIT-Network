@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ChatService.dto.worksheet.RequestCreateWorkSheet;
 import com.example.ChatService.dto.worksheet.RequestUpdateWSParent;
+import com.example.ChatService.dto.worksheet.UpdateWSChild;
 import com.example.ChatService.service.WorkSheetService;
 
 @RestController
@@ -29,6 +30,11 @@ public class WorkSheetController {
     @PutMapping("/parent")
     public ResponseEntity updateWorkSheet(@RequestBody RequestUpdateWSParent request, @RequestHeader("Authorization") String authorizationHeader) {
         return workSheetService.updateWorkSheet(request, authorizationHeader);
+    }
+
+    @PutMapping("/child")
+    public ResponseEntity updateWorkSheetChild(@RequestBody List<UpdateWSChild> request, @RequestHeader("Authorization") String authorizationHeader) {
+        return workSheetService.updateWorkSheetChild(request, authorizationHeader);
     }
 
 }

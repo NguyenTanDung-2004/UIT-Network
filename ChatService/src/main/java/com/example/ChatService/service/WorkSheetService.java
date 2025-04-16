@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.ChatService.dto.worksheet.RequestCreateWorkSheet;
 import com.example.ChatService.dto.worksheet.RequestUpdateWSParent;
+import com.example.ChatService.dto.worksheet.UpdateWSChild;
 import com.example.ChatService.entity.WorkSheet;
 import com.example.ChatService.enums.EnumStatus;
 import com.example.ChatService.enums.EnumWorkSheetType;
@@ -116,6 +117,36 @@ public class WorkSheetService {
                 .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_WORKSHEET_SUCCESS))
                 .build();
         
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity updateWorkSheetChild(List<UpdateWSChild> request, String authorizationHeader) {
+        // get user id from token
+        String userId = (String) userClient.getUserId(authorizationHeader);
+        
+        request.stream().forEach(item -> {
+            // find child 
+            WorkSheet child = this.workSheetRepository.findById(item.getId()).get();
+
+            // update 
+            child.setContent(item.getContent() == null ? child.getContent() : item.getContent());
+            child.setWorkstatus(item.getWorkstatus() == null ? child.getWorkstatus() : item.getWorkstatus());
+            child.setModifiedbyuserid(userId);
+            child.setModifieddate(new Date());
+            child.setStatus(item.getStatus() == null ? child.getStatus() : item.getStatus());
+            child.setFromdate(item.getFromdate() == null ? child.getFromdate() : item.getFromdate());
+            child.setTodate(item.getTodate() == null ? child.getTodate() : item.getTodate());
+            child.setUserids(item.getUserids() == null ? child.getUserids() : item.getUserids());
+            child.setWorkstatus(null == item.getWorkstatus() ? child.getWorkstatus() : item.getWorkstatus());
+
+            // save to db
+            this.workSheetRepository.save(child);
+        });
+
+        ApiResponse response = ApiResponse.builder()
+                .object(null)
+                .enumResponse(EnumResponse.toJson(EnumResponse.UPDATE_WORKSHEET_SUCCESS))
+                .build();
         return ResponseEntity.ok(response);
     }
     
