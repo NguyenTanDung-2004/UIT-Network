@@ -13,6 +13,7 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
         primary: "#FF70D9",
+        mainChat: "#EF45C2",
         primaryLight: "#FFE6F8",
         ghostWhite: "#FFF8FD",
         textGray: "838383",

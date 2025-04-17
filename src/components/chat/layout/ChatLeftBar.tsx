@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import ChatListItem from "./ChatListItem";
 import { ChatData } from "@/types/chats/ChatData";
+import Image from "next/image";
 
 interface ChatLeftBarProps {
   chats: ChatData[];
@@ -32,6 +33,14 @@ const ChatLeftBar: React.FC<ChatLeftBarProps> = ({ chats, activeChatId }) => {
   return (
     <div className="w-80 md:w-96 h-screen flex flex-col bg-white dark:bg-gray-800  border-r border-gray-200 dark:border-gray-700 flex-shrink-0 ">
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <Image
+          src="/auth/logo text.png"
+          alt="Study Buddy Logo"
+          width={200}
+          height={200}
+          className="mb-3 hidden md:block"
+        />
+
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-2xl font-bold text-black dark:text-white">
             Chats

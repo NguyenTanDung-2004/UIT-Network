@@ -103,7 +103,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
             {lastMessage}
           </p>
           {unread && (
-            <span className="ml-2 flex-shrink-0 w-2.5 h-2.5 bg-pink-500 rounded-full"></span>
+            <span className="ml-2 flex-shrink-0 w-2.5 h-2.5 bg-primary rounded-full"></span>
           )}
         </div>
       </div>
