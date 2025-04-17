@@ -26,7 +26,7 @@ const LeftBar: React.FC<LeftBarProps> = ({ groups }) => {
       id: "home",
       icon: <i className="fas fa-home"></i>,
       label: "Home",
-      href: "/",
+      href: "/home",
     },
     {
       id: "profile",

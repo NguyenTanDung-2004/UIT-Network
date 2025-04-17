@@ -239,8 +239,13 @@ const ProfileAboutPageContent: React.FC<{ profileId: string }> = ({
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center w-full h-[400px]">
-        <ClipLoader color="#F472B6" loading={true} size={35} />
+      <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
+        <ClipLoader
+          color="#FF69B4"
+          loading={true}
+          size={35}
+          aria-label="Loading Spinner"
+        />
       </div>
     );
   }

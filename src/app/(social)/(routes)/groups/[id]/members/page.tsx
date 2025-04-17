@@ -186,12 +186,12 @@ const MemberGroup = () => {
 
   if (loading) {
     return (
-      <div className=" dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 mb-6 md:mb-8 min-h-[400px] flex items-center justify-center">
+      <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
         <ClipLoader
-          color="#2A88F5"
+          color="#FF69B4"
           loading={true}
-          size={30}
-          aria-label="Loading Members"
+          size={35}
+          aria-label="Loading Spinner"
         />
       </div>
     );

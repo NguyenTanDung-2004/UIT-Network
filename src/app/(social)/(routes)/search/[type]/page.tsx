@@ -324,12 +324,12 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="p-10 flex justify-center items-center w-full h-[500px]">
+        <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
           <ClipLoader
-            color="#2A88F5"
+            color="#FF69B4"
             loading={true}
-            size={30}
-            aria-label="Loading Profile Content"
+            size={35}
+            aria-label="Loading Spinner"
           />
         </div>
       );
