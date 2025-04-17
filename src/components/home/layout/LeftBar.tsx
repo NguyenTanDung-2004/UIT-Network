@@ -64,12 +64,12 @@ const LeftBar: React.FC<LeftBarProps> = ({ groups }) => {
       label: "Notifications",
       href: "/notifications",
     },
-    {
-      id: "videos",
-      icon: <i className="fas fa-video"></i>,
-      label: "Videos",
-      href: "/videos",
-    },
+    // {
+    //   id: "videos",
+    //   icon: <i className="fas fa-video"></i>,
+    //   label: "Videos",
+    //   href: "/videos",
+    // },
     {
       id: "helps",
       icon: <i className="fas fa-question-circle"></i>,
@@ -84,20 +84,34 @@ const LeftBar: React.FC<LeftBarProps> = ({ groups }) => {
         <ul>
           {menuItems.map((item) => (
             <li key={item.id} className="mb-2">
-              <Link href={item.href}>
-                <div className="flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors pl-4 dark:hover:bg-gray-700">
-                  <div
-                    className={`w-6 flex justify-center items-center text-gray-600 dark:text-gray-400`}
-                  >
-                    {" "}
-                    {/* Added flex centering for icons */}
-                    {item.icon}
+              {item.id === "home" ? (
+                // Nếu là "Home", dùng thẻ <a> thường để reload
+                <a href={item.href}>
+                  <div className="flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors pl-4 dark:hover:bg-gray-700">
+                    <div
+                      className={`w-6 flex justify-center items-center text-gray-600 dark:text-gray-400`}
+                    >
+                      {item.icon}
+                    </div>
+                    <span className="ml-4 text-sm font-medium dark:text-gray-300">
+                      {item.label}
+                    </span>
                   </div>
-                  <span className="ml-4 text-sm font-medium dark:text-gray-300">
-                    {item.label}
-                  </span>
-                </div>
-              </Link>
+                </a>
+              ) : (
+                <Link href={item.href}>
+                  <div className="flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors pl-4 dark:hover:bg-gray-700">
+                    <div
+                      className={`w-6 flex justify-center items-center text-gray-600 dark:text-gray-400`}
+                    >
+                      {item.icon}
+                    </div>
+                    <span className="ml-4 text-sm font-medium dark:text-gray-300">
+                      {item.label}
+                    </span>
+                  </div>
+                </Link>
+              )}
             </li>
           ))}
         </ul>
