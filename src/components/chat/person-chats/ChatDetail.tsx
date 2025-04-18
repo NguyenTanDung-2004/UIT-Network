@@ -9,28 +9,18 @@ import {
   Calendar,
   LogOut,
   Bell,
+  ArrowLeft,
   ChevronRight,
 } from "lucide-react";
 import MediaViewerModal from "@/components/profile/media/MediaViewerModal";
+import { SharedMediaItem } from "@/types/chats/ChatData";
+import { SharedFileItem } from "@/types/chats/ChatData";
+import { SharedLinkItem } from "@/types/chats/ChatData";
+import { getFileIcon, formatFileSize } from "@/utils/ViewFilesUtils";
+import SharedMediaView from "./SharedMediaView";
+import SharedFilesView from "./SharedFilesView";
+import SharedLinksView from "./SharedLinksView";
 
-interface SharedMediaItem {
-  id: string;
-  url: string;
-  type: "image" | "video";
-}
-interface SharedFileItem {
-  id: string;
-  name: string;
-  size: number;
-  url: string;
-  type: string;
-}
-interface SharedLinkItem {
-  id: string;
-  url: string;
-  title?: string;
-  domain?: string;
-}
 interface GroupMemberInfo {
   id: string;
   name: string;
@@ -59,31 +49,7 @@ interface ChatDetailProps {
   onMediaItemClick?: (mediaItem: SharedMediaItem, index: number) => void;
 }
 
-const getFileIcon = (fileType?: string): string => {
-  if (!fileType) return "/images/files/file-icon.png";
-  const lowerType = fileType.toLowerCase();
-  if (lowerType.includes("pdf")) return "/images/files/pdf-icon.png";
-  if (lowerType.includes("doc") || lowerType.includes("wordprocessingml"))
-    return "/images/files/docx-icon.png";
-  if (lowerType.includes("txt") || lowerType.includes("plain"))
-    return "/images/files/txt-icon.png";
-  return "/images/files/file-icon.png";
-};
-
-const formatFileSize = (bytes?: number) => {
-  if (!bytes || bytes === 0) return "0 KB";
-  const k = 1024;
-  const sizes = ["KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  const displayIndex = i > 0 ? i - 1 : 0;
-  const displaySize = i > 0 ? bytes / Math.pow(k, i) : bytes / k;
-  const decimalPlaces = displayIndex > 0 ? 1 : 0;
-
-  return (
-    parseFloat(displaySize.toFixed(decimalPlaces)) + " " + sizes[displayIndex]
-  );
-};
+type DetailView = "details" | "media" | "files" | "links";
 
 const ChatDetail: React.FC<ChatDetailProps> = ({
   type,
@@ -102,6 +68,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
   onToggleNotifications,
   onMediaItemClick,
 }) => {
+  const [currentView, setCurrentView] = useState<DetailView>("details");
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [mediaViewerList, setMediaViewerList] = useState<SharedMediaItem[]>([]);
   const [mediaViewerStartIndex, setMediaViewerStartIndex] = useState(0);
@@ -148,60 +115,32 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
   };
 
   const renderActionButtons = () => {
-    const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
-    const [mediaViewerList, setMediaViewerList] = useState<SharedMediaItem[]>(
-      []
-    );
-    const [mediaViewerStartIndex, setMediaViewerStartIndex] = useState(0);
-
     interface ActionButtonConfig {
-      icon: React.FC<any>; //
+      icon: React.FC<any>;
       label: string;
       action?: () => void;
+      viewTarget?: DetailView;
       danger?: boolean;
-      section?:
-        | "media"
-        | "files"
-        | "links"
-        | "notifications"
-        | "members"
-        | "schedule"
-        | "leave"
-        | "block";
     }
-
-    const buttonConfigMap = {
-      media: { icon: ImageIconVideo, label: "Media", danger: false },
-      files: { icon: FileText, label: "Files", danger: false },
-      links: { icon: LinkIcon, label: "Links", danger: false },
+    const buttonConfigMap: Record<string, ActionButtonConfig> = {
+      media: { icon: ImageIconVideo, label: "Media", viewTarget: "media" },
+      files: { icon: FileText, label: "Files", viewTarget: "files" },
+      links: { icon: LinkIcon, label: "Links", viewTarget: "links" },
       notifications: {
         icon: Bell,
         label: "Notifications",
         action: onToggleNotifications,
-        danger: false,
       },
-      members: {
-        icon: Users,
-        label: "Members",
-        action: onViewMembers,
-        danger: false,
-      },
-      schedule: {
-        icon: Calendar,
-        label: "Schedule",
-        action: onScheduleEvent,
-        danger: false,
-      },
+      members: { icon: Users, label: "Members", action: onViewMembers },
+      schedule: { icon: Calendar, label: "Schedule", action: onScheduleEvent },
       leave: {
         icon: LogOut,
         label: "Leave",
         action: onLeaveGroup,
         danger: true,
       },
-      block: { icon: Users, label: "Block", action: onBlockUser, danger: true }, // Corrected icon, maybe UserX?
+      block: { icon: Users, label: "Block", action: onBlockUser, danger: true },
     };
-
-    // Define buttons based on type
     const commonSections: (keyof typeof buttonConfigMap)[] = [
       "media",
       "files",
@@ -210,41 +149,25 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
     ];
     const personSections: (keyof typeof buttonConfigMap)[] = [
       ...commonSections,
-    ]; // Add 'block' if needed
+    ];
     const groupSections: (keyof typeof buttonConfigMap)[] = [
       ...commonSections,
       "members",
-    ]; // Add 'schedule', 'leave' if needed
-
+    ];
     const sectionsToShow = type === "group" ? groupSections : personSections;
-
-    // Function to scroll to section (optional)
-    const scrollToSection = (sectionId: string) => {
-      document
-        .getElementById(sectionId)
-        ?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    // Media click
-
     return (
       <div className="flex justify-around items-center px-4 pt-2 pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
         {sectionsToShow.map((sectionKey) => {
           const config = buttonConfigMap[sectionKey];
           if (!config) return null;
-
-          // Associate button click with scrolling to the section ID (optional)
-          const scrollAction = () => {
-            // Combine with original action if exists
-            if ("action" in config && config.action) config.action();
-            // Scroll to section, assumes section has id={`detail-section-${sectionKey}`}
-            // scrollToSection(`detail-section-${sectionKey}`);
+          const handleClick = () => {
+            if (config.action) config.action();
+            if (config.viewTarget) setCurrentView(config.viewTarget);
           };
-
           return (
             <button
               key={sectionKey}
-              onClick={scrollAction}
+              onClick={handleClick}
               className={`flex flex-col items-center justify-center p-1 rounded-full w-14 h-14 transition-colors text-center group focus:outline-none focus:ring-2 focus:ring-primary/30 ${
                 config.danger
                   ? "hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -264,11 +187,10 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
                   className={`${
                     config.danger
                       ? "text-red-600 dark:text-red-400"
-                      : "text-pink-600 dark:text-pink-400"
-                  }`} // Use consistent color or danger color
+                      : "text-primary "
+                  }`}
                 />
               </div>
-              {/* <span className={`text-[10px] font-medium leading-tight ${config.danger ? 'text-red-600 dark:text-red-500' : 'text-gray-700 dark:text-gray-400'} group-hover:${config.danger ? 'text-red-700 dark:text-red-400' : 'text-gray-900 dark:text-gray-200'}`}>{config.label}</span> */}
             </button>
           );
         })}
@@ -276,7 +198,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
     );
   };
 
-  const mediaContent =
+  const mediaPreviewContent =
     sharedMedia.length > 0 ? (
       <div className="grid grid-cols-3 gap-1.5">
         {sharedMedia.slice(0, 6).map((media, index) => (
@@ -312,8 +234,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
         ))}
       </div>
     ) : null;
-
-  const filesContent =
+  const filesPreviewContent =
     sharedFiles.length > 0
       ? sharedFiles.slice(0, 3).map((file) => (
           <a
@@ -342,8 +263,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
           </a>
         ))
       : null;
-
-  const linksContent =
+  const linksPreviewContent =
     sharedLinks.length > 0
       ? sharedLinks.slice(0, 3).map((link) => (
           <a
@@ -371,8 +291,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
           </a>
         ))
       : null;
-
-  const membersContent =
+  const membersPreviewContent =
     type === "group" && groupMembers && groupMembers.length > 0 ? (
       <div className="flex -space-x-2 overflow-hidden">
         {groupMembers.slice(0, 7).map((member) => (
@@ -397,68 +316,218 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
       </div>
     ) : null;
 
-  return (
-    <div className="w-[400px] h-full flex flex-col bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
-        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
-          Chat details
-        </h3>
-        <button
-          onClick={onClose}
-          className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30"
-          aria-label="Close chat details"
-        >
-          <X size={20} />
-        </button>
-      </div>
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case "media":
+        return (
+          <SharedMediaView
+            mediaList={sharedMedia}
+            onBack={() => setCurrentView("details")}
+            onMediaItemClick={(item, index) => handleMediaClick(item, index)} // Pass both media and index
+          />
+        );
+      case "files":
+        return (
+          <SharedFilesView
+            filesList={sharedFiles}
+            onBack={() => setCurrentView("details")}
+          />
+        );
+      case "links":
+        return (
+          <SharedLinksView
+            linksList={sharedLinks}
+            onBack={() => setCurrentView("details")}
+          />
+        );
+      case "details":
+      default:
+        return (
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 pt-0 pb-4">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                Chat details
+              </h3>
+              <button
+                onClick={onClose}
+                className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                aria-label="Close chat details"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 pt-0 pb-4">
-        {renderActionButtons()}
-        <div id="detail-section-media">
-          {renderSection(
-            "Shared media",
-            mediaContent,
-            onViewAllMedia,
-            sharedMedia.length
-          )}
-        </div>
-        <div id="detail-section-files">
-          {renderSection(
-            "Shared files",
-            filesContent,
-            onViewAllFiles,
-            sharedFiles.length
-          )}
-        </div>
-        <div id="detail-section-links">
-          {renderSection(
-            "Shared links",
-            linksContent,
-            onViewAllLinks,
-            sharedLinks.length
-          )}
-        </div>
-
-        {type === "group" && membersContent && (
-          <div id="detail-section-members">
-            {renderSection(
-              "Members",
-              membersContent,
-              onViewMembers,
-              groupMembers?.length
+            {renderActionButtons()}
+            <div id="detail-section-media">
+              {renderSection(
+                "Shared media",
+                mediaPreviewContent,
+                () => setCurrentView("media"),
+                sharedMedia.length
+              )}
+            </div>
+            <div id="detail-section-files">
+              {renderSection(
+                "Shared files",
+                filesPreviewContent,
+                () => setCurrentView("files"),
+                sharedFiles.length
+              )}
+            </div>
+            <div id="detail-section-links">
+              {renderSection(
+                "Shared links",
+                linksPreviewContent,
+                () => setCurrentView("links"),
+                sharedLinks.length
+              )}
+            </div>
+            {type === "group" && membersPreviewContent && (
+              <div id="detail-section-members">
+                {renderSection(
+                  "Members",
+                  membersPreviewContent,
+                  onViewMembers,
+                  groupMembers?.length
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        );
+    }
+  };
+
+  // const mediaContent =
+  //   sharedMedia.length > 0 ? (
+  //     <div className="grid grid-cols-3 gap-1.5">
+  //       {sharedMedia.slice(0, 6).map((media, index) => (
+  //         <button
+  //           key={media.id}
+  //           onClick={() => handleMediaClick(media, index)}
+  //           className="aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 cursor-pointer relative group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+  //           title={`View media ${index + 1}`}
+  //         >
+  //           {media.type === "image" ? (
+  //             <Image
+  //               src={media.url}
+  //               alt="Shared media preview"
+  //               fill
+  //               sizes="(max-width: 768px) 33vw, 100px"
+  //               className="object-cover transition-transform duration-200 group-hover:scale-105"
+  //             />
+  //           ) : (
+  //             <>
+  //               <video
+  //                 src={media.url}
+  //                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+  //                 muted
+  //                 playsInline
+  //                 preload="metadata"
+  //               />
+  //               <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+  //                 <i className="fas fa-play text-white text-3xl"></i>
+  //               </div>
+  //             </>
+  //           )}
+  //         </button>
+  //       ))}
+  //     </div>
+  //   ) : null;
+
+  // const filesContent =
+  //   sharedFiles.length > 0
+  //     ? sharedFiles.slice(0, 3).map((file) => (
+  //         <a
+  //           key={file.id}
+  //           href={file.url}
+  //           target="_blank"
+  //           rel="noopener noreferrer"
+  //           className="flex items-center gap-2 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 mb-1 transition-colors"
+  //           title={`Open ${file.name}`}
+  //         >
+  //           <div className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-600 rounded-full flex-shrink-0">
+  //             <img
+  //               src={getFileIcon(file.type)}
+  //               alt="file icon"
+  //               className="w-4 h-4"
+  //             />
+  //           </div>
+  //           <div className="min-w-0 flex-1">
+  //             <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+  //               {file.name}
+  //             </p>
+  //             <p className="text-[11px] text-gray-500 dark:text-gray-400">
+  //               {formatFileSize(file.size)}
+  //             </p>
+  //           </div>
+  //         </a>
+  //       ))
+  //     : null;
+
+  // const linksContent =
+  //   sharedLinks.length > 0
+  //     ? sharedLinks.slice(0, 3).map((link) => (
+  //         <a
+  //           key={link.id}
+  //           href={link.url}
+  //           target="_blank"
+  //           rel="noopener noreferrer"
+  //           className="flex items-center gap-2 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 mb-1 transition-colors"
+  //           title={`Open link: ${link.url}`}
+  //         >
+  //           <div className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-600 rounded-full flex-shrink-0">
+  //             <LinkIcon
+  //               size={16}
+  //               className="text-gray-600 dark:text-gray-400"
+  //             />
+  //           </div>
+  //           <div className="min-w-0 flex-1">
+  //             <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+  //               {link.title || link.url}
+  //             </p>
+  //             <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+  //               {link.domain || new URL(link.url).hostname.replace("www.", "")}
+  //             </p>
+  //           </div>
+  //         </a>
+  //       ))
+  //     : null;
+
+  // const membersContent =
+  //   type === "group" && groupMembers && groupMembers.length > 0 ? (
+  //     <div className="flex -space-x-2 overflow-hidden">
+  //       {groupMembers.slice(0, 7).map((member) => (
+  //         <Image
+  //           key={member.id}
+  //           src={member.avatar}
+  //           width={28}
+  //           height={28}
+  //           alt={member.name}
+  //           title={member.name}
+  //           className="inline-block h-7 w-7 rounded-full ring-2 ring-white dark:ring-gray-800 object-cover"
+  //         />
+  //       ))}
+  //       {groupMembers.length > 7 && (
+  //         <div
+  //           title={`${groupMembers.length - 7} more members`}
+  //           className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 ring-2 ring-white dark:ring-gray-800 text-xs font-medium text-gray-600 dark:text-gray-300"
+  //         >
+  //           +{groupMembers.length - 7}
+  //         </div>
+  //       )}
+  //     </div>
+  //   ) : null;
+
+  return (
+    <div className="w-80 md:w-96 h-full flex flex-col bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex-shrink-0">
+      {renderCurrentView()}
 
       {isMediaViewerOpen && (
         <MediaViewerModal
           isOpen={isMediaViewerOpen}
           onClose={() => setIsMediaViewerOpen(false)}
-          mediaList={mediaViewerList.map((m) => ({
-            url: m.url,
-            type: m.type,
-          }))}
+          // Pass the compatible SharedMediaItem[] directly after ensuring type safety if needed
+          mediaList={mediaViewerList}
           startIndex={mediaViewerStartIndex}
         />
       )}

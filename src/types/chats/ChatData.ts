@@ -22,3 +22,22 @@ export interface Message {
   senderName?: string; // dành cho group chat
   senderAvatar?: string; // dành cho group chat
 }
+
+export interface SharedMediaItem {
+  id: string;
+  url: string;
+  type: "image" | "video";
+}
+export interface SharedFileItem {
+  id: string;
+  name: string;
+  size: number;
+  url: string;
+  type: string;
+}
+export interface SharedLinkItem {
+  id: string;
+  url: string;
+  title?: string;
+  domain?: string;
+}
