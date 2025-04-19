@@ -19,7 +19,12 @@ import ChatMessageItem from "@/components/chat/person-chats/ChatMessageItem";
 import ChatInput from "@/components/chat/person-chats/ChatInput";
 import ChatDetail from "@/components/chat/person-chats/ChatDetail";
 import MediaViewerModal from "@/components/profile/media/MediaViewerModal";
-import { Message } from "@/types/chats/ChatData";
+import {
+  Message,
+  SharedMediaItem,
+  SharedFileItem,
+  SharedLinkItem,
+} from "@/types/chats/ChatData";
 
 interface MediaItem {
   url: string;
@@ -30,24 +35,6 @@ interface ChatPartnerInfo {
   name: string;
   avatar: string;
   isOnline: boolean;
-}
-interface SharedMediaItem {
-  id: string;
-  url: string;
-  type: "image" | "video";
-}
-interface SharedFileItem {
-  id: string;
-  name: string;
-  size: number;
-  url: string;
-  type: string;
-}
-interface SharedLinkItem {
-  id: string;
-  url: string;
-  title?: string;
-  domain?: string;
 }
 
 const CURRENT_USER_ID = "my-user-id";
@@ -457,19 +444,41 @@ const PersonChatPage = () => {
         <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />
       </div>
 
-      {showDetails && (
-        <ChatDetail
-          type="person"
-          partnerName={partnerInfo.name}
-          partnerAvatar={partnerInfo.avatar}
-          sharedMedia={sharedMedia}
-          sharedFiles={sharedFiles}
-          sharedLinks={sharedLinks}
-          onClose={() => setShowDetails(false)}
-        />
-      )}
+      {showDetails &&
+        partnerInfo && ( // Thêm kiểm tra partnerInfo để đảm bảo có dữ liệu
+          <ChatDetail
+            type="person"
+            partnerName={partnerInfo.name}
+            partnerAvatar={partnerInfo.avatar}
+            sharedMedia={sharedMedia}
+            sharedFiles={sharedFiles}
+            sharedLinks={sharedLinks}
+            onClose={() => setShowDetails(false)}
+            // === Cung cấp các props mới với giá trị mặc định/không phù hợp ===
+            schedules={[]} // Person chat không có schedule chung
+            // Cần lấy thông tin người dùng hiện tại từ context/auth
+            currentUserInfo={{
+              id: CURRENT_USER_ID,
+              name: "You",
+              avatar: DEFAULT_AVATAR,
+              role: "member",
+            }} // Mock tạm thời
+            groupMembers={undefined} // Không có group members
+            // Cung cấp hàm rỗng cho các action không áp dụng với person chat
+            onAddMember={() => {}}
+            onChatMember={() => {}}
+            onRemoveMember={() => {}}
+            onCreateSchedule={() => {}}
+            onViewScheduleDetails={() => {}}
+            onDeleteSchedule={() => {}}
+            // Có thể giữ lại các action chung nếu cần
+            onBlockUser={() => console.log("Block user action")}
+            onToggleNotifications={() =>
+              console.log("Toggle notifications action")
+            }
+          />
+        )}
 
-      {/* Use the imported MediaViewerModal with adapted props */}
       <MediaViewerModal
         isOpen={mediaViewerOpen}
         onClose={closeMediaViewer}

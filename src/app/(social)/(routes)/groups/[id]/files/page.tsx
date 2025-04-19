@@ -6,7 +6,8 @@ import { Search } from "lucide-react";
 import ClipLoader from "react-spinners/ClipLoader";
 import FileFilter, {
   FileTypeFilter,
-} from "@/components/groups/files/FileFilter"; // Import filter component
+} from "@/components/groups/files/FileFilter";
+import { getFileIcon, formatFileSize } from "@/utils/ViewFilesUtils";
 
 export interface UploadedFile {
   id: string;
@@ -170,23 +171,6 @@ const FilesGroup = () => {
       isMounted = false;
     };
   }, [groupId]);
-
-  const getFileIcon = (fileType: string): string => {
-    if (!fileType) return "/images/files/file-icon.png";
-    const lowerType = fileType.toLowerCase();
-    if (lowerType.includes("pdf")) return "/images/files/pdf-icon.png";
-    if (lowerType.includes("doc") || lowerType.includes("wordprocessingml"))
-      return "/images/files/docx-icon.png";
-    return "/images/files/file-icon.png";
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
-  };
 
   const filteredFiles = useMemo(() => {
     return allFiles.filter((file) => {

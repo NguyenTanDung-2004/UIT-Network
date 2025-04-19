@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { Message } from "@/types/chats/ChatData";
+import { getFileIcon, formatFileSize } from "@/utils/ViewFilesUtils";
 
 interface ChatMessageItemProps {
   message: Message;
@@ -17,25 +18,6 @@ const formatTime = (date: Date): string => {
       hour12: true,
     })
     .toLowerCase();
-};
-
-const getFileIcon = (fileType?: string): string => {
-  if (!fileType) return "/images/files/file-icon.png";
-  const lowerType = fileType.toLowerCase();
-  if (lowerType.includes("pdf")) return "/images/files/pdf-icon.png";
-  if (lowerType.includes("doc") || lowerType.includes("wordprocessingml"))
-    return "/images/files/docx-icon.png";
-  if (lowerType.includes("txt") || lowerType.includes("plain"))
-    return "/images/files/txt-icon.png";
-  return "/images/files/file-icon.png";
-};
-
-const formatFileSize = (bytes?: number) => {
-  if (!bytes || bytes === 0) return "";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 };
 
 const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
@@ -119,7 +101,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   return (
     <div className={`flex flex-col ${alignment} mb-3`}>
       {isGroup && !isSender && message.senderName && (
-        <div className="flex items-center mb-1 ml-10">
+        <div className="flex items-center mb-1">
           <Image
             src={message.senderAvatar || "/default-avatar.png"}
             width={20}

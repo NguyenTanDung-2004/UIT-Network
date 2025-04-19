@@ -41,3 +41,11 @@ export interface SharedLinkItem {
   title?: string;
   domain?: string;
 }
+
+// group
+export interface GroupMemberInfo {
+  id: string;
+  name: string;
+  avatar: string;
+  role: "admin" | "moderator" | "member";
+}

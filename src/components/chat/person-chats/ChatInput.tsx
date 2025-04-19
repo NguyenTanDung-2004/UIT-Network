@@ -331,7 +331,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
         </div>
 
         {/* Text Input */}
-        <div className="flex-1 relative -mb-6px">
+        <div className="flex-1 relative ">
           <textarea
             id="chat-textarea"
             rows={1}
@@ -339,9 +339,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Aa ..."
-            className="w-full border border-gray-300 rounded-3xl py-2 px-4 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-600 dark:border-gray-500 dark:text-gray-200 dark:placeholder-gray-400 resize-none overflow-y-hidden scrollbar-thin"
+            className="w-full -mb-[6px] max-h-[120px] min-h-full border border-gray-300 rounded-3xl py-2 px-4 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-600 dark:border-gray-500 dark:text-gray-200 dark:placeholder-gray-400 resize-none overflow-y-hidden scrollbar-thin"
             disabled={isUploading || isSending}
-            style={{ maxHeight: "120px" }} // Limit max height
           />
           {/* Emoji Button */}
           <button
