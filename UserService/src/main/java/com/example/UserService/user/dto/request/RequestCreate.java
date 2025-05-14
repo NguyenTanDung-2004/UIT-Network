@@ -40,4 +40,5 @@ public class RequestCreate {
     Double latitude;
     Double longitude;
     String jsonSchedule;
+    String background;
 }

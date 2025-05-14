@@ -104,10 +104,9 @@ public class UserController {
         return userService.getUserInfoById(userId, authorizationHeader);
     }
 
-    @GetMapping("/list/{textSearch}")
-    public ResponseEntity getListUser(@RequestHeader("Authorization") String authorizationHeader,
-            @PathVariable(name = "textSearch") String textSearch) {
-        return userService.getListUser(authorizationHeader, textSearch);
+    @GetMapping("/search")
+    public ResponseEntity getListUser(@RequestParam(name = "text") String textSearch) {
+        return userService.getListUser(null, textSearch);
     }
 
     @GetMapping("/list")
@@ -135,6 +134,11 @@ public class UserController {
     @GetMapping("/list/mutual-friend")
     public ResponseEntity getListMutualFriend(@RequestHeader("Authorization") String authorizationHeader) {
         return userService.getListMutualFriend(authorizationHeader);
+    }
+
+    @GetMapping("/list/recommend-hobby")
+    public ResponseEntity getListRecommendHobby(@RequestHeader("Authorization") String authorizationHeader) {
+        return userService.getListRecommendHobby(authorizationHeader);
     }
 
 

@@ -101,6 +101,11 @@ public class FriendService {
         return ResponseEntity.ok(list);
     }
 
+    public ResponseEntity getListFriendNotExternal(String userId) {
+        List<String> list = this.friendRepository.getListFriend(userId);
+        return ResponseEntity.ok(list);
+    }
+
     public ResponseEntity getListMutualFriend(String userId) {
         List<FriendSuggestion> list = this.friendRepository.recommendFriends(userId);
 
@@ -109,5 +114,21 @@ public class FriendService {
         }
 
         return ResponseEntity.ok(list);
+    }
+
+    public ResponseEntity getListRequestFriend(String userId) {
+        List<String> list = this.friendRepository.getListRequestFriend(userId);
+
+        if (list == null){
+            list = new ArrayList<>();
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(list)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
 }

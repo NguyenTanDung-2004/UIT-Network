@@ -29,7 +29,8 @@ public enum EnumResponse {
     GET_LIST_COMMENT_SUCCESS("s_11_post", "Get list comment successfully!", HttpStatus.OK),
     GET_LIST_USER_POST_SUCCESS("s_12_post", "Get list user's post successfully!", HttpStatus.OK),
     GET_LIST_FANPAGE_POST_SUCCESS("s_13_post", "Get list fanpage's post successfully!", HttpStatus.OK),
-    GET_LIST_GROUP_POST_SUCCESS("s_14_post", "Get list group's post successfully!", HttpStatus.OK),;
+    GET_LIST_GROUP_POST_SUCCESS("s_14_post", "Get list group's post successfully!", HttpStatus.OK),
+    SUCCESS("s_00_post", "Success!", HttpStatus.OK),;
     String code;
     String message;
     HttpStatusCode httpStatus;

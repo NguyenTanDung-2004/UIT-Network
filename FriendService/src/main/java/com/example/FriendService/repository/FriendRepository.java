@@ -56,4 +56,9 @@ public interface FriendRepository extends Neo4jRepository<User, String> {
         """)
         List<FriendSuggestion> recommendFriends(String userId);
 
+
+        @Query("MATCH (a:User)-[:REQUEST]->(b:User {id: $userId}) RETURN a.id")
+        List<String> getListRequestFriend(String userId);
+
+
 }

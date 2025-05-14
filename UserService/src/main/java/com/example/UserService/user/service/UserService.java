@@ -272,11 +272,13 @@ public class UserService {
         // get user hobby ids
         Set<Long> originalHobbyIds = this.hobbyService.getUserHobbyIds(user.getId());
 
-        // create user hobby ids
-        Set<Long> updatedHobbyIds = createUserHobbyIds(request.getHobbyIds(), originalHobbyIds);
+        // // create user hobby ids
+        // Set<Long> updatedHobbyIds = createUserHobbyIds(request.getHobbyIds(), originalHobbyIds);
+        // delete user hobbies 
+        this.hobbyService.deleteUserHobbies(user.getId());
 
         // save
-        this.hobbyService.insertUserHobbies(user.getId(), updatedHobbyIds);
+        this.hobbyService.insertUserHobbies(user.getId(), request.getHobbyIds());
 
         // create response
         ApiResponse apiResponse = ApiResponse.builder()
@@ -566,6 +568,25 @@ public class UserService {
             users.stream().forEach(user1 -> {
                 user1.setData(map.get(user1.getId()));
             });
+        }
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(users)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListRecommendHobby(String authorizationHeader) {
+        // get user from authorization
+        User user = this.getUserFromAthorization(authorizationHeader);
+
+        // get recommend data in database 
+        List<RecommendationUser> users = this.userRepository.getListRecommendHobby(user.getId());
+
+        if (users == null) {
+            users = new ArrayList<>();
         }
 
         ApiResponse apiResponse = ApiResponse.builder()

@@ -2,7 +2,9 @@ package com.example.FanpageGroupService.service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -267,6 +269,143 @@ public class GroupService {
         }
 
         return ResponseEntity.ok(listGroup);
+    }
+
+    public ResponseEntity getAllGroup(String authorizationHeader) {
+        // get userId
+        String userId = this.getUserId(authorizationHeader);
+
+        // get list group
+        List<Group> listGroup = this.groupRepository.getAllGroup();
+        List<Boolean> joinedList = new ArrayList<>();
+
+        if (listGroup == null) {
+            listGroup = new ArrayList<>();
+        }
+        else{
+            for (Group group : listGroup) {
+                // check if user is member of group
+                int isMember = this.userGroupRepository.isMemberOfGroup(userId, group.getId());
+                if (isMember == 1) {
+                    joinedList.add(true);
+                } else {
+                    joinedList.add(false);
+                }
+            }
+        }
+
+        // create response
+        Map<String, Object> response = new HashMap<>();
+        response.put("listGroup", listGroup);
+        response.put("joinedList", joinedList);
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(response)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_GROUPS_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListGroupNotExeternal(String userId) {
+        // get list group
+        List<Group> listGroup = this.userGroupRepository.getListGroupByUserId(userId);
+
+        if (listGroup == null) {
+            listGroup = new ArrayList<>();
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(listGroup)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_GROUPS_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity searchGroup(String text) {
+        // get list group
+        List<Group> listGroup = this.groupRepository.searchGroup(text);
+
+        if (listGroup == null) {
+            listGroup = new ArrayList<>();
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(listGroup)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_GROUPS_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getGroup(String groupid) {
+        // get group
+        Group group = this.getGroupById(groupid);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(group)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getNumberMember(String groupid) {
+        int numberMember = this.userGroupRepository.getNumberMember(groupid);
+        if (numberMember == 0) {
+            numberMember = 0;
+        }   
+        // create response
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(numberMember)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListMember(String groupid) {
+        // get list member
+        List<UserGroup> listMember = this.userGroupRepository.getListMember(groupid);
+
+        if (listMember == null) {
+            listMember = new ArrayList<>();
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(listMember)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_GROUPS_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListPostPending(String groupid) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getListPostPending'");
+    }
+
+    public ResponseEntity isAdmin(String groupid, String userid) {
+        Boolean isAdmin = false;
+        // get post 
+        Group group = this.getGroupById(groupid);
+        // check if user is admin
+        if (userid.equals(group.getCreatedUserId())) {
+            isAdmin = true;
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(isAdmin)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
     }
 
 }

@@ -71,4 +71,17 @@ public class PostController {
     public ResponseEntity getListPostGroup(@PathVariable(name = "groupId") String groupId, @RequestHeader("Authorization") String authorizationHeader) {
         return postService.getListPostOfGroup(groupId);
     }
+
+    @GetMapping("/list/group/pending/{groupId}")
+    public ResponseEntity getListPendingPostGroup(@PathVariable(name = "groupId") String groupId, @RequestHeader("Authorization") String authorizationHeader) {
+        return postService.getListPendingPostGroup(groupId);
+    }
+
+    @GetMapping("/fanpage/media/{type}/{objectid}")
+    public ResponseEntity getListMedia(@PathVariable(name = "type") String type,
+            @PathVariable(name = "objectid") String objectid) {
+        return postService.getListMedia(type, objectid);
+    }
+
+
 }

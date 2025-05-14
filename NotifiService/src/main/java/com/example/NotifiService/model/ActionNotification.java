@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -32,6 +33,8 @@ public class ActionNotification extends Notification{
     private String message;
     private Date date;
     private String receivedid;
+
+    @Transient
     private Map<String, Object> extrafield;
 
     public ActionNotification(List<String> parts){

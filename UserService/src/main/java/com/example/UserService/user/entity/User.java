@@ -70,6 +70,7 @@ public class User {
     Double longitude;
     @Column(columnDefinition = "JSON") // Define JSON column
     String jsonSchedule;
+    String background;
 
     @Column(columnDefinition = "INT DEFAULT 0")
     Integer privateProperties = 0; // 1 is private || 0 is public

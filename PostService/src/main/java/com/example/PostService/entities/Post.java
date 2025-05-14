@@ -31,6 +31,8 @@ public class Post {
     private Date updatedDate;
     private String caption;
 
+    private String statusgroup;
+
     private List<Media> media;
 
     private Map<String, Object> postType;

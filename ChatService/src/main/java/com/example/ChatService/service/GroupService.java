@@ -18,6 +18,7 @@ import com.example.ChatService.entity.Group;
 import com.example.ChatService.enums.EnumGroupType;
 import com.example.ChatService.enums.EnumStatus;
 import com.example.ChatService.mapper.GroupMapper;
+import com.example.ChatService.model.GroupChatUIHome;
 import com.example.ChatService.repository.GroupRepository;
 import com.example.ChatService.repository.httpclient.UserClient;
 import com.example.ChatService.response.ApiResponse;
@@ -234,4 +235,74 @@ public class GroupService {
 
 
     }
+
+    public ResponseEntity getListGroupInHome(String userid) {
+        List<Object[]> results = this.groupRepository.findListGroupInHome(userid);
+        List<GroupChatUIHome> groups = new ArrayList<>();
+
+        if (results != null && results.size() > 0) {
+            groups = results.stream().map(r -> {
+                return new GroupChatUIHome(
+                    (String) r[0], // id
+                    (Integer) r[1], // type
+                    (String) r[2], // name
+                    (String) r[3], // ownerid
+                    (String) r[4], // status 
+                    (Date) r[5],    // createddate
+                    (Date) r[6], // modifieddate
+                    (String) r[7], // avturl
+                    (String) r[8] // userid
+                );
+            }).toList();
+
+            // get userids in group that has type = 2
+            List<String> userids = new ArrayList<>();
+            groups.stream().forEach(group -> {
+                if (group.getType() == EnumGroupType.IsUser.getId()) {
+                    userids.add(group.getUserid());
+                }
+            });
+
+            if (userids != null && userids.size() > 0) {
+                // convert list to string
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < userids.size(); i++) {
+                    sb.append(userids.get(i));
+                    if (i != userids.size() - 1) {
+                        sb.append(",");
+                    }
+                }
+                String userIds = sb.toString();
+                System.out.println("userIds: " + userIds);
+
+                // get user info
+                Object listUserInfos = this.userClient.getListUserInfos(userIds);
+                List<ExternalUserInfo> externalUserInfos = new ObjectMapper().convertValue(listUserInfos,
+                        new TypeReference<List<ExternalUserInfo>>() {
+                        });
+
+                // map userid to avturl
+                Map<String, ExternalUserInfo> avtUrls = new HashMap<>();
+                externalUserInfos.stream().forEach(userInfo -> {
+                    avtUrls.put(userInfo.getUserId(), userInfo);
+                });
+
+                // set avturl to group
+                groups.stream().forEach(group -> {
+                    if (group.getType() == EnumGroupType.IsUser.getId()) {
+                        group.setAvturl(avtUrls.get(group.getUserid()).getAvtURL());
+                        group.setName(avtUrls.get(group.getUserid()).getUserName() == null ? avtUrls.get(group.getUserid()).getStudentId()
+                                : avtUrls.get(group.getUserid()).getUserName());
+                    }
+                });
+            }
+        }
+        // create response
+        ApiResponse response = ApiResponse.builder()
+                .object(groups)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_GROUP_SUCCESS))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
 }

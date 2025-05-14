@@ -48,6 +48,16 @@ public class FriendController {
         return friendService.deleteFriend(senderId, receiverId);
     }
 
+    @GetMapping("/notexternal/list/{userId}")
+    public ResponseEntity getListFriendIds(@PathVariable(name = "userId") String userId) {
+        return friendService.getListFriendNotExternal(userId);
+    }
+
+    @GetMapping("/list-request/{userId}")
+    public ResponseEntity getListRequestFriend(@PathVariable(name = "userId") String userId){
+        return friendService.getListRequestFriend(userId);
+    }
+
     /*
      * External APIs
      */

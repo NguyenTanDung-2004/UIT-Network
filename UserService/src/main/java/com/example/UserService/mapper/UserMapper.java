@@ -46,6 +46,7 @@ public class UserMapper {
                 .latitude(requestCreate.getLatitude())
                 .longitude(requestCreate.getLongitude())
                 .privateProperties(0)
+                .background(requestCreate.getBackground())
                 .build();
     }
 
@@ -65,6 +66,7 @@ public class UserMapper {
                 .longitude(user.getLongitude())
                 .jsonSchedule(user.getJsonSchedule())
                 .hobbies(hobbyService.getUserHobbies(user.getId()))
+                .background(user.getBackground())
                 .build();
     }
 
@@ -76,6 +78,7 @@ public class UserMapper {
         Optional.ofNullable(requestUpdateUserInfo.getDob()).ifPresent(user::setDob);
         Optional.ofNullable(requestUpdateUserInfo.getLongitude()).ifPresent(user::setLongitude);
         Optional.ofNullable(requestUpdateUserInfo.getLatitude()).ifPresent(user::setLatitude);
+        Optional.ofNullable(requestUpdateUserInfo.getBackground()).ifPresent(user::setBackground);
     }
 
     public ResponseExternalUserInfo toResponseExternalUserInfo(User user) {

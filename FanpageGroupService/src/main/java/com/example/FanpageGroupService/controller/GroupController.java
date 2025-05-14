@@ -65,6 +65,43 @@ public class GroupController {
         return groupService.removeJoinRequest(groupId, requestAcceptJoinGroup);
     }
 
+    @GetMapping("/list")
+    public ResponseEntity getAllListGroup(@RequestHeader("Authorization") String authorizationHeader) {
+        return groupService.getAllGroup(authorizationHeader);
+    }
+
+    @GetMapping("/notexternal/list/{userId}")
+    public ResponseEntity getListGroupNotExeternal(@PathVariable(name = "userId") String userId) {
+        return groupService.getListGroupNotExeternal(userId);
+    }
+    
+    @GetMapping("/search")
+    public ResponseEntity searchGroup(@RequestParam(name = "text") String text) {
+        return groupService.searchGroup(text);
+    }
+
+    @GetMapping("/{groupid}")
+    public ResponseEntity getGroup(@PathVariable(name = "groupid") String groupid) {
+        return groupService.getGroup(groupid);
+    }
+
+    @GetMapping("/number-member/{groupid}")
+    public ResponseEntity getNumberMember(@PathVariable(name = "groupid") String groupid) {
+        return groupService.getNumberMember(groupid);
+    }
+
+    @GetMapping("/members/{groupid}")
+    public ResponseEntity getListMember(@PathVariable(name = "groupid") String groupid) {
+        return groupService.getListMember(groupid);
+    }
+
+    @GetMapping("/isadmin/{groupid}/{userid}")
+    public ResponseEntity isAdmin(@PathVariable(name = "groupid") String groupid,
+            @PathVariable(name = "userid") String userid) {
+        return groupService.isAdmin(groupid, userid);
+    }
+
+
     /*
      * External APIs
      */

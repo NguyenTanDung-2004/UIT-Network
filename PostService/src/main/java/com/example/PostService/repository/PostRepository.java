@@ -12,8 +12,11 @@ public interface PostRepository extends MongoRepository<Post, String> {
     @Query("{'isDelete': false, 'parentId': null, 'userId': {$in: ?0}}")
     public List<Post> getListFriendPost(List<String> userIds);
 
-    @Query("{'isDelete': false, 'parentId': {$in: ?0}}")
+    @Query("{'isDelete': false, 'parentId': {$in: ?0}, 'statusgroup': 'ACTIVE'}")
     public List<Post> getListGroupPost(List<String> groupIds);
+
+    @Query("{'isDelete': false, 'parentId': {$in: ?0}, 'statusgroup': 'PENDING'}")
+    public List<Post> getListGroupPendingPost(List<String> groupIds);
 
     @Query("{'isDelete': false, 'parentId': {$in: ?0}}")
     public List<Post> getListFanpagePost(List<String> fanpageIds);

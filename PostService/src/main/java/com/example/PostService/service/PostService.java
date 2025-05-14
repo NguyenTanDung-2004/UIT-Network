@@ -28,6 +28,7 @@ import com.example.PostService.exception.UserException;
 import com.example.PostService.mapper.Mapper;
 import com.example.PostService.mapper.PostMapper;
 import com.example.PostService.models.UserInfo;
+import com.example.PostService.models.media.Media;
 import com.example.PostService.repository.LikeRepository;
 import com.example.PostService.repository.PostRepository;
 import com.example.PostService.repository.httpclient.FanpageClient;
@@ -386,6 +387,64 @@ public class PostService {
     public ResponseEntity getListPostOfGroup(String groupId) {
         // get list post of group
         List<Post> posts = this.postRepository.getListGroupPost(List.of("group||" + groupId));
+        Map<String, Object> map = new HashMap<>();
+
+        // check null
+        if (posts == null) {
+            posts = new ArrayList<>();
+        }
+        else{
+            map.put("listPost", posts);
+
+            // get user info
+            Object listUserInfos = this.userClient.getListUserInfos(convertListToString(posts.stream().map(Post::getUserId).toList()));
+            List<ExternalUserInfo> externalUserInfos = new ObjectMapper().convertValue(listUserInfos, new TypeReference<List<ExternalUserInfo>>() {});
+            map.put("listUserInfos", externalUserInfos);
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(map)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_GROUP_POST_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListMedia(String type, String objectid) {
+        List<Post> posts = new ArrayList<>();
+        switch (type) {
+            case "user":
+                posts = this.postRepository.findUserPost(objectid);
+                break;  
+            case "fanpage":
+                posts = this.postRepository.getListFanpagePost(List.of("fanpage||" + objectid));
+                break;
+            case "group":
+                posts = this.postRepository.getListGroupPost(List.of("group||" + objectid));
+                break;
+            default:
+                throw new UserException(EnumException.POST_NOT_FOUND);
+        }
+
+        List<Media> listMedia = new ArrayList<>();
+        for (Post post : posts) {
+            if (post.getMedia() != null) {
+                listMedia.addAll(post.getMedia());
+            }
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(listMedia)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getListPendingPostGroup(String groupId) {
+        // get list post of group
+        List<Post> posts = this.postRepository.getListGroupPendingPost(List.of("group||" + groupId));
         Map<String, Object> map = new HashMap<>();
 
         // check null

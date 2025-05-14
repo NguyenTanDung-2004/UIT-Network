@@ -52,6 +52,13 @@ public class GroupController {
         return groupService.seenMessage(groupid, authorizationHeader);
     }
 
+    @GetMapping("/listhome/{userid}")
+    public ResponseEntity getListGroupInHome(@PathVariable(name = "userid") String userid) {
+        return groupService.getListGroupInHome(userid);
+    }
+
+
+
     /*
      * this api is used to get list group of user
      * - groupid

@@ -26,7 +26,9 @@ public enum EnumResponse {
     GET_REQUESTJOINGROUP_SUCCESS("s_08_fanpagegroup", "Get request join group successfully!", HttpStatus.OK),
     ACCEPT_REQUESTJOINGROUP_SUCCESS("s_09_fanpagegroup", "Accept request join group successfully!", HttpStatus.OK),
     REMOVE_REQUESTJOINGROUP_SUCCESS("s_010_fanpagegroup", "Remove request join group successfully!", HttpStatus.OK),
-    REACT_FANPAGE_SUCCESS("s_011_fanpagegroup", "React fanpage successfully!", HttpStatus.OK);
+    REACT_FANPAGE_SUCCESS("s_011_fanpagegroup", "React fanpage successfully!", HttpStatus.OK), 
+    GET_GROUPS_SUCCESS("s_012_fanpagegroup", "Get groups successfully!", HttpStatus.OK),
+    SUCCESS("s_00_fanpagegroup", "Success!", HttpStatus.OK),;
 
     String code;
     String message;

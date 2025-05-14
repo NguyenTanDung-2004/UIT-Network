@@ -67,5 +67,27 @@ public interface UserRepository extends JpaRepository<User, String> {
         """, nativeQuery = true)
     List<RecommendationUser> getListUserByIds(@Param("userIds") List<String> userIds);
 
+    @Query(value = """
+        SELECT u.id, 
+            u.name, 
+            u.avturl, 
+            u.studentid, 
+            u.email, 
+            u.major, 
+            u.faculty,
+            COUNT(*) AS data
+        FROM user_hobby uh1
+        JOIN user_hobby uh2 
+            ON uh1.hobby_id = uh2.hobby_id
+        JOIN users u 
+            ON u.id = uh2.user_id
+        WHERE uh1.user_id = :userid
+        AND uh2.user_id != uh1.user_id
+        GROUP BY u.id, u.name, u.email
+        ORDER BY data DESC
+        LIMIT 10;
+    """, nativeQuery = true)
+    List<RecommendationUser> getListRecommendHobby(String userid);
+
 
 }

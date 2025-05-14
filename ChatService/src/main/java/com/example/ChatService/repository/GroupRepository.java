@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.example.ChatService.dto.ResponseListGroup;
 import com.example.ChatService.entity.Group;
+import com.example.ChatService.model.GroupChatUIHome;
 
 import feign.Param;
 
@@ -128,6 +129,35 @@ public interface GroupRepository extends JpaRepository<Group, String> {
                 AND g.status = 'ACTIVE'
         """, nativeQuery = true)
     List<Object[]> findListGroup(@Param("userId") String userId);
+
+    @Query(value = 
+    """
+        SELECT a.id, a.type, a.name, a.ownerid, a.status, a.createddate, a.modifieddate, a.avturl, ug.userid
+        FROM (
+            SELECT cg.* FROM chatgroup cg JOIN user_group ug 
+                ON cg.id = ug.groupid
+            WHERE ug.userid = :userid
+            AND cg.STATUS = 'ACTIVE' 
+                AND ug.status = 'ACTIVE'
+            ORDER BY cg.type
+        ) AS a
+        LEFT JOIN user_group ug on ug.groupid = a.id 
+        WHERE 
+            CASE 
+                WHEN a.type = 1 THEN
+                    CASE
+                        WHEN ug.userid = :userid THEN TRUE
+                        ELSE FALSE
+                    END 
+                WHEN a.type = 2 THEN 
+                    CASE 
+                        WHEN ug.userid = :userid THEN FALSE
+                        ELSE TRUE
+                    END
+                ELSE TRUE 
+            END
+    """, nativeQuery = true)
+    List<Object[]> findListGroupInHome(String userid);
 
     
     

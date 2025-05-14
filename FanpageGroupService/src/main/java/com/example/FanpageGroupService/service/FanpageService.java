@@ -165,4 +165,60 @@ public class FanpageService {
 
         return ResponseEntity.ok(list);
     }
+
+    public ResponseEntity getListFanpageNotExternal(String userId) {
+        List<Fanpage> list = this.fanpageRepository.getListFanpageNotExternal(userId);
+
+        if (list == null){
+            list = new ArrayList<>();
+        }
+
+         // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(list)
+                .enumResponse(EnumResponse.toJson(EnumResponse.REACT_FANPAGE_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity searchFanpage(String text) {
+        List<Fanpage> list = this.fanpageRepository.searchFanpage(text);
+
+        if (list == null){
+            list = new ArrayList<>();
+        }
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(list)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_GROUPS_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getFanpageInfo(String fanpageId) {
+        Fanpage fanpage = this.fanpageRepository.findById(fanpageId).orElseThrow(() -> new UserException(EnumException.FANPAGE_NOT_FOUND));
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(fanpage)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_GROUPS_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getNumberFollowers(String fanpageId) {
+        int numberFollowers = this.fanpageRepository.getNumberFollowers(fanpageId);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(numberFollowers)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_GROUPS_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
 }

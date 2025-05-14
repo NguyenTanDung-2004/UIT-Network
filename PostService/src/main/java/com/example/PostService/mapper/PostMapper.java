@@ -27,6 +27,12 @@ public class PostMapper implements Mapper {
         // create date
         Date date = new Date();
 
+        String statusgroup = "ACTIVE";
+
+        if (requestCreatePost.getPostTypeId() == 6 || requestCreatePost.getPostTypeId() == 7) {
+            statusgroup = "PENDING";
+        } 
+
         // convert
         return Post.builder()
                 .caption(requestCreatePost.getCaption())
@@ -34,6 +40,7 @@ public class PostMapper implements Mapper {
                 .postType(EnumPostType.toMap(EnumPostType.fromTypeId(requestCreatePost.getPostTypeId())))
                 .createdDate(date)
                 .updatedDate(date)
+                .statusgroup(statusgroup)
                 .parentId(createParentId(requestCreatePost.getPostTypeId(), requestCreatePost.getParentId()))
                 .build();
     }

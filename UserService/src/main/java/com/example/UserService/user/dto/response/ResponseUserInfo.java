@@ -39,6 +39,7 @@ public class ResponseUserInfo {
     Double latitude;
     Double longitude;
     String jsonSchedule;
+    String background;
 
     Set<Hobby> hobbies;
 }

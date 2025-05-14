@@ -19,4 +19,18 @@ public interface FanpageRepository extends JpaRepository<Fanpage, String> {
 
     @Query(value = "SELECT * FROM fanpage WHERE id IN (:ids)", nativeQuery = true)
     public List<Fanpage> getListFanpageInfos(String ids);
+
+    @Query(value = """
+            SELECT f.* 
+            FROM fanpage f JOIN user_like_fanpage uf 
+                    ON f.id = uf.fanpage_id
+            WHERE uf.user_id = :userId
+                                                """, nativeQuery = true)
+    public List<Fanpage> getListFanpageNotExternal(String userId);
+
+    @Query(value = "SELECT * FROM fanpage WHERE name LIKE %:text%", nativeQuery = true)
+    public List<Fanpage> searchFanpage(String text);
+
+    @Query(value = "SELECT COUNT(*) FROM user_like_fanpage WHERE fanpage_id = :fanpageId", nativeQuery = true)
+    public int getNumberFollowers(String fanpageId);
 }

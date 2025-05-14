@@ -1,4 +1,4 @@
-package com.example.FriendService.response;
+package com.example.NotifiService.response;
 
 import java.util.Map;
 
@@ -16,11 +16,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum EnumResponse {
-    REQUEST_TO_ADDFRIEND("s_01_friend", "Request to add friend successfully!", HttpStatus.OK),
-    CANCEL_REQUEST_ADDFRIEND("s_02_friend", "Cancel request to add friend successfully!", HttpStatus.OK),
-    ACCEPT_REQUEST_ADDFRIEND("s_03_friend", "Accept friend successfully!", HttpStatus.OK),
-    REMOVE_REQUEST_ADDFRIEND("s_04_friend", "Remove friend successfully!", HttpStatus.OK),
-    SUCCESS("s_00", "Success!", HttpStatus.OK),;
+    SUCCESS("n1_success", "Success", HttpStatus.OK),;
 
     String code;
     String message;

@@ -69,4 +69,15 @@ public class HobbyService {
             }
         });
     }
+
+    public void deleteUserHobbies(String id) {
+        String sql = "DELETE FROM user_hobby WHERE user_id = ?";
+
+        entityManager.unwrap(Session.class).doWork(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, id);
+                ps.executeUpdate();
+            }
+        });
+    }
 }

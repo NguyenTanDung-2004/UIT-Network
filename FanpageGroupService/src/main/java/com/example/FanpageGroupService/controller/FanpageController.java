@@ -45,6 +45,26 @@ public class FanpageController {
         return fanpageService.reactFanpage(authorizationHeader, fanpageId);
     }
 
+    @GetMapping("/notexternal/list/{userId}")
+    public ResponseEntity getListFanpageNotExternal(@PathVariable(name = "userId") String userId) {
+        return fanpageService.getListFanpageNotExternal(userId);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity searchFanpage(@RequestParam(name = "text") String text) {
+        return fanpageService.searchFanpage(text);
+    }
+
+    @GetMapping("/{fanpageId}")
+    public ResponseEntity getFanpageInfo(@PathVariable(name = "fanpageId") String fanpageId) {
+        return fanpageService.getFanpageInfo(fanpageId);
+    }
+
+    @GetMapping("/number-followers/{fanpageId}")
+    public ResponseEntity getNumberFollowers(@PathVariable(name = "fanpageId") String fanpageId) {
+        return fanpageService.getNumberFollowers(fanpageId);
+    }
+
     /**
      * External APIs
      */
