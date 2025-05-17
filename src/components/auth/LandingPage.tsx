@@ -87,7 +87,7 @@ const LandingPage = () => {
 
       {/* Main Content */}
       <main className="grid grid-cols-1 md:grid-cols-2 gap-8 px-8 md:px-16 lg:px-32 items-center">
-        <div className="text-center md:text-left">
+        <div className="text-center md:text-left z-10">
           <h1 className="text-5xl md:text-6xl font-extrabold text-[#1D2939] mb-4 leading-tight mt-10 md:leading-relaxed lg:leading-snug">
             Study Together <br /> Succeed Together
           </h1>
