@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import LeftBar from "@/components/home/layout/LeftBar";
 import RightBar from "@/components/home/layout/RightBar";
+import { ChatItem } from "@/components/home/layout/RightBar";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,54 +20,84 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
     { id: "ban-hoc-tap", name: "Ban học tập khoa CNPM" },
   ];
 
-  const communityChats = [
-    { id: "rubik-club", name: "Rubik Club" },
-    { id: "taekwondo-judo", name: "Teakwondo & Judo" },
-    { id: "ban-hoc-tap", name: "Ban học tập khoa CNPM" },
-  ];
-
-  const groupChats = [
-    { id: "ktpm2022-1", name: "KTPM2022.1" },
-    { id: "se101", name: "SE101" },
-    { id: "it001", name: "IT001" },
-    { id: "learning-english", name: "Learning English" },
-  ];
-
-  const onlineContacts = [
+  const chatItems: ChatItem[] = [
     {
-      id: "user1",
+      id: "1",
       name: "Nguyễn Tấn Dũng",
-      status: "online" as "online" | "offline",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 2,
+      status: "online",
     },
     {
-      id: "user2",
-      name: "Trần Nguyễn Hồng Quân",
-      status: "online" as "online" | "offline",
+      id: "2",
+      name: "Phan Giang",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 2,
+      status: "offline",
     },
     {
-      id: "user3",
-      name: "Kim Nhung",
-      status: "online" as "online" | "offline",
-    },
-    { id: "user4", name: "Yến Trần", status: "online" as "online" | "offline" },
-    {
-      id: "user5",
-      name: "Nguyễn Tấn Dũng",
-      status: "online" as "online" | "offline",
+      id: "3",
+      name: "Yến Trần",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 2,
+      status: "offline",
     },
     {
-      id: "user6",
-      name: "Trần Nguyễn Hồng Quân",
-      status: "online" as "online" | "offline",
+      id: "4",
+      name: "Group Học giải tích",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 1,
     },
     {
-      id: "user7",
-      name: "Kim Nhung",
-      status: "online" as "online" | "offline",
+      id: "5",
+      name: "Group Học giải tích",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 1,
     },
-    { id: "user8", name: "Yến Trần", status: "online" as "online" | "offline" },
+    {
+      id: "6",
+      name: "Group Học giải tích",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 1,
+    },
+    {
+      id: "7",
+      name: "Group Học giải tích",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 1,
+    },
+    {
+      id: "8",
+      name: "Nguyễn  Văn A",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 2,
+      status: "online",
+    },
+    {
+      id: "9",
+      name: "Phan B",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 2,
+      status: "offline",
+    },
+    {
+      id: "10",
+      name: "Yến Trần 123",
+      avatar:
+        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      type: 2,
+      status: "offline",
+    },
   ];
-
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -146,11 +177,7 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
               showRightSidebar ? "translate-x-0" : "translate-x-full"
             } transition-transform duration-300 w-72 flex-shrink-0 lg:translate-x-0 absolute right-0 md:relative z-20 bg-white h-full`}
           >
-            <RightBar
-              communityChats={communityChats}
-              groupChats={groupChats}
-              onlineContacts={onlineContacts}
-            />
+            <RightBar chats={chatItems} />
           </div>
         )}
       </div>
