@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
-import Post from "@/components/post/Post";
 import PeopleCard from "@/components/search/PeopleCard";
 import PageCard from "@/components/search/PageCard";
 import GroupCard from "@/components/search/GroupCard";
@@ -9,55 +8,6 @@ import { ClipLoader } from "react-spinners";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
-
-interface AuthorInfo {
-  id: string;
-  name: string;
-  avatar: string;
-}
-
-interface MediaItem {
-  url: string;
-  type: "image" | "video";
-}
-
-interface GroupInfo {
-  id: string;
-  name: string;
-  isJoined: boolean;
-}
-
-interface PageInfo {
-  isFollowing: boolean;
-}
-
-interface PostOriginPage {
-  type: "page";
-  pageInfo: PageInfo;
-}
-
-interface PostOriginGroup {
-  type: "group";
-  groupInfo: GroupInfo;
-}
-
-type PostOrigin = PostOriginPage | PostOriginGroup;
-
-interface PostDataType {
-  id: string;
-  type: "post";
-  author: AuthorInfo;
-  origin?: PostOrigin;
-  content: string;
-  fullContent?: string;
-  date: string;
-  time: string;
-  mediaList?: MediaItem[];
-  likes: number;
-  comments: number;
-  shares: number;
-  file?: { name: string; size: number; url: string; type: string };
-}
 
 interface PersonData {
   id: string;
@@ -87,7 +37,7 @@ interface GroupData {
   isJoined: boolean;
 }
 
-type SearchResultItem = PostDataType | PersonData | PageData | GroupData;
+type SearchResultItem = PersonData | PageData | GroupData;
 
 interface SearchResultsPageProps {
   params: Promise<{ type: string }>;
@@ -116,116 +66,6 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         let sampleData: SearchResultItem[] = [];
-
-        if (type === "posts" || type === "top") {
-          sampleData.push(
-            {
-              id: `sample-post-1`,
-              type: "post",
-              author: {
-                id: "user-sample-1",
-                name: `Sample User`,
-                avatar: DEFAULT_AVATAR,
-              },
-              origin: undefined,
-              content:
-                "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and ...",
-              fullContent:
-                "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and tourism. With a population of about 97 million people, Vietnam is one of the most populous countries in the world. The country's cuisine is renowned globally for its fresh ingredients, vibrant flavors, and healthy cooking techniques.",
-              date: "Fri, February 7, 2025",
-              time: "10:56 AM",
-              mediaList: [
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661303/cld-sample-2.jpg",
-                  type: "image",
-                },
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-              ],
-              likes: 293,
-              comments: 18,
-              shares: 10,
-            },
-            {
-              id: `sample-post-page-1`,
-              type: "post",
-              author: {
-                id: "pageJavaDev",
-                name: "CLB Java Developer",
-                avatar: DEFAULT_AVATAR,
-              },
-              origin: {
-                type: "page",
-                pageInfo: {
-                  isFollowing: false,
-                },
-              },
-              content: "Exciting news about our upcoming Java workshop!",
-              date: "Thu, February 6, 2025",
-              time: "02:30 PM",
-              mediaList: [
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-              ],
-              likes: 120,
-              comments: 15,
-              shares: 8,
-            },
-            {
-              id: `sample-post-group-1`,
-              type: "post",
-              author: {
-                id: "userTanDung",
-                name: "Nguyễn Tấn Dũng",
-                avatar: DEFAULT_AVATAR,
-              },
-              origin: {
-                type: "group",
-                groupInfo: {
-                  id: "groupUITK22",
-                  name: "UIT K22",
-                  isJoined: true,
-                },
-              },
-              content: "Anyone have notes for the last Algorithms lecture?",
-              date: "Wed, February 5, 2025",
-              time: "09:00 AM",
-              mediaList: [
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-              ],
-              likes: 30,
-              comments: 5,
-              shares: 2,
-            }
-          );
-        }
 
         if (type === "people" || type === "top") {
           sampleData.push(
@@ -299,7 +139,6 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
 
         if (type !== "top") {
           sampleData = sampleData.filter((item) => {
-            if (type === "posts") return item.type === "post";
             if (type === "people") return item.type === "people";
             if (type === "pages") return item.type === "page";
             if (type === "groups") return item.type === "group";
@@ -353,8 +192,6 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
       <div className="space-y-5">
         {results.map((result) => {
           switch (result.type) {
-            case "post":
-              return <Post key={result.id} post={result as PostDataType} />;
             case "people":
               return (
                 <PeopleCard key={result.id} person={result as PersonData} />
