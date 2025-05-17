@@ -32,7 +32,12 @@ const ChatLeftBar: React.FC<ChatLeftBarProps> = ({ chats, activeChatId }) => {
 
   return (
     <div className="w-80 md:w-96 h-screen flex flex-col bg-white dark:bg-gray-800  border-r border-gray-200 dark:border-gray-700 flex-shrink-0 ">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div
+        className="p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer"
+        onClick={() => {
+          router.push("/home");
+        }}
+      >
         <Image
           src="/auth/logo text.png"
           alt="Study Buddy Logo"

@@ -42,7 +42,6 @@ const getMockFollowersData = (
     "pending_received",
     "friend",
     "pending_sent",
-    "not_friend",
   ];
   const mockFollowers: Follower[] = Array.from({ length: count }).map(
     (_, i) => ({

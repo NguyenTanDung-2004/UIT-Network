@@ -1,12 +1,14 @@
 import Image from "next/image";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface LoginModalProps {
   onClose: () => void;
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -150,6 +152,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
           </div>
 
           <button
+            onClick={() => {
+              router.push("/home");
+            }}
             className="bg-[#FF70D9] hover:bg-opacity-80 text-white font-medium py-3 px-4 rounded-md w-full transition duration-200"
             type="button"
           >

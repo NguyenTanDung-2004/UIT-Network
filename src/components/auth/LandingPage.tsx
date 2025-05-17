@@ -18,17 +18,17 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-[#FFF8FD] relative overflow-hidden ">
       {/* Decorative Shapes */}
-      <div className="absolute -bottom-[35%] -left-[20px] w-1/3 h-48 transform rotate-[110deg]">
+      <div className="absolute -bottom-[50%] -left-[45px] w-1/3  transform rotate-[125deg]">
         <Image
           src="/auth/vector.png"
           alt="Vector Shape"
-          width={500}
-          height={300}
+          width={200}
+          height={100}
           style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />
       </div>
 
-      <div className="absolute -top-[23%] -right-[200px] w-1/4 h-64 ">
+      <div className="absolute -right-[244px] w-1/4 h-64 ">
         <Image
           src="/auth/vector.png"
           alt="Vector Shape"
