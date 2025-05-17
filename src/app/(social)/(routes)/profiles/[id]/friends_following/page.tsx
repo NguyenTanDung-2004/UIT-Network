@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, use } from "react";
-import { useParams } from "next/navigation";
 
 import FriendsNavigation from "@/components/profile/friends/FriendsNavigation";
 import SearchAndHeader from "@/components/profile/friends/SearchAndHeader";
@@ -34,22 +33,9 @@ const getMockFollowingData = (
   id: string
 ): {
   following: FollowingItem[];
-  counts: { all: number; following: number; followers: number };
+  counts: { all: number; following: number; joined: number };
 } => {
-  const userCount = 10;
-  const pageCount = 5;
-  const totalCount = userCount + pageCount;
-
-  const mockFollowingUsers: FollowingItem[] = Array.from({
-    length: userCount,
-  }).map((_, i) => ({
-    type: "user",
-    id: `following-user-${id}-${i}`,
-    name: `Người Đang Theo Dõi ${i + 1}`,
-    avatar: SAMPLE_AVATARS[i % (SAMPLE_AVATARS.length - 1)], // Avoid page avatar for users
-    profileUrl: `/profiles/following-user-${id}-${i}`,
-  }));
-
+  const pageCount = 5; // Chỉ đếm số page
   const mockFollowingPages: FollowingItem[] = Array.from({
     length: pageCount,
   }).map((_, i) => ({
@@ -60,14 +46,13 @@ const getMockFollowingData = (
     pageUrl: `/pages/following-page-${id}-${i}`,
   }));
 
-  // Combine and shuffle for realism
-  const combined = [...mockFollowingUsers, ...mockFollowingPages].sort(
-    () => Math.random() - 0.5
-  );
-
   return {
-    following: combined,
-    counts: { all: 10, following: totalCount, followers: 5 },
+    following: mockFollowingPages,
+    counts: {
+      all: 10, // Placeholder: có thể là tổng số bạn bè hoặc liên quan khác
+      following: pageCount, // Chỉ đếm số page
+      joined: 5, // Placeholder: đếm số group đang join
+    },
   };
 };
 
@@ -97,13 +82,13 @@ const ProfileFollowingPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm   md:p-6  mb-6 md:mb-8">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm md:p-6 mb-6 md:mb-8 min-h-[400px]">
       <SearchAndHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
       <FriendsNavigation
-        activeTab="following" // Đặt activeTab là 'following'
+        activeTab="following"
         profileId={profileId}
         counts={followingData.counts}
       />
@@ -112,7 +97,7 @@ const ProfileFollowingPage: React.FC<{ params: Promise<{ id: string }> }> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filteredFollowing.map((item) => (
             <FollowingCard
-              key={`${item.type}-${item.id}`} // Key cần unique cho cả user và page
+              key={`${item.type}-${item.id}`}
               item={item}
               profileId={profileId}
               isOwnProfile={isOwnProfile}
@@ -123,7 +108,7 @@ const ProfileFollowingPage: React.FC<{ params: Promise<{ id: string }> }> = ({
         <div className="text-center py-12 text-gray-500 dark:text-gray-400">
           {searchQuery
             ? "Nothing found matching your search."
-            : "Not following anyone or any pages yet."}
+            : "Not following any pages yet."}
         </div>
       )}
     </div>

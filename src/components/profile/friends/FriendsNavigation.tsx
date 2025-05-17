@@ -2,12 +2,12 @@ import React from "react";
 import Link from "next/link";
 
 interface FriendsNavigationProps {
-  activeTab: "all" | "following" | "followers";
+  activeTab: "all" | "following" | "joined";
   profileId: string;
   counts: {
     all: number;
     following: number;
-    followers: number;
+    joined: number;
   };
 }
 
@@ -30,10 +30,10 @@ const FriendsNavigation: React.FC<FriendsNavigationProps> = ({
       count: counts.following,
     },
     {
-      id: "followers",
-      name: "Followers",
-      href: `/profiles/${profileId}/friends_follower`,
-      count: counts.followers,
+      id: "joined",
+      name: "Joined",
+      href: `/profiles/${profileId}/friends_joined`,
+      count: counts.joined,
     },
   ];
 
@@ -58,12 +58,12 @@ const FriendsNavigation: React.FC<FriendsNavigationProps> = ({
           ))}
         </nav>
         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-          {totalCount}{" "}
+          {totalCount}
           {activeTab === "all"
-            ? "people"
+            ? " people"
             : activeTab === "following"
-            ? "following"
-            : "followers"}
+            ? " following"
+            : " joined"}
         </span>
       </div>
     </div>

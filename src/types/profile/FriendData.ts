@@ -37,4 +37,12 @@ export interface FollowingPage {
   pageUrl: string;
 }
 
+export interface JoinedGroup {
+  type: "group";
+  id: string;
+  name: string;
+  avatar: string;
+  groupUrl: string;
+}
+
 export type FollowingItem = FollowingUser | FollowingPage;

@@ -28,7 +28,7 @@ const getMockFriendsData = (
   id: string
 ): {
   friends: Friend[];
-  counts: { all: number; following: number; followers: number };
+  counts: { all: number; following: number; joined: number };
 } => {
   const count = 10;
   const mockFriends: Friend[] = Array.from({ length: count }).map((_, i) => ({
@@ -41,7 +41,7 @@ const getMockFriendsData = (
   }));
   return {
     friends: mockFriends,
-    counts: { all: count, following: 15, followers: 5 },
+    counts: { all: count, following: 15, joined: 5 },
   };
 };
 
@@ -80,7 +80,7 @@ const ProfileFriendsPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm   md:p-6  mb-6 md:mb-8">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm   md:p-6  mb-6 md:mb-8 min-h-[400px]">
       <SearchAndHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
