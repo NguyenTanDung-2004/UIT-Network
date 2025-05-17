@@ -19,149 +19,149 @@ const MAX_SEARCH_HISTORY = 10;
 const SEARCH_HISTORY_KEY = "STUDY_BUDDY_SEARCH_HISTORY";
 
 // Data Chat & Noti
-const dummyNotifications = [
-  {
-    id: "n1",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    content: (
-      <>
-        <span className="font-semibold">Tấn Dũng</span> send you a friend
-        request
-      </>
-    ),
-    timestamp: new Date(),
-    read: false,
-  },
-  {
-    id: "n2",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    content: (
-      <>
-        <span className="font-semibold">Tấn Dũng</span> mentioned you in a
-        comment
-      </>
-    ),
-    timestamp: new Date(Date.now() - 20 * 60 * 1000),
-    read: false,
-  },
-  {
-    id: "n3",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    content: (
-      <>
-        <span className="font-semibold">ABC and 10 others</span> liked your post
-      </>
-    ),
-    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: "n4",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    content: (
-      <>
-        UIT K22: “Chào mọi người, hello mọi người. Đã hết tết rồi, chúc mọi
-        người vui vẻ và sẵn sàng bắt ...”
-      </>
-    ),
-    timestamp: new Date(2025, 1, 5),
-    read: true,
-  }, // Feb 5, 2025
-  {
-    id: "n5",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    content: (
-      <>
-        UIT K22: “Chào mọi người, hello mọi người. Đã hết tết rồi, chúc mọi
-        người vui vẻ và sẵn sàng bắt ...”
-      </>
-    ),
-    timestamp: new Date(2025, 1, 5),
-    read: true,
-  },
-  {
-    id: "n6",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    content: (
-      <>
-        UIT K22: “Chào mọi người, hello mọi người. Đã hết tết rồi, chúc mọi
-        người vui vẻ và sẵn sàng bắt ...”
-      </>
-    ),
-    timestamp: new Date(2025, 1, 5),
-    read: true,
-  },
-];
+// const dummyNotifications = [
+//   {
+//     id: "n1",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     content: (
+//       <>
+//         <span className="font-semibold">Tấn Dũng</span> send you a friend
+//         request
+//       </>
+//     ),
+//     timestamp: new Date(),
+//     read: false,
+//   },
+//   {
+//     id: "n2",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     content: (
+//       <>
+//         <span className="font-semibold">Tấn Dũng</span> mentioned you in a
+//         comment
+//       </>
+//     ),
+//     timestamp: new Date(Date.now() - 20 * 60 * 1000),
+//     read: false,
+//   },
+//   {
+//     id: "n3",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     content: (
+//       <>
+//         <span className="font-semibold">ABC and 10 others</span> liked your post
+//       </>
+//     ),
+//     timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
+//     read: true,
+//   },
+//   {
+//     id: "n4",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     content: (
+//       <>
+//         UIT K22: “Chào mọi người, hello mọi người. Đã hết tết rồi, chúc mọi
+//         người vui vẻ và sẵn sàng bắt ...”
+//       </>
+//     ),
+//     timestamp: new Date(2025, 1, 5),
+//     read: true,
+//   }, // Feb 5, 2025
+//   {
+//     id: "n5",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     content: (
+//       <>
+//         UIT K22: “Chào mọi người, hello mọi người. Đã hết tết rồi, chúc mọi
+//         người vui vẻ và sẵn sàng bắt ...”
+//       </>
+//     ),
+//     timestamp: new Date(2025, 1, 5),
+//     read: true,
+//   },
+//   {
+//     id: "n6",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     content: (
+//       <>
+//         UIT K22: “Chào mọi người, hello mọi người. Đã hết tết rồi, chúc mọi
+//         người vui vẻ và sẵn sàng bắt ...”
+//       </>
+//     ),
+//     timestamp: new Date(2025, 1, 5),
+//     read: true,
+//   },
+// ];
 
-const dummyMessages = [
-  {
-    id: "m1",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    name: "Nguyễn Tấn Dũng",
-    lastMessage: "Sent a photo.",
-    timestamp: new Date(),
-    read: false,
-  },
-  {
-    id: "m2",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    name: "Group UIT K2022",
-    lastMessage: "You sent a file.",
-    timestamp: new Date(Date.now() - 10 * 60 * 1000),
-    read: false,
-  },
-  {
-    id: "m3",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    name: "Thắm Trần",
-    lastMessage: "Happy birthday, chúc bạn năm mới vui ...",
-    timestamp: new Date(Date.now() - 10 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: "m4",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    name: "Nguyễn Tấn Dũng",
-    lastMessage: "Sent a photo.",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: "m5",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    name: "Group UIT K2022",
-    lastMessage: "You sent a file.",
-    timestamp: new Date(2025, 1, 5),
-    read: true,
-  }, // Feb 5, 2025
-  {
-    id: "m6",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-    name: "Thắm Trần",
-    lastMessage: "Happy birthday, chúc bạn năm mới vui ...",
-    timestamp: new Date(2021, 11, 30),
-    read: true,
-  }, // Dec 30, 2021
-];
+// const dummyMessages = [
+//   {
+//     id: "m1",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     name: "Nguyễn Tấn Dũng",
+//     lastMessage: "Sent a photo.",
+//     timestamp: new Date(),
+//     read: false,
+//   },
+//   {
+//     id: "m2",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     name: "Group UIT K2022",
+//     lastMessage: "You sent a file.",
+//     timestamp: new Date(Date.now() - 10 * 60 * 1000),
+//     read: false,
+//   },
+//   {
+//     id: "m3",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     name: "Thắm Trần",
+//     lastMessage: "Happy birthday, chúc bạn năm mới vui ...",
+//     timestamp: new Date(Date.now() - 10 * 60 * 1000),
+//     read: true,
+//   },
+//   {
+//     id: "m4",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     name: "Nguyễn Tấn Dũng",
+//     lastMessage: "Sent a photo.",
+//     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+//     read: true,
+//   },
+//   {
+//     id: "m5",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     name: "Group UIT K2022",
+//     lastMessage: "You sent a file.",
+//     timestamp: new Date(2025, 1, 5),
+//     read: true,
+//   }, // Feb 5, 2025
+//   {
+//     id: "m6",
+//     avatar:
+//       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+//     name: "Thắm Trần",
+//     lastMessage: "Happy birthday, chúc bạn năm mới vui ...",
+//     timestamp: new Date(2021, 11, 30),
+//     read: true,
+//   }, // Dec 30, 2021
+// ];
 
 // End - Data Chat & Noti
 const NavBar: React.FC<NavBarProps> = ({ user }) => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [showNotificationsDropdown, setShowNotificationsDropdown] =
-    useState(false);
-  const [showMessagesDropdown, setShowMessagesDropdown] = useState(false);
+  // const [showNotificationsDropdown, setShowNotificationsDropdown] =
+  //   useState(false);
+  // const [showMessagesDropdown, setShowMessagesDropdown] = useState(false);
 
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationsDropdownRef = useRef<HTMLDivElement>(null);
@@ -193,8 +193,8 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
 
   const closeAllDropdowns = () => {
     setShowProfileDropdown(false);
-    setShowNotificationsDropdown(false);
-    setShowMessagesDropdown(false);
+    // setShowNotificationsDropdown(false);
+    // setShowMessagesDropdown(false);
     setShowSearchSuggestions(false);
   };
 
@@ -206,17 +206,17 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
     }
   };
 
-  const toggleNotificationsDropdown = () => {
-    const newState = !showNotificationsDropdown;
-    closeAllDropdowns();
-    setShowNotificationsDropdown(newState);
-  };
+  // const toggleNotificationsDropdown = () => {
+  //   const newState = !showNotificationsDropdown;
+  //   closeAllDropdowns();
+  //   setShowNotificationsDropdown(newState);
+  // };
 
-  const toggleMessagesDropdown = () => {
-    const newState = !showMessagesDropdown;
-    closeAllDropdowns();
-    setShowMessagesDropdown(newState);
-  };
+  // const toggleMessagesDropdown = () => {
+  //   const newState = !showMessagesDropdown;
+  //   closeAllDropdowns();
+  //   setShowMessagesDropdown(newState);
+  // };
 
   const handleClickOutside = (event: MouseEvent) => {
     const target = event.target as Node;
@@ -319,10 +319,10 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
     closeAllDropdowns();
     router.push("/chat");
   };
-  const unreadNotificationsCount = dummyNotifications.filter(
-    (n) => !n.read
-  ).length;
-  const unreadMessagesCount = dummyMessages.filter((m) => !m.read).length;
+  // const unreadNotificationsCount = dummyNotifications.filter(
+  //   (n) => !n.read
+  // ).length;
+  // const unreadMessagesCount = dummyMessages.filter((m) => !m.read).length;
 
   return (
     <div className="flex items-center justify-between px-10 py-2.5 bg-white border-b dark:bg-gray-800 dark:border-gray-700">
@@ -397,7 +397,11 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
         <div className="relative" ref={messagesDropdownRef}>
           <button
             ref={messagesIconRef}
-            onClick={toggleMessagesDropdown}
+            // onClick={toggleMessagesDropdown}
+            onClick={() => {
+              closeAllDropdowns();
+              router.push("/chat");
+            }}
             className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
             aria-label="Messages"
           >
@@ -405,26 +409,33 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
               className="w-5 h-5 text-gray-600 dark:text-gray-300"
               strokeWidth={2}
             />
-            {unreadMessagesCount > 0 && (
+            {/* {unreadMessagesCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center border-2 border-white dark:border-gray-800">
                 {unreadMessagesCount}
               </span>
-            )}
+            )} */}
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center border-2 border-white dark:border-gray-800">
+              !
+            </span>
           </button>
-          <MessagesDropdown
+          {/* <MessagesDropdown
             isOpen={showMessagesDropdown}
             onClose={closeAllDropdowns}
             onExpand={handleExpandMessages}
             messages={dummyMessages}
             newCount={unreadMessagesCount}
-          />
+          /> */}
         </div>
 
         {/* Notifications Icon */}
         <div className="relative" ref={notificationsDropdownRef}>
           <button
             ref={notificationsIconRef}
-            onClick={toggleNotificationsDropdown}
+            // onClick={toggleNotificationsDropdown}
+            onClick={() => {
+              closeAllDropdowns();
+              router.push("/notifications");
+            }}
             className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
             aria-label="Notifications"
           >
@@ -432,20 +443,23 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
               className="w-5 h-5 text-gray-600 dark:text-gray-300"
               strokeWidth={2}
             />
-            {unreadNotificationsCount > 0 && (
+            {/* {unreadNotificationsCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center border-2 border-white dark:border-gray-800">
                 {unreadNotificationsCount}
               </span>
-            )}
+            )} */}
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center border-2 border-white dark:border-gray-800">
+              !
+            </span>
           </button>
-          <NotificationsDropdown
+          {/* <NotificationsDropdown
             isOpen={showNotificationsDropdown}
             onClose={closeAllDropdowns}
             onViewAll={handleViewAllNotifications}
             onClearAll={handleClearAllNotifications}
             notifications={dummyNotifications}
             newCount={unreadNotificationsCount}
-          />
+          /> */}
         </div>
 
         {/* Profile */}
