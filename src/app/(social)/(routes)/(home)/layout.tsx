@@ -14,11 +14,11 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Sample data for testing
-  const groups = [
-    { id: "rubik-club", name: "Rubik Club" },
-    { id: "taekwondo-judo", name: "Taekwondo & Judo" },
-    { id: "ban-hoc-tap", name: "Ban học tập khoa CNPM" },
-  ];
+  // const groups = [
+  //   { id: "rubik-club", name: "Rubik Club" },
+  //   { id: "taekwondo-judo", name: "Taekwondo & Judo" },
+  //   { id: "ban-hoc-tap", name: "Ban học tập khoa CNPM" },
+  // ];
 
   const chatItems: ChatItem[] = [
     {
@@ -162,7 +162,7 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
             showLeftSidebar ? "translate-x-0" : "-translate-x-full"
           } transition-transform duration-300 w-64 flex-shrink-0 md:translate-x-0 absolute md:relative z-20 bg-white h-full`}
         >
-          <LeftBar groups={groups} />
+          <LeftBar />
         </div>
 
         {/* Main Content */}

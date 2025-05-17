@@ -268,7 +268,7 @@ const HomePage = () => {
         ))}
       </div>
 
-      <div className="hidden lg:block lg:w-72 ml-4 ">
+      {/* <div className="hidden lg:block lg:w-72 ml-4 ">
         <PeopleToConnectWidget
           title="Who to connect"
           people={peopleToConnect}
@@ -280,7 +280,7 @@ const HomePage = () => {
           groups={groupsToJoin}
           onJoin={handleJoinGroup}
         />
-      </div>
+      </div> */}
 
       {/* Show CreatePostModal */}
       {isModalOpen && (
