@@ -6,6 +6,13 @@ export interface Friend {
   profileUrl: string;
 }
 
+export interface Person {
+  id: string;
+  name: string;
+  avatar: string;
+  profileUrl: string;
+  friendshipStatus: FriendshipStatus;
+}
 export type FriendshipStatus =
   | "friend"
   | "not_friend"

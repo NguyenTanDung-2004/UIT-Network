@@ -12,10 +12,10 @@ import {
 } from "lucide-react";
 
 const mainSidebarItems = [
-  { name: "All", href: "/connect", icon: Earth },
-  { name: "People", href: "/connect/peoples", icon: Users },
-  { name: "Pages", href: "/connect/pages", icon: Landmark },
-  { name: "Groups", href: "/connect/groups", icon: Building },
+  { name: "All", href: "/recommend", icon: Earth },
+  { name: "People", href: "/recommend/peoples", icon: Users },
+  { name: "Pages", href: "/recommend/pages", icon: Landmark },
+  { name: "Groups", href: "/recommend/groups", icon: Building },
 ];
 
 const peopleFilters = [
@@ -105,7 +105,7 @@ export default function ConnectSidebar() {
       }
     });
 
-    // Chỉ push khi pathname là /connect/peoples (tab People)
+    // Chỉ push khi pathname là /recommend/peoples (tab People)
     if (currentType === "peoples") {
       const queryString = currentParams.toString();
       router.push(`${pathname}${queryString ? `?${queryString}` : ""}`, {

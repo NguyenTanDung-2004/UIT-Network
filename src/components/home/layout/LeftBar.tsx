@@ -36,10 +36,10 @@ const LeftBar: React.FC = () => {
       href: "/friends",
     },
     {
-      id: "connect",
+      id: "recommend",
       icon: <i className="fas fa-globe"></i>,
-      label: "Connect",
-      href: "/connect",
+      label: "Recommend",
+      href: "/recommend",
     },
     {
       id: "notifications",
