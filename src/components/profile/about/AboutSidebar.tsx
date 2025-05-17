@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { User, Phone, Heart, Briefcase } from "lucide-react";
+import { User, Phone, Heart, Briefcase, Calendar } from "lucide-react";
 
 const sidebarItems = [
   { id: "overview", name: "Overview", icon: User },
@@ -23,6 +23,12 @@ const sidebarItems = [
     name: "Education and Work",
     icon: Briefcase,
     hrefSuffix: "education",
+  },
+  {
+    id: "schedule",
+    name: "Schedule",
+    icon: Calendar,
+    hrefSuffix: "schedule",
   },
 ];
 

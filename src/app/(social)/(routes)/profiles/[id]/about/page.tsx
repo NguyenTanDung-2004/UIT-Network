@@ -9,6 +9,7 @@ import OverviewContent from "@/components/profile/about/OverviewContent";
 import ContactInfoContent from "@/components/profile/about/ContactInfoContent";
 import HobbiesContent from "@/components/profile/about/HobbiesContent";
 import EducationContent from "@/components/profile/about/EducationContent";
+import ScheduleContent from "@/components/profile/about/ScheduleContent";
 
 import { ProfileHeaderData } from "@/types/profile/ProfileData";
 import { ProfileAboutData } from "@/types/profile/AboutData";
@@ -146,6 +147,43 @@ async function fetchProfileAboutData(
           ? [{ id: "h1", name: "Some High School", duration: "2017-2020" }]
           : [],
       },
+      schedule: {
+        monday: [
+          { from: 6.0, to: 8.0 },
+          { from: 13.0, to: 15.0 },
+          { from: 18.0, to: 20.0 },
+        ],
+        tuesday: [
+          { from: 9.5, to: 11.0 },
+          { from: 14.0, to: 16.0 },
+          { from: 19.0, to: 21.0 },
+        ],
+        wednesday: [
+          { from: 7.5, to: 9.0 },
+          { from: 12.0, to: 14.5 },
+          { from: 17.5, to: 20.0 },
+        ],
+        thursday: [
+          { from: 8.0, to: 9.0 },
+          { from: 13.5, to: 15.0 },
+          { from: 20.0, to: 22.0 },
+        ],
+        friday: [
+          { from: 10.0, to: 12.0 },
+          { from: 14.0, to: 15.5 },
+          { from: 19.0, to: 21.0 },
+        ],
+        saturday: [
+          { from: 9.0, to: 11.0 },
+          { from: 15.0, to: 17.0 },
+          { from: 18.0, to: 20.0 },
+        ],
+        sunday: [
+          { from: 7.0, to: 9.0 },
+          { from: 13.0, to: 15.0 },
+          { from: 20.0, to: 21.5 },
+        ],
+      },
     };
     return data;
   } catch (error) {
@@ -223,6 +261,14 @@ const ProfileAboutPageContent: React.FC<{ profileId: string }> = ({
         return (
           <EducationContent
             data={aboutData.workAndEducation}
+            isOwnProfile={isOwnProfile}
+          />
+        );
+
+      case "schedule":
+        return (
+          <ScheduleContent
+            data={aboutData.schedule ?? {}}
             isOwnProfile={isOwnProfile}
           />
         );

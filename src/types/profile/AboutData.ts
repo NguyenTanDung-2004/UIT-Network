@@ -32,4 +32,13 @@ export interface ProfileAboutData {
     colleges: { id: string; name: string; degree: string; duration: string }[];
     highSchools: { id: string; name: string; duration: string }[];
   };
+  schedule?: {
+    monday: { from: number; to: number }[];
+    tuesday: { from: number; to: number }[];
+    wednesday: { from: number; to: number }[];
+    thursday: { from: number; to: number }[];
+    friday: { from: number; to: number }[];
+    saturday: { from: number; to: number }[];
+    sunday: { from: number; to: number }[];
+  };
 }
