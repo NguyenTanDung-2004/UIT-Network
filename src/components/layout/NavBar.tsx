@@ -529,18 +529,11 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
                   Setting
                 </Link>
                 <Link
-                  href="/privacy"
-                  className=" px-6 py-2 text-gray-800 hover:bg-gray-100 transition-colors duration-200 flex items-center dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  <i className="fas fa-file-shield mr-3"></i>
-                  Privacy
-                </Link>
-                <Link
                   href="/help"
                   className=" px-6 py-2 text-gray-800 hover:bg-gray-100 transition-colors duration-200 flex items-center dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   <i className="fas fa-question-circle mr-3"></i>
-                  Help
+                  Help & Support
                 </Link>
               </div>
 

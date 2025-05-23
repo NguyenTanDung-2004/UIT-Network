@@ -79,7 +79,7 @@ const RecommendPage: React.FC = () => {
   if (!isValidType) {
     return (
       <div className="w-full h-full flex items-center justify-center min-h-screen bg-[#f3f3f3] dark:bg-gray-900 p-4 sm:p-6 md:p-8">
-        <div className=" dark:bg-gray-800 rounded-lg shadow-sm px-6 sm:px-8 md:px-10 w-full max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">
+        <div className="  rounded-lg shadow-sm px-6 sm:px-8 md:px-10 w-full max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">
           <h2 className="-mt-[80px] text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-6 sm:mb-8 text-center">
             Choose Recommendation Type
           </h2>

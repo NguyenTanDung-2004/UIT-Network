@@ -48,10 +48,10 @@ const LeftBar: React.FC = () => {
       href: "/notifications",
     },
     {
-      id: "helps",
+      id: "help",
       icon: <i className="fas fa-question-circle"></i>,
-      label: "Helps",
-      href: "/helps",
+      label: "Help & Support",
+      href: "/help",
     },
   ];
 
