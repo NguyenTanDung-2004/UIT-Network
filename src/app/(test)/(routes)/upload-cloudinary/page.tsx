@@ -35,8 +35,8 @@ function UploadPage() {
         setImageUrl(data.url);
       } else {
         const errorText = await response.text();
-        console.error("Upload failed:", errorText); // Log error text từ response
-        alert(`Upload failed: ${errorText}`); // Hiển thị thông báo lỗi cho người dùng
+        console.error("Upload failed:", errorText);
+        alert(`Upload failed: ${errorText}`);
       }
     } catch (error) {
       console.error("Upload error:", error);
