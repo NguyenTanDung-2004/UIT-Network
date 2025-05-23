@@ -118,7 +118,7 @@ const CreateGroupPage: React.FC = () => {
     return (
       <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
         <ClipLoader
-          color="#FF69B4"
+          color="#FF70D9"
           loading={true}
           size={35}
           aria-label="Loading Spinner"
