@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import ClipLoader from "react-spinners/ClipLoader";
 
-interface GroupForm {
+interface PageForm {
   name: string;
   intro: string;
   phone: string;
@@ -13,8 +13,8 @@ interface GroupForm {
   backgroundUrl: string;
 }
 
-const CreateGroupPage: React.FC = () => {
-  const [form, setForm] = useState<GroupForm>({
+const CreatePage: React.FC = () => {
+  const [form, setForm] = useState<PageForm>({
     name: "",
     intro: "",
     phone: "",
@@ -94,7 +94,7 @@ const CreateGroupPage: React.FC = () => {
         finalForm = { ...finalForm, backgroundUrl };
       }
 
-      alert("Group created successfully!. Info: " + JSON.stringify(finalForm));
+      alert("Page created successfully!. Info: " + JSON.stringify(finalForm));
 
       setForm({
         name: "",
@@ -108,7 +108,7 @@ const CreateGroupPage: React.FC = () => {
       setBackgroundFile(null);
     } catch (error) {
       // This alert appears if any upload fails
-      alert("Failed to create group. Check console for details.");
+      alert("Failed to create Page. Check console for details.");
     } finally {
       setUploading(false);
     }
@@ -131,7 +131,7 @@ const CreateGroupPage: React.FC = () => {
     <div className="w-full min-h-screen overflow-y-auto py-8">
       <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-8 md:p-10 max-w-2xl mx-auto border border-gray-100 dark:border-gray-700">
         <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-          Create New Group
+          Create New Page
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -139,7 +139,7 @@ const CreateGroupPage: React.FC = () => {
               htmlFor="name"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Group Name
+              Page Name
             </label>
             <input
               type="text"
@@ -211,7 +211,7 @@ const CreateGroupPage: React.FC = () => {
               htmlFor="avatar"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Group Avatar
+              Page Avatar
             </label>
             <input
               type="file"
@@ -267,7 +267,7 @@ const CreateGroupPage: React.FC = () => {
               disabled={uploading}
               className="px-6 py-2 text-sm font-medium rounded-md transition-colors bg-primary text-white hover:bg-pink-200 hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Group
+              Create Page
             </button>
           </div>
         </form>
@@ -276,4 +276,4 @@ const CreateGroupPage: React.FC = () => {
   );
 };
 
-export default CreateGroupPage;
+export default CreatePage;
