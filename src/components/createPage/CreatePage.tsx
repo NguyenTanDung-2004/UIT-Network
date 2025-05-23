@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import ClipLoader from "react-spinners/ClipLoader";
+import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface PageForm {
   name: string;
@@ -25,6 +27,7 @@ const CreatePage: React.FC = () => {
   const [avtFile, setAvtFile] = useState<File | null>(null);
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const router = useRouter();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -130,9 +133,17 @@ const CreatePage: React.FC = () => {
   return (
     <div className="w-full min-h-screen overflow-y-auto py-8">
       <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-8 md:p-10 max-w-2xl mx-auto border border-gray-100 dark:border-gray-700">
-        <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-          Create New Page
-        </h2>
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+            Create New Page
+          </h2>
+          <button
+            onClick={() => router.push("/create-page")}
+            className="px-3 py-1 text-sm font-medium rounded-md transition-colors bg-primaryLight  text-primary  hover:bg-primary/30 flex-shrink-0 dark:bg-primary/30 dark:text-white dark:hover:bg-primary/20"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+          </button>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
