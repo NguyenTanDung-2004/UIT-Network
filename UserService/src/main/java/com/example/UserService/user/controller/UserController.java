@@ -1,8 +1,13 @@
 package com.example.UserService.user.controller;
 
 import java.io.IOException;
+import java.sql.PreparedStatement;
+import java.sql.Wrapper;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,9 +25,14 @@ import com.example.UserService.user.dto.request.RequestLogin;
 import com.example.UserService.user.dto.request.RequestResetPassword;
 import com.example.UserService.user.dto.request.RequestUpdateUserInfo;
 import com.example.UserService.user.entity.User;
+import com.example.UserService.user.model.TimeSlot;
+import com.example.UserService.user.model.setup_data.AvtBackground;
 import com.example.UserService.user.repository.UserRepository;
 import com.example.UserService.user.service.UserService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.persistence.EntityManager;
 import lombok.experimental.FieldDefaults;
 
 @RestController
@@ -164,4 +174,67 @@ public class UserController {
     public ResponseEntity getListUserInfoV2(@RequestParam(name = "ids") String ids) {
         return userService.externalGetUserInfoV2(ids);
     }
+
+    /*
+     * setup data
+     */
+    @Autowired
+    private EntityManager entityManager;
+
+    @PostMapping("setupdata")
+    public String postMethodName(@RequestBody List<Set<Long>> entity) {
+        List<User> list = userRepository.findAll();
+
+        for (int i = 1; i < list.size(); i++){
+            insertUserHobbies(list.get(i).getId(), entity.get(i - 1));
+        }
+
+        return "ok";
+    }
+
+    @PostMapping("setup-json-schedule")
+    public String setupschedule(@RequestBody List<Map<String, List<TimeSlot>>> list1) throws JsonProcessingException {
+        List<User> list = userRepository.findAll();
+
+        for (int i = 1; i < list.size(); i++){
+            ObjectMapper objectMapper = new ObjectMapper();
+            String json = objectMapper.writeValueAsString(list1.get(i - 1));
+            list.get(i).setJsonSchedule(json);
+            userRepository.save(list.get(i));
+        }
+        return "ok";
+    }
+
+    @PostMapping("setup-avt-background")
+    public String postMethodName1(@RequestBody List<AvtBackground> entity) {
+        List<User> list = userRepository.findAll();
+        for (int i = 1; i < list.size(); i++){
+            list.get(i).setAvtURL(entity.get(i - 1).getAvt());
+            list.get(i).setBackground(entity.get(i - 1).getBg());
+            userRepository.save(list.get(i));
+        }
+        return "ok";
+    }
+    
+    
+
+    public void insertUserHobbies(String userId, Set<Long> hobbyIds) {
+        if (hobbyIds == null || hobbyIds.isEmpty()) {
+            return;
+        }
+
+        String sql = "INSERT INTO user_hobby (user_id, hobby_id) VALUES (?, ?)";
+
+        entityManager.unwrap(Session.class).doWork(connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                for (Long hobbyId : hobbyIds) {
+                    ps.setString(1, userId);
+                    ps.setLong(2, hobbyId);
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+        });
+    }
+    
 }

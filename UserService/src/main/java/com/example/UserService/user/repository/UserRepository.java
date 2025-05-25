@@ -90,4 +90,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     List<RecommendationUser> getListRecommendHobby(String userid);
 
 
+    @Query(value = "INSERT INTO ", nativeQuery = true)
+    public void createUserHobby(String userid, String hobbyid);
 }
