@@ -1,5 +1,7 @@
 package com.example.FanpageGroupService.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -120,5 +122,17 @@ public class GroupController {
     @GetMapping("/list-info")
     public ResponseEntity getListGroupInfos(@RequestParam("ids") String ids) {
         return groupService.getListGroupInfos(ids);
+    }
+
+
+    /*
+     * setup data
+     */
+    @PostMapping("/setup-create")
+    public String postMethodName(@RequestBody List<RequestCreateGroup> entity, @RequestHeader("Authorization") String authorizationHeader) {
+        for (int i = 0; i < entity.size(); i++){
+            groupService.createGroup(entity.get(i), authorizationHeader);
+        }
+        return "0k";
     }
 }

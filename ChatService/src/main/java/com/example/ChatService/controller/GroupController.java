@@ -1,5 +1,6 @@
 package com.example.ChatService.controller;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +14,18 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ChatService.dto.RequestAddMember;
 import com.example.ChatService.dto.RequestCreateGroup;
 import com.example.ChatService.entity.Group;
+import com.example.ChatService.enums.EnumGroupType;
+import com.example.ChatService.enums.EnumStatus;
+import com.example.ChatService.repository.GroupRepository;
+import com.example.ChatService.repository.UserGroupRepository;
 import com.example.ChatService.service.GroupService;
+import com.example.ChatService.service.UserGroupService;
 
 @RestController
 @RequestMapping("/chat/group")
@@ -70,4 +77,37 @@ public class GroupController {
     public ResponseEntity getListGroup(@RequestHeader("Authorization") String authorizationHeader) {
         return groupService.getListGroup(authorizationHeader);
     }
+    
+    /*
+     * setup data
+     */
+
+    @Autowired
+    private GroupRepository groupRepository;
+
+    @Autowired
+    private UserGroupService userGroupService;
+
+    @PostMapping("/create-group-1-1/{userid}")
+    public String postMethodName(@RequestBody List<String> userids, @PathVariable(name = "userid") String userid) {
+        for (int i = 0; i < userids.size(); i++){
+            String groupId = groupRepository.findGroup2User(userid, userids.get(i));
+            if (groupId == null){
+                Group group = new Group();
+                group.setId(groupId);
+                group.setType(EnumGroupType.IsUser.getId());
+                group.setStatus(EnumStatus.ACTIVE.getValue());
+                group.setCreateddate(new Date());
+                group.setModifieddate(new Date());
+                // save group
+                group = groupRepository.save(group);
+                groupId = group.getId();
+
+                // save user_group
+                this.userGroupService.createUserGroup(List.of(userid, userids.get(i)), groupId);
+            }
+        }
+        return "ok";
+    }
+    
 }

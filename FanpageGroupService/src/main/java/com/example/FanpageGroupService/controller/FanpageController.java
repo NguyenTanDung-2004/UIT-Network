@@ -1,5 +1,7 @@
 package com.example.FanpageGroupService.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,7 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.FanpageGroupService.dto.request.RequestCreateFanpage;
+import com.example.FanpageGroupService.dto.request.RequestCreateGroup;
 import com.example.FanpageGroupService.dto.request.RequestUpdateFanpage;
+import com.example.FanpageGroupService.repository.FanpageRepository;
+import com.example.FanpageGroupService.repository.GroupRepository;
 import com.example.FanpageGroupService.service.FanpageService;
 
 @RestController
@@ -77,4 +82,27 @@ public class FanpageController {
     public ResponseEntity getListFanpageInfos(@RequestParam(name = "ids") String ids) {
         return fanpageService.getListFanpageInfos(ids);
     }
+
+    /*
+     * setup data
+     */
+    @Autowired
+    private FanpageRepository fanpageRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
+
+    @PostMapping("/setup-create")
+    public String postMethodName(@RequestBody List<RequestCreateFanpage> entity, @RequestHeader("Authorization") String authorizationHeader) {
+        for (int i = 0; i < entity.size(); i++){
+            fanpageService.createFanpage(entity.get(i), authorizationHeader);
+        }
+        return "0k";
+    }
+
+    // @PostMapping("/add-user-to-group-fanpage")
+    // public String postMethodName(@RequestBody List<String> list) {  
+
+    // }
+    
 }

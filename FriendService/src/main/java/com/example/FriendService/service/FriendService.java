@@ -42,6 +42,7 @@ public class FriendService {
     }
 
     public ResponseEntity requestAddFriend(String senderId, String receiverId) {
+        System.out.println(senderId + " " + receiverId);
         this.friendRepository.sendFriendRequest(senderId, receiverId);
 
         // create response

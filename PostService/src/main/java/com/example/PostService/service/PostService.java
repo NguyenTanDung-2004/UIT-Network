@@ -443,6 +443,7 @@ public class PostService {
     }
 
     public ResponseEntity getListPendingPostGroup(String groupId) {
+        System.out.println(groupId);
         // get list post of group
         List<Post> posts = this.postRepository.getListGroupPendingPost(List.of("group||" + groupId));
         Map<String, Object> map = new HashMap<>();
@@ -464,6 +465,36 @@ public class PostService {
         ApiResponse apiResponse = ApiResponse.builder()
                 .object(map)
                 .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_GROUP_POST_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity approvePost(String postid){
+        //get post
+        Post post = this.postRepository.findById(postid).get();
+
+        if (post.getStatusgroup().equals("PENDING")){
+            post.setStatusgroup("ACTIVE");
+        }
+
+        post = postRepository.save(post);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(post)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity getNumberOfLikes(String postid) {
+        Integer result = this.likeRepository.countLikesByPostId(postid);
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(result)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
                 .build();
 
         return ResponseEntity.ok(apiResponse);

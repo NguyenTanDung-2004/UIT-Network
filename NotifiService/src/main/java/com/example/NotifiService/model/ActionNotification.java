@@ -33,6 +33,7 @@ public class ActionNotification extends Notification{
     private String message;
     private Date date;
     private String receivedid;
+    private String postid;
 
     @Transient
     private Map<String, Object> extrafield;
@@ -51,6 +52,7 @@ public class ActionNotification extends Notification{
                 break;
             case 2:
                 this.extrafield = new HashMap<>();
+                this.postid = parts.get(4);
                 this.extrafield.put("postid", parts.get(4));
                 break;
             default:

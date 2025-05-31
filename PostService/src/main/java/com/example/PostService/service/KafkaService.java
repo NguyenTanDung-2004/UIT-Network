@@ -29,7 +29,7 @@ public class KafkaService {
         // check if this is liking normal post
         if (post.getParentId() == null) {
             // create message
-            String message = 2 + "||" + createdId + "||" + notiMessage + "||" + comment.getUserId() + "||" + post.getPostId();
+            String message = 2 + "||" + createdId + "||" + notiMessage + "||" + post.getUserId() + "||" + post.getPostId();
 
             // pust to kafka
             this.kafkaTemplate.send(topic, message);
