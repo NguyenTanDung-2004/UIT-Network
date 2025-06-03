@@ -1,5 +1,7 @@
 package com.example.FriendService.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -12,6 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.FriendService.service.FriendService;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
+
+
 
 @RestController
 @RequestMapping("/friend")
@@ -58,6 +64,12 @@ public class FriendController {
         return friendService.getListRequestFriend(userId);
     }
 
+    @GetMapping("/friend-status/{view}/{unview}")
+    public ResponseEntity checkFriendStatus(@PathVariable(name = "view") String viewid, @PathVariable(name = "unview") String unviewid) {
+        return friendService.checkFriendStatus(viewid, unviewid);
+    }
+    
+
     /*
      * External APIs
      */
@@ -76,4 +88,11 @@ public class FriendController {
     public ResponseEntity getListMutualFriend(@PathVariable(name = "userId") String userId) {
         return friendService.getListMutualFriend(userId);
     }
+
+    @PostMapping("/setup-recommend-friend/{userid}")
+    public String postMethodName(@RequestBody List<String> userids, @PathVariable(name = "userid") String userid) {
+        friendService.setupRecommendFriend(userids, userid);
+        return "ok";
+    }
+    
 }

@@ -153,6 +153,8 @@ public class CommentService {
             // get comment id from comment
             String commentId = comment.getId();
 
+            // System.out.println(comment);
+
             // check if comment is Parent comment
             if (comment.getParentCommentId() == null) {
                 parentidAndChild.put(commentId, new ArrayList<>());
@@ -168,6 +170,8 @@ public class CommentService {
                 parentidAndChild.get(parentCommentId).add(comment);
             }
         });
+
+        // System.out.println(parentidAndChild);
 
         // set data for response list comment
         parentComments.stream().forEach(parentComment -> {

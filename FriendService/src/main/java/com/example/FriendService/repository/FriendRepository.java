@@ -3,6 +3,8 @@ package com.example.FriendService.repository;
 import com.example.FriendService.entity.User;
 import com.example.FriendService.model.FriendSuggestion;
 
+import feign.Param;
+
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 
@@ -59,6 +61,35 @@ public interface FriendRepository extends Neo4jRepository<User, String> {
 
         @Query("MATCH (a:User)-[:REQUEST]->(b:User {id: $userId}) RETURN a.id")
         List<String> getListRequestFriend(String userId);
+
+
+        @Query("""
+                MATCH (a:User {id: $viewid})
+                MATCH (b:User {id: $unviewid})
+                OPTIONAL MATCH (a)-[r1:FRIEND]-(b)
+                OPTIONAL MATCH (a)-[r2:REQUEST]->(b)
+                OPTIONAL MATCH (b)-[r3:REQUEST]->(a)
+                RETURN CASE
+                        WHEN r1 IS NOT NULL THEN 'FRIEND'
+                        WHEN r2 IS NOT NULL THEN 'REQUEST'
+                        WHEN r3 IS NOT NULL THEN 'ACCEPT'
+                        ELSE 'NO_RE'
+                END AS status
+                LIMIT 1
+        """)
+        String checkFriendStatus(@Param("viewid") String viewid, @Param("unviewid") String unviewid);
+
+
+        @Modifying
+        @Query("""
+        UNWIND $userids AS uid
+        MATCH (a:User {id: $userid}), (b:User {id: uid})
+        MERGE (a)-[:FRIEND]->(b)
+        MERGE (b)-[:FRIEND]->(a)
+        """)
+        void createFriendRelationships(@Param("userids") List<String> userids, @Param("userid") String userid);
+
+
 
 
 }

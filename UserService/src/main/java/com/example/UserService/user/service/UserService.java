@@ -523,6 +523,8 @@ public class UserService {
         // get user from authorization
         User user = this.getUserFromAthorization(authorizationHeader);
 
+        System.out.println(user.getLongitude() + " " + user.getId() + " " + user.getLatitude());
+
         // get data from db
         List<RecommendationUser> users = this.userRepository.getUserByLocation(user.getId(), user.getLatitude(), user.getLongitude());
     

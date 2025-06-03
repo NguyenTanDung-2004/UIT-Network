@@ -64,6 +64,11 @@ public class GroupController {
         return groupService.getListGroupInHome(userid);
     }
 
+    @GetMapping("/list/ws/{groupid}")
+    public ResponseEntity getListWSInGroup(@PathVariable(name = "groupid") String groupid) {
+        return groupService.getListWSInGroup(groupid);
+    }
+
 
 
     /*

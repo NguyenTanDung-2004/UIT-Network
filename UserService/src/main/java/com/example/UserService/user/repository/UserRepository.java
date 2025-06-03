@@ -53,7 +53,7 @@ public interface UserRepository extends JpaRepository<User, String> {
         ) AS data
         FROM users u
         WHERE u.id != :userId
-        HAVING data <= 20
+        --HAVING data <= 20
         ORDER BY data ASC
         LIMIT 10
     """, nativeQuery = true)

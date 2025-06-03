@@ -132,4 +132,20 @@ public class FriendService {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    public ResponseEntity checkFriendStatus(String viewid, String unviewid) {
+        String status = friendRepository.checkFriendStatus(viewid, unviewid);
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(status)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    public void setupRecommendFriend(List<String> userids, String userid) {
+        this.friendRepository.createFriendRelationships(userids, userid);
+    }
 }

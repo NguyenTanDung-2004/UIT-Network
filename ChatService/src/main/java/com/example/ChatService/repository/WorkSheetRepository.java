@@ -20,5 +20,8 @@ public interface WorkSheetRepository extends JpaRepository<WorkSheet, String> {
             and ws2.status = 'ACTIVE'
             """, nativeQuery = true)
     List<WorkSheet> getWSDetail(String id);
+
+    @Query(value = "SELECT * FROM work_sheet WHERE groupid = :groupid AND status = 'ACTIVE' AND isparent = 1", nativeQuery = true)
+    List<WorkSheet> findListWSInGroup(String groupid);
     
 }

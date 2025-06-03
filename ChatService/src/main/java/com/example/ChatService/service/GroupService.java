@@ -15,11 +15,13 @@ import com.example.ChatService.dto.RequestAddMember;
 import com.example.ChatService.dto.RequestCreateGroup;
 import com.example.ChatService.dto.ResponseListGroup;
 import com.example.ChatService.entity.Group;
+import com.example.ChatService.entity.WorkSheet;
 import com.example.ChatService.enums.EnumGroupType;
 import com.example.ChatService.enums.EnumStatus;
 import com.example.ChatService.mapper.GroupMapper;
 import com.example.ChatService.model.GroupChatUIHome;
 import com.example.ChatService.repository.GroupRepository;
+import com.example.ChatService.repository.WorkSheetRepository;
 import com.example.ChatService.repository.httpclient.UserClient;
 import com.example.ChatService.response.ApiResponse;
 import com.example.ChatService.response.EnumResponse;
@@ -41,6 +43,9 @@ public class GroupService {
 
     @Autowired
     private UserGroupService userGroupService;
+
+    @Autowired
+    private WorkSheetRepository workSheetRepository;
 
     public ResponseEntity createGroup(RequestCreateGroup request, String authorizationHeader) {
         // get userid from header
@@ -127,6 +132,8 @@ public class GroupService {
     public ResponseEntity seenMessage(String groupid, String authorizationHeader) {
         // get user id from authorizationHeader
         String userId = (String) userClient.getUserId(authorizationHeader);
+
+        System.out.println(userId);
 
         // update 
         this.groupRepository.updateSeenMessage(groupid, userId, new Date());
@@ -300,6 +307,18 @@ public class GroupService {
         // create response
         ApiResponse response = ApiResponse.builder()
                 .object(groups)
+                .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_GROUP_SUCCESS))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity getListWSInGroup(String groupid) {
+        // TODO Auto-generated method stub
+        List<WorkSheet> works = this.workSheetRepository.findListWSInGroup(groupid);
+
+        // create response
+        ApiResponse response = ApiResponse.builder()
+                .object(works)
                 .enumResponse(EnumResponse.toJson(EnumResponse.GET_LIST_GROUP_SUCCESS))
                 .build();
         return ResponseEntity.ok(response);

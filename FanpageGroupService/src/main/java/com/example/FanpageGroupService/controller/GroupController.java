@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.FanpageGroupService.dto.request.RequestAcceptOrRemoveJoinGroup;
 import com.example.FanpageGroupService.dto.request.RequestCreateGroup;
 import com.example.FanpageGroupService.dto.request.RequestUpdateGroup;
+import com.example.FanpageGroupService.entities.user_group.UserGroup;
+import com.example.FanpageGroupService.entities.user_group.UserGroupPK;
+import com.example.FanpageGroupService.mapper.GroupMapper;
+import com.example.FanpageGroupService.repository.UserGroupRepository;
 import com.example.FanpageGroupService.service.GroupService;
 
 import jakarta.websocket.server.PathParam;
@@ -128,6 +132,12 @@ public class GroupController {
     /*
      * setup data
      */
+    @Autowired
+    private UserGroupRepository userGroupRepository;
+
+    @Autowired
+    private GroupMapper mapper;
+
     @PostMapping("/setup-create")
     public String postMethodName(@RequestBody List<RequestCreateGroup> entity, @RequestHeader("Authorization") String authorizationHeader) {
         for (int i = 0; i < entity.size(); i++){
@@ -135,4 +145,29 @@ public class GroupController {
         }
         return "0k";
     }
+
+    @PostMapping("/setup-request-join/{groupid}")
+    public String postMethodName1(@PathVariable(name = "groupid") String groupid, @RequestBody List<String> userids) {
+        for (int i = 0; i < userids.size(); i++){
+            // create pk usergroup
+            UserGroupPK userGroupPK = createUserGroupPK(userids.get(i), groupid);
+
+            // create usergroup
+            UserGroup userGroup = new UserGroup();
+            userGroup = (UserGroup) this.mapper.toEntity(userGroupPK, userGroup);
+
+            // save
+            userGroup = this.userGroupRepository.save(userGroup);
+        }
+
+        return "ok";
+    }
+
+    private UserGroupPK createUserGroupPK(String userId, String groupId) {
+        return UserGroupPK.builder()
+                .userId(userId)
+                .groupId(groupId)
+                .build();
+    }
+    
 }

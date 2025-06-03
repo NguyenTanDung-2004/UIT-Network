@@ -373,6 +373,17 @@ public class PostService {
             Object listUserInfos = this.userClient.getListUserInfos(convertListToString(posts.stream().map(Post::getUserId).toList()));
             List<ExternalUserInfo> externalUserInfos = new ObjectMapper().convertValue(listUserInfos, new TypeReference<List<ExternalUserInfo>>() {});
             map.put("listUserInfos", externalUserInfos);
+
+            // put fanpage info
+            if (posts.size() > 0){
+                ObjectMapper objectMapper = new ObjectMapper();
+                 // get fanpage info
+                Object listFanpageInfos = this.fanpageClient.getListFanpageInfos(
+                    posts.get(0).getParentId().replace("fanpage||", "")
+                );
+                List<ExternalFanpageInfo> externalFanpageInfos = objectMapper.convertValue(listFanpageInfos, new TypeReference<List<ExternalFanpageInfo>>() {});
+                map.put("fanpageInfo", externalFanpageInfos.get(0));
+            }
         }
 
         // create response
@@ -498,6 +509,24 @@ public class PostService {
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    public ResponseEntity checkLiked(String postid, String userid) {
+        // check like
+        UserLikePost userLikePost = likeRepository.findByUserIdAndPostId(userid, postid);
+
+        Boolean result = false;
+
+        if (userLikePost != null){
+            result = true;
+        }
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(result)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);        
     }
 
 }

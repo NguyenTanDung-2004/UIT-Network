@@ -40,9 +40,9 @@ public class PostController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity deletePost(@RequestHeader("Authorization") String authorizationHeader,
+    public ResponseEntity deletePost(//@RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(name = "postId") String postId) {
-        return postService.deletPost(authorizationHeader, postId);
+        return postService.deletPost(null, postId);
     }
 
     @GetMapping("/like")
@@ -97,6 +97,12 @@ public class PostController {
     public ResponseEntity getMethodName(@PathVariable(name = "postid") String postid) {
         return this.postService.getNumberOfLikes(postid);
     }
+
+    @GetMapping("/is-liked/{postid}/{userid}")
+    public ResponseEntity getMethodName2(@PathVariable(name = "postid") String postid, @PathVariable(name = "userid") String userid) {
+        return this.postService.checkLiked(postid, userid);
+    }
+    
     
     
 
