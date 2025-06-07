@@ -539,7 +539,7 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
 
               <div className="py-2 border-t dark:border-gray-700">
                 <Link
-                  href="/logout"
+                  href="/"
                   className="px-6 py-2 text-gray-800 hover:bg-gray-100 transition-colors duration-200 flex items-center dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   <i className="fas fa-sign-out-alt mr-3"></i>

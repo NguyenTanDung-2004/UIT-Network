@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import ForgotPasswordModals from "./ForgotPasswordModals";
+import { login } from "@/services/authService";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -14,6 +15,26 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const response = await login(email, password);
+      if (response.enumResponse.code === "s_02") {
+        router.push("/home");
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError("Login failed. Please check your login information again.");
+    }
   };
 
   return (
@@ -74,8 +95,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
             </svg>
           </div>
 
+          {error && (
+            <div className="mb-4 text-red-500 text-sm text-center">{error}</div>
+          )}
+
           {/* Form */}
-          <form>
+          <form onSubmit={handleLogin}>
             <div className="mb-6">
               <label
                 htmlFor="username"
@@ -100,6 +125,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
                   id="username"
                   className="border border-gray-200 rounded-md w-full py-3 pl-10 pr-3 text-gray-600 placeholder-gray-400 focus:outline-none focus:border-pink-300"
                   placeholder="Username or email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -131,6 +158,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
                   id="password"
                   className="border border-gray-200 rounded-md w-full py-3 pl-10 pr-10 text-gray-600 placeholder-gray-400 focus:outline-none focus:border-pink-300"
                   placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
                 <div
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
@@ -156,11 +185,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
             </div>
 
             <button
-              onClick={() => {
-                router.push("/home");
-              }}
               className="bg-[#FF70D9] hover:bg-opacity-80 text-white font-medium py-3 px-4 rounded-md w-full transition duration-200"
-              type="button"
+              type="submit"
             >
               Login
             </button>

@@ -1,10 +1,7 @@
 const apiFetch = async <T>(
-  endpoint: string,
+  url: string,
   options: RequestInit = {}
 ): Promise<T> => {
-  const baseUrl = process.env.SERVER_PUBLIC_API_URL || "http://localhost:8080";
-  const url = `${baseUrl}${endpoint}`;
-
   const defaultOptions: RequestInit = {
     method: "GET",
     headers: {
@@ -15,10 +12,13 @@ const apiFetch = async <T>(
   };
 
   try {
-    const response = await fetch(endpoint, defaultOptions);
+    console.log("Fetching URL:", url, "with options:", defaultOptions);
+    const response = await fetch(url, defaultOptions);
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP error: ${response.status}`);
+      throw new Error(
+        errorData.enumResponse?.message || `HTTP error: ${response.status}`
+      );
     }
     return response.json() as Promise<T>;
   } catch (error) {
