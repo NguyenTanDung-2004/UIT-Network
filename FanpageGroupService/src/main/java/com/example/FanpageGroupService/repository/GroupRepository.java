@@ -9,8 +9,8 @@ import com.example.FanpageGroupService.entities.Group;
 
 public interface GroupRepository extends JpaRepository<Group, String> {
 
-    @Query(value = "SELECT * FROM study_groups where id in (:ids)", nativeQuery = true)
-    List<Group> getListGroupInfos(String ids);
+    @Query(value = "SELECT * FROM study_groups WHERE id IN :ids", nativeQuery = true)
+    List<Group> getListGroupInfos(List<String> ids);
 
     @Query(value = "SELECT * FROM study_groups where is_delete = false OR is_delete is null", nativeQuery = true)
     List<Group> getAllGroup();

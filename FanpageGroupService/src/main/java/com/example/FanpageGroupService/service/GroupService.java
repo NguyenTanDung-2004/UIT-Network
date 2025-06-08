@@ -261,8 +261,12 @@ public class GroupService {
     }
 
     public ResponseEntity getListGroupInfos(String ids) {
+        List<String> listIds = List.of(ids.split(","));
+
         // get list group
-        List<Group> listGroup = this.groupRepository.getListGroupInfos(ids);
+        List<Group> listGroup = this.groupRepository.getListGroupInfos(listIds);
+
+        System.out.println(listGroup.size());
 
         if (listGroup == null) {
             listGroup = new ArrayList<>();

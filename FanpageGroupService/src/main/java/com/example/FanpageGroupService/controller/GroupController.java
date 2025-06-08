@@ -125,6 +125,7 @@ public class GroupController {
 
     @GetMapping("/list-info")
     public ResponseEntity getListGroupInfos(@RequestParam("ids") String ids) {
+        System.out.println("GroupController.getListGroupInfos: ids = " + ids);
         return groupService.getListGroupInfos(ids);
     }
 

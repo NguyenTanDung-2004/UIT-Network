@@ -263,6 +263,7 @@ public class PostService {
         // create query
         List<Post> listFriendPosts = this.postRepository.getListFriendPost(friendids);
         List<Post> listGroupPosts = this.postRepository.getListGroupPost(groupIds);
+        System.out.println("size of group posts: " + listGroupPosts.size());
         List<Post> listFanpagePosts = this.postRepository.getListFanpagePost(fanpageIds);
 
         List<Post> listPost = new ArrayList<>();
@@ -289,15 +290,25 @@ public class PostService {
         );
         List<ExternalFanpageInfo> externalFanpageInfos = objectMapper.convertValue(listFanpageInfos, new TypeReference<List<ExternalFanpageInfo>>() {});
 
-        // get group info
-        Object listGroupInfos = this.groupClient.getListGroupInfos(
-            convertListToString(
+        String ids = convertListToString(
                 listGroupPosts.stream()
                     .map(Post::getParentId) // Extract parentId
                     .filter(parentId -> parentId.startsWith("group||")) // Ensure it starts with "fanpage||"
                     .map(parentId -> parentId.replace("group||", "")) // Remove "fanpage||" prefix
                     .toList() // Collect as a list
-            )
+            );
+        System.out.println("ids: " + ids);
+        
+        // get group info
+        Object listGroupInfos = this.groupClient.getListGroupInfos(
+            // convertListToString(
+            //     listGroupPosts.stream()
+            //         .map(Post::getParentId) // Extract parentId
+            //         .filter(parentId -> parentId.startsWith("group||")) // Ensure it starts with "fanpage||"
+            //         .map(parentId -> parentId.replace("group||", "")) // Remove "fanpage||" prefix
+            //         .toList() // Collect as a list
+            // )
+            ids
         );
         List<ExternalGroupInfo> externalGroupInfos = objectMapper.convertValue(listGroupInfos, new TypeReference<List<ExternalGroupInfo>>() {});
 
