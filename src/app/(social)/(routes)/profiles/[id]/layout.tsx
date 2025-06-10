@@ -5,43 +5,12 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import { ProfileHeaderData } from "@/types/profile/ProfileData";
 import { ClipLoader } from "react-spinners";
+import { useUser } from "@/contexts/UserContext";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 const DEFAULT_COVER =
   "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg";
-
-// Giữ nguyên hàm fetch này vì layout vẫn cần nó
-async function fetchProfileData(id: string): Promise<ProfileHeaderData | null> {
-  try {
-    // await new Promise(res => setTimeout(res, 100)); // Simulate delay if needed
-
-    if (id === "me") {
-      return {
-        id: "me",
-        name: "Phan Nguyễn Trà Giang",
-        avatar: DEFAULT_AVATAR,
-        coverPhoto: DEFAULT_COVER,
-        followerCount: 19,
-        friendCount: 200,
-        friendshipStatus: "self",
-      };
-    } else {
-      return {
-        id: id,
-        name: "Nguyễn Tấn Dũng",
-        avatar: DEFAULT_AVATAR,
-        coverPhoto: DEFAULT_COVER,
-        followerCount: 2,
-        friendCount: 12,
-        friendshipStatus: "friend",
-      };
-    }
-  } catch (error) {
-    console.error("Error fetching profile data:", error);
-    return null;
-  }
-}
 
 interface ProfileLayoutProps {
   children: React.ReactNode;
@@ -58,6 +27,12 @@ const ProfileLayout = ({
   const params = React.use(paramsPromise);
   const { id: currentProfileId } = params;
 
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
+
   const [profileData, setProfileData] = useState<ProfileHeaderData | null>(
     null
   );
@@ -67,27 +42,68 @@ const ProfileLayout = ({
   useEffect(() => {
     let isMounted = true;
 
-    if (currentProfileId) {
+    if (userContextLoading) {
+      setLoading(true);
+      return;
+    }
+
+    if (userContextError) {
+      setError(userContextError);
+      setLoading(false);
+      return;
+    }
+
+    const isCurrentUserProfile =
+      user && (currentProfileId === "me" || currentProfileId === user.id);
+
+    if (isCurrentUserProfile && user) {
+      setProfileData({
+        id: user.id,
+        name: user.name,
+        avatar: user.avtURL || DEFAULT_AVATAR,
+        coverPhoto: user.background || DEFAULT_COVER,
+        followerCount: 0,
+        friendCount: 0,
+        friendshipStatus: "self",
+      });
+      setLoading(false);
+    } else if (currentProfileId) {
       setLoading(true);
       setError(null);
-      fetchProfileData(currentProfileId)
-        .then((data) => {
-          if (isMounted) {
-            if (data) {
-              setProfileData(data);
-            } else {
-              setError(`Profile with ID "${currentProfileId}" not found.`);
-            }
-            setLoading(false);
-          }
-        })
-        .catch((fetchError) => {
-          console.error("Failed to fetch profile data:", fetchError);
-          if (isMounted) {
-            setError("Failed to load profile data.");
-            setLoading(false);
-          }
-        });
+
+      // Hardcoded data for other profiles
+      let data: ProfileHeaderData | null = null;
+      if (currentProfileId === "someOtherId") {
+        // Thay thế bằng ID thật của một người dùng khác nếu muốn
+        data = {
+          id: currentProfileId,
+          name: "Nguyễn Tấn Dũng",
+          avatar: DEFAULT_AVATAR,
+          coverPhoto: DEFAULT_COVER,
+          followerCount: 2,
+          friendCount: 12,
+          friendshipStatus: "friend",
+        };
+      } else {
+        data = {
+          id: currentProfileId,
+          name: "Other User",
+          avatar: DEFAULT_AVATAR,
+          coverPhoto: DEFAULT_COVER,
+          followerCount: 5,
+          friendCount: 50,
+          friendshipStatus: "not_friend",
+        };
+      }
+
+      if (isMounted) {
+        if (data) {
+          setProfileData(data);
+        } else {
+          setError(`Profile with ID "${currentProfileId}" not found.`);
+        }
+        setLoading(false);
+      }
     } else {
       setError("Invalid profile ID.");
       setLoading(false);
@@ -96,7 +112,7 @@ const ProfileLayout = ({
     return () => {
       isMounted = false;
     };
-  }, [currentProfileId]);
+  }, [currentProfileId, user, userContextLoading, userContextError]);
 
   if (loading) {
     return (

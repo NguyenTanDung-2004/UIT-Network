@@ -69,6 +69,7 @@ export const getUserInfo = async (): Promise<ProfileAboutData> => {
       id: response.object.id,
       avtURL: response.object.avtURL || "",
       name: response.object.name || "",
+      background: response.object.background || "",
       overview: {
         bio: response.object.description || "",
         born: response.object.dob || null,
