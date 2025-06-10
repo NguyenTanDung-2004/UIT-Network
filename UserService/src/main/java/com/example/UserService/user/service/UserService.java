@@ -598,4 +598,37 @@ public class UserService {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    public ResponseEntity getListUserInfo(String ids) {
+        List<String> idList = Arrays.asList(ids.split(",")); // Convert to List
+
+        List<User> users = this.userRepository.getListUser(idList);
+
+        if (users == null) {
+            users = new ArrayList<>();
+        }
+
+        List<ResponseUserInfo> listResponses = new ArrayList<>();
+        users.stream().forEach(user -> {
+            if (user.getPrivateProperties() == 1) {
+                listResponses.add(this.userMapper.toResponse(user, hobbyService));
+            }
+            else{
+                try {
+                    listResponses.add(this.userMapper.toResponse(user, hobbyService));
+                } catch (Exception e) {
+                    throw new UserException();
+                }
+            }
+        });
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(listResponses)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SEARCH_USER_SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    
+    }
 }

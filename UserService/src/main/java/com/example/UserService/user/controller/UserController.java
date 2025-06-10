@@ -151,6 +151,11 @@ public class UserController {
         return userService.getListRecommendHobby(authorizationHeader);
     }
 
+    @GetMapping("/list-user-info/{ids}")
+    public ResponseEntity getListUserInfo1(@PathVariable(name = "ids") String ids) {
+        return userService.getListUserInfo(ids);
+    }
+
 
     /*
      * external APIs
