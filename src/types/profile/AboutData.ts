@@ -1,4 +1,7 @@
 export interface ProfileAboutData {
+  id: string;
+  avtURL: string;
+  name: string;
   overview: {
     bio: string;
     born: string | null;

@@ -10,6 +10,7 @@ import MessagesDropdown from "./MessagesDropdown";
 
 interface NavBarProps {
   user: {
+    id: string;
     name: string;
     avatar: string;
   };
@@ -513,7 +514,7 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
                   </div>
                 </div>
                 <button
-                  onClick={() => router.push("/profiles/me")}
+                  onClick={() => router.push(`/profiles/${user.id}`)}
                   className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-opacity-80 transition-colors duration-200"
                 >
                   View profile
