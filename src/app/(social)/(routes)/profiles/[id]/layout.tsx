@@ -141,7 +141,7 @@ const ProfileLayout = ({
 
   return (
     <div className="w-full bg-gray-100 dark:bg-gray-900 min-h-screen overflow-auto  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto mb-28 ">
         <ProfileHeader profileData={profileData} />
         <div className="relative z-0 -mt-5 md:-mt-8 px-2 sm:px-4 lg:px-0">
           <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg mb-4 sticky top-0 z-10">

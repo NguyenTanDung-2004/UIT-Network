@@ -1,4 +1,3 @@
-// services/friendService.tsx
 import apiFetch from "./apiClient";
 import { Friend } from "@/types/profile/FriendData";
 

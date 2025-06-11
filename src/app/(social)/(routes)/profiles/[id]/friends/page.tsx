@@ -6,44 +6,17 @@ import ClipLoader from "react-spinners/ClipLoader";
 import FriendsNavigation from "@/components/profile/friends/FriendsNavigation";
 import SearchAndHeader from "@/components/profile/friends/SearchAndHeader";
 import FriendCard from "@/components/profile/friends/FriendCard";
-// Import other card types if needed on this specific page (unlikely for 'All Friends')
 
-import { ProfileHeaderData } from "@/types/profile/ProfileData"; // Assume exists
+import { ProfileHeaderData } from "@/types/profile/ProfileData";
 import { Friend } from "@/types/profile/FriendData";
+import { useUser } from "@/contexts/UserContext";
+import {
+  getListFriendIds,
+  getUserInfoCardsByIds,
+} from "@/services/friendService";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
-
-const getMockHeaderData = (id: string): ProfileHeaderData => ({
-  id: id,
-  name: id === "me" ? "Phan Nguyễn Trà Giang" : "Nguyễn Tấn Dũng",
-  avatar: DEFAULT_AVATAR,
-  coverPhoto: "",
-  followerCount: id === "me" ? 19 : 2,
-  friendCount: id === "me" ? 200 : 12,
-  friendshipStatus: id === "me" ? "self" : "friend",
-});
-
-const getMockFriendsData = (
-  id: string
-): {
-  friends: Friend[];
-  counts: { all: number; following: number; joined: number };
-} => {
-  const count = 10;
-  const mockFriends: Friend[] = Array.from({ length: count }).map((_, i) => ({
-    id: `friend-${id}-${i}`,
-    name: `Trần Nguyễn Hồng Thắm ${i + 1}`,
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample-2.jpg",
-    followerCount: Math.floor(Math.random() * 100),
-    profileUrl: `/profiles/friend-${id}-${i}`,
-  }));
-  return {
-    friends: mockFriends,
-    counts: { all: count, following: 15, joined: 5 },
-  };
-};
 
 const ProfileFriendsPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   params: paramsPromise,
@@ -51,27 +24,128 @@ const ProfileFriendsPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   const params = use(paramsPromise);
   const profileId = params.id;
 
-  const headerData = getMockHeaderData(profileId);
-  const friendsData = getMockFriendsData(profileId);
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
 
+  const [headerData, setHeaderData] = useState<ProfileHeaderData | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friendCounts, setFriendCounts] = useState<{
+    all: number;
+    following: number;
+    joined: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+
+    const fetchFriendsData = async () => {
+      try {
+        if (userContextLoading) {
+          return;
+        }
+
+        if (userContextError) {
+          throw new Error(userContextError);
+        }
+
+        if (!profileId) {
+          throw new Error("Invalid profile ID for friends page.");
+        }
+
+        const isCurrentUserProfile =
+          user && (profileId === "me" || profileId === user.id);
+
+        let targetUserId = profileId;
+        if (isCurrentUserProfile && user) {
+          targetUserId = user.id;
+          setHeaderData({
+            id: user.id,
+            name: user.name,
+            avatar: user.avtURL || DEFAULT_AVATAR,
+            coverPhoto: user.background || "",
+            followerCount: 0,
+            friendCount: 0, // Will be updated after fetching friends
+            friendshipStatus: "self",
+          });
+        } else {
+          // For other profiles, you might need an API to get their basic info,
+          // or pass it down from the ProfileLayout. For now, hardcode.
+          setHeaderData({
+            id: profileId,
+            name: "Other User", // Placeholder
+            avatar: DEFAULT_AVATAR,
+            coverPhoto: "",
+            followerCount: 0,
+            friendCount: 0, // Will be updated after fetching friends
+            friendshipStatus: "not_friend", // Placeholder
+          });
+        }
+
+        const friendIds = await getListFriendIds(targetUserId);
+        const friendInfoCards = await getUserInfoCardsByIds(friendIds);
+
+        if (isMounted) {
+          setFriends(friendInfoCards);
+          setFriendCounts({
+            all: friendInfoCards.length,
+            following: 0, // Placeholder
+            joined: 0, // Placeholder
+          });
+
+          // Update friendCount in headerData
+          setHeaderData((prev) =>
+            prev ? { ...prev, friendCount: friendInfoCards.length } : null
+          );
+        }
+      } catch (err: any) {
+        console.error("Error fetching friends data:", err);
+        if (isMounted) {
+          setError(err.message || "Failed to load friends data.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchFriendsData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileId, user, userContextLoading, userContextError]);
+
   const filteredFriends = useMemo(() => {
-    if (!friendsData?.friends) return [];
-    if (!searchQuery) return friendsData.friends;
-    return friendsData.friends.filter((friend) =>
+    if (!friends) return [];
+    if (!searchQuery) return friends;
+    return friends.filter((friend) =>
       friend.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [friendsData?.friends, searchQuery]);
+  }, [friends, searchQuery]);
 
-  const isOwnProfile = headerData?.friendshipStatus === "self";
-
-  if (!headerData || !friendsData) {
-    return <div>Error loading profile data.</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
+        <ClipLoader
+          color="#FF69B4"
+          loading={true}
+          size={35}
+          aria-label="Loading Spinner"
+        />
+      </div>
+    );
   }
 
-  if (error || !headerData || !friendsData) {
+  if (error || !headerData || !friendCounts) {
     return (
       <div className="p-6 text-center mt-8 text-red-600 dark:text-red-400 font-semibold bg-red-100 dark:bg-red-900/20 rounded-md max-w-md mx-auto">
         {error || "Could not load profile friends information."}
@@ -88,7 +162,7 @@ const ProfileFriendsPage: React.FC<{ params: Promise<{ id: string }> }> = ({
       <FriendsNavigation
         activeTab="all"
         profileId={profileId}
-        counts={friendsData.counts}
+        counts={friendCounts}
       />
 
       {filteredFriends.length > 0 ? (

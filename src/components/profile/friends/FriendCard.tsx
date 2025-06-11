@@ -52,9 +52,9 @@ const FriendCard: React.FC<FriendCardProps> = ({ friend, profileId }) => {
             {friend.name}
           </h4>
         </Link>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        {/* <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
           {friend.followerCount} followers
-        </p>
+        </p> */}
       </div>
       <div className="flex px-4 mb-3 items-center justify-between mt-auto ">
         <button

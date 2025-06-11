@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, { useState, useEffect, use } from "react";
 import Image from "next/image";
 import MediaViewerModal from "@/components/profile/media/MediaViewerModal";
+import ClipLoader from "react-spinners/ClipLoader";
+import { getListMediaByUserId } from "@/services/postService";
+import { useUser } from "@/contexts/UserContext";
 
 interface MediaItem {
   id: string;
@@ -10,68 +13,100 @@ interface MediaItem {
   type: "image" | "video";
 }
 
-const SAMPLE_MEDIA_URLS = [
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample.jpg",
-  "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/sea-turtle.mp4",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738273042/hobbies/njpufnhlajjpss384yuz.png",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738661303/cld-sample-2.jpg",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample-4.jpg",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample-3.jpg",
-  "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/cld-sample-video.mp4",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270447/samples/chair-and-coffee-table.jpg",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270446/samples/breakfast.jpg",
-];
-
-const imageExtensions = [".jpeg", ".png", ".jpg", ".gif", ".svg", ".webp"];
-const videoExtensions = [".mp4", ".webm", ".ogg", ".mov"];
-
-const getMediaType = (url: string): "image" | "video" | "unknown" => {
-  if (!url) return "unknown";
-  try {
-    const lowerCaseUrl = url.toLowerCase();
-    const extensionMatch = lowerCaseUrl.match(/\.[0-9a-z]+$/i);
-    const extension = extensionMatch ? extensionMatch[0] : null;
-
-    if (extension) {
-      if (imageExtensions.includes(extension)) {
-        return "image";
-      }
-      if (videoExtensions.includes(extension)) {
-        return "video";
-      }
-    }
-  } catch (e) {
-    console.error("Error determining media type for URL:", url, e);
-  }
-  return "unknown";
-};
-
 const ProfileMediaPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   params: paramsPromise,
 }) => {
   const params = use(paramsPromise);
   const profileId = params.id;
 
-  const mediaItems: MediaItem[] = SAMPLE_MEDIA_URLS.map((url, i) => {
-    const type = getMediaType(url);
-    if (type === "image" || type === "video") {
-      return {
-        id: `media-${profileId}-${i}`,
-        url: url,
-        type: type,
-      };
-    }
-    return null;
-  }).filter((item): item is MediaItem => item !== null);
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
+
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerStartIndex, setViewerStartIndex] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+
+    const fetchMedia = async () => {
+      try {
+        if (userContextLoading) {
+          return;
+        }
+
+        if (userContextError) {
+          throw new Error(userContextError);
+        }
+
+        let targetUserId = profileId;
+        if (profileId === "me" && user) {
+          targetUserId = user.id;
+        } else if (profileId === "me" && !user) {
+          throw new Error("User not logged in. Cannot fetch media for 'me'.");
+        }
+
+        if (!targetUserId) {
+          throw new Error("Invalid profile ID.");
+        }
+
+        const fetchedMedia = await getListMediaByUserId(targetUserId);
+
+        if (isMounted) {
+          setMediaItems(fetchedMedia);
+        }
+      } catch (err: any) {
+        console.error("Error fetching media:", err);
+        if (isMounted) {
+          setError(err.message || "Failed to load media.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchMedia();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileId, user, userContextLoading, userContextError]);
 
   const handleMediaClick = (index: number) => {
     setViewerStartIndex(index);
     setViewerOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
+        <ClipLoader
+          color="#FF69B4"
+          loading={true}
+          size={35}
+          aria-label="Loading Spinner"
+        />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-6 mt-8 text-red-600 dark:text-red-400 font-semibold bg-red-100 dark:bg-red-900/20 rounded-md max-w-md mx-auto">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 mb-6 md:mb-8">
