@@ -51,6 +51,20 @@ const formatUserInfoToProfileAboutData = (
     schedule = {};
   }
 
+  let formattedDob: string | null = null;
+  if (userInfo.dob) {
+    try {
+      const dobDate = new Date(userInfo.dob);
+      if (!isNaN(dobDate.getTime())) {
+        formattedDob = dobDate.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+    } catch (e) {}
+  }
+
   return {
     id: userInfo.id,
     avtURL: userInfo.avtURL || "",
@@ -58,7 +72,7 @@ const formatUserInfoToProfileAboutData = (
     background: userInfo.background || "",
     overview: {
       bio: userInfo.description || "",
-      born: userInfo.dob || null,
+      born: formattedDob,
       status: null,
       occupation: userInfo.major || null,
       livesIn: `${userInfo.latitude}, ${userInfo.longitude}` || null,
@@ -73,7 +87,7 @@ const formatUserInfoToProfileAboutData = (
       websites: [],
     },
     basicInfo: {
-      born: userInfo.dob || null,
+      born: formattedDob,
       gender: null,
     },
     hobbies: userInfo.hobbies.map((hobby) => ({

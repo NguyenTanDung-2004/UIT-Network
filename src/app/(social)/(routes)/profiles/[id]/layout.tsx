@@ -6,11 +6,27 @@ import ProfileTabs from "@/components/profile/ProfileTabs";
 import { ProfileHeaderData } from "@/types/profile/ProfileData";
 import { ClipLoader } from "react-spinners";
 import { useUser } from "@/contexts/UserContext";
+import { getListUserInfoByIds } from "@/services/userService";
+import { ProfileAboutData } from "@/types/profile/AboutData";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 const DEFAULT_COVER =
   "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg";
+
+const mapProfileAboutToProfileHeader = (
+  profileAbout: ProfileAboutData
+): ProfileHeaderData => {
+  return {
+    id: profileAbout.id,
+    name: profileAbout.name,
+    avatar: profileAbout.avtURL || DEFAULT_AVATAR,
+    coverPhoto: profileAbout.background || DEFAULT_COVER,
+    followerCount: 0,
+    friendCount: 0,
+    friendshipStatus: "not_friend",
+  };
+};
 
 interface ProfileLayoutProps {
   children: React.ReactNode;
@@ -71,39 +87,27 @@ const ProfileLayout = ({
       setLoading(true);
       setError(null);
 
-      // Hardcoded data for other profiles
-      let data: ProfileHeaderData | null = null;
-      if (currentProfileId === "someOtherId") {
-        // Thay thế bằng ID thật của một người dùng khác nếu muốn
-        data = {
-          id: currentProfileId,
-          name: "Nguyễn Tấn Dũng",
-          avatar: DEFAULT_AVATAR,
-          coverPhoto: DEFAULT_COVER,
-          followerCount: 2,
-          friendCount: 12,
-          friendshipStatus: "friend",
-        };
-      } else {
-        data = {
-          id: currentProfileId,
-          name: "Other User",
-          avatar: DEFAULT_AVATAR,
-          coverPhoto: DEFAULT_COVER,
-          followerCount: 5,
-          friendCount: 50,
-          friendshipStatus: "not_friend",
-        };
-      }
-
-      if (isMounted) {
-        if (data) {
-          setProfileData(data);
-        } else {
-          setError(`Profile with ID "${currentProfileId}" not found.`);
-        }
-        setLoading(false);
-      }
+      getListUserInfoByIds([currentProfileId])
+        .then((dataArray) => {
+          if (isMounted) {
+            if (dataArray && dataArray.length > 0) {
+              const fetchedProfile = mapProfileAboutToProfileHeader(
+                dataArray[0]
+              );
+              setProfileData(fetchedProfile);
+            } else {
+              setError(`Profile with ID "${currentProfileId}" not found.`);
+            }
+            setLoading(false);
+          }
+        })
+        .catch((fetchError) => {
+          console.error("Failed to fetch other profile data:", fetchError);
+          if (isMounted) {
+            setError("Failed to load profile data.");
+            setLoading(false);
+          }
+        });
     } else {
       setError("Invalid profile ID.");
       setLoading(false);
