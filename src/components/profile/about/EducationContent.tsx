@@ -112,7 +112,7 @@ const EducationContent: React.FC<EducationContentProps> = ({
             <InfoItemCard
               key={college.id}
               icon="fas fa-graduation-cap"
-              value={`${college.degree} at ${college.name} (${college.duration})`}
+              value={`${college.degree} at University of Information Technology`}
             />
           ))}
           {isOwnProfile && (
