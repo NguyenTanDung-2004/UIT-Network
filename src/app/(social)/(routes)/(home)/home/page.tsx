@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CreatePost from "@/components/post/CreatePost";
 import Post from "@/components/post/Post";
 import { PostDataType } from "@/components/post/Post";
@@ -10,20 +10,27 @@ import {
 } from "@/components/home/Connect";
 import CreatePostModal from "@/components/post/create/CreatePostModal";
 import { UploadedFile } from "@/components/post/create/CreatePostModal";
+import { getHomePosts } from "@/services/postService"; // Import getHomePosts
+import { useUser } from "@/contexts/UserContext"; // Import useUser
+import ClipLoader from "react-spinners/ClipLoader";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
 const HomePage = () => {
-  // Mock user data
-  const currentUser = {
-    id: "user123",
-    name: "Phan Nguyễn Trà Giang",
-    avatar:
-      "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-  };
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
 
-  // Mock people to connect with
+  const [posts, setPosts] = useState<PostDataType[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [errorPosts, setErrorPosts] = useState<string | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Mock data for widgets for now, will replace with API calls later
   const [peopleToConnect, setPeopleToConnect] = useState([
     {
       id: "user1",
@@ -59,7 +66,6 @@ const HomePage = () => {
     },
   ]);
 
-  // Mock groups to join
   const [groupsToJoin, setGroupsToJoin] = useState([
     {
       id: "group1",
@@ -84,112 +90,44 @@ const HomePage = () => {
     },
   ]);
 
-  // Mock posts data
-  const [posts, setPosts] = useState<PostDataType[]>([
-    {
-      id: "post1",
-      author: {
-        id: "author1",
-        name: "Phan Nguyễn Trà Giang",
-        avatar: DEFAULT_AVATAR,
-      },
-      content:
-        "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and ...",
-      fullContent:
-        "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines. The country has a vibrant economy, largely driven by agriculture, manufacturing, and tourism. With a population of about 97 million people, Vietnam is one of the most populous countries in the world. The country's cuisine is renowned globally for its fresh ingredients, vibrant flavors, and healthy cooking techniques.",
-      date: "Fri, February 7, 2025",
-      time: "10:56 AM",
-      mediaList: [
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661303/cld-sample-2.jpg",
-          type: "image",
-        },
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-      ],
-      likes: 293,
-      comments: 18,
-      shares: 10,
-    },
-    {
-      id: "post-page1",
-      author: {
-        id: "pageJavaDev",
-        name: "CLB Java Developer",
-        avatar: DEFAULT_AVATAR,
-      },
-      origin: {
-        type: "page",
-        pageInfo: {
-          isFollowing: false,
-        },
-      },
-      content: "Exciting news about our upcoming Java workshop!",
-      date: "Thu, February 6, 2025",
-      time: "02:30 PM",
-      mediaList: [
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-      ],
-      likes: 150,
-      comments: 22,
-      shares: 5,
-    },
-    {
-      id: "post-group1",
-      author: {
-        id: "userTanDung",
-        name: "Nguyễn Tấn Dũng",
-        avatar: DEFAULT_AVATAR,
-      },
-      origin: {
-        type: "group",
-        groupInfo: {
-          id: "groupUITK22",
-          name: "UIT K22",
-          isJoined: true,
-        },
-      },
-      content: "Anyone have notes for the last Algorithms lecture?",
-      date: "Wed, February 5, 2025",
-      time: "09:00 AM",
-      mediaList: [
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-        {
-          url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-      ],
-      likes: 45,
-      comments: 8,
-      shares: 2,
-    },
-  ]);
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingPosts(true);
+    setErrorPosts(null);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+    const fetchPosts = async () => {
+      try {
+        if (userContextLoading) {
+          return;
+        }
+
+        if (userContextError) {
+          throw new Error(userContextError);
+        }
+
+        const fetchedPosts = await getHomePosts();
+        if (isMounted) {
+          setPosts(fetchedPosts);
+        }
+      } catch (err: any) {
+        console.error("Error fetching home posts:", err);
+        if (isMounted) {
+          setErrorPosts(err.message || "Failed to load posts.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingPosts(false);
+        }
+      }
+    };
+
+    fetchPosts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userContextLoading, userContextError]);
+
   const openModal = () => {
     setIsModalOpen(true);
   };
@@ -197,22 +135,23 @@ const HomePage = () => {
     setIsModalOpen(false);
   };
 
-  // Handle creating a new post
   const handleCreatePost = (
     content: string,
     mediaList: { url: string; type: string }[],
     file?: UploadedFile
   ) => {
+    if (!user) return; // Cannot create post if user is not loaded
+
     let truncatedContent: string | undefined = undefined;
     if (content.length > 200) {
       truncatedContent = content.substring(0, 200);
     }
-    const newPost = {
-      id: `post${posts.length + 1}`,
+    const newPost: PostDataType = {
+      id: `post${Date.now()}`, // Unique ID for new post
       author: {
-        id: currentUser.id,
-        name: currentUser.name,
-        avatar: currentUser.avatar,
+        id: user.id,
+        name: user.name,
+        avatar: user.avtURL || DEFAULT_AVATAR,
       },
       content: truncatedContent || "",
       fullContent: content,
@@ -227,7 +166,7 @@ const HomePage = () => {
         minute: "numeric",
         hour12: true,
       }),
-      mediaList: mediaList,
+      mediaList: mediaList.length > 0 ? mediaList : undefined,
       likes: 0,
       comments: 0,
       shares: 0,
@@ -235,9 +174,9 @@ const HomePage = () => {
     };
 
     setPosts([newPost, ...posts]);
+    closeModal();
   };
 
-  // Handle connecting with a person
   const handleConnect = (userId: string) => {
     setPeopleToConnect(
       peopleToConnect.map((person) =>
@@ -248,7 +187,6 @@ const HomePage = () => {
     );
   };
 
-  // Handle joining a group
   const handleJoinGroup = (groupId: string) => {
     setGroupsToJoin(
       groupsToJoin.map((group) =>
@@ -257,15 +195,52 @@ const HomePage = () => {
     );
   };
 
+  if (userContextLoading || loadingPosts) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-100px)]">
+        <ClipLoader
+          color="#FF69B4"
+          loading={true}
+          size={35}
+          aria-label="Loading Spinner"
+        />
+      </div>
+    );
+  }
+
+  if (userContextError || errorPosts || !user) {
+    return (
+      <div className="text-center p-4 text-red-600 dark:text-red-400 font-semibold bg-red-100 dark:bg-red-900/20 rounded-md max-w-md mx-auto mt-8">
+        {userContextError ||
+          errorPosts ||
+          "Failed to load user or posts data. Please try logging in again."}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col md:flex-row">
-      {/* Main Feed */}
       <div className="flex-1 ">
-        <CreatePost user={currentUser} onPostCreate={openModal} />
+        <CreatePost
+          user={{
+            id: user.id,
+            name: user.name,
+            avatar: user.avtURL || DEFAULT_AVATAR,
+          }}
+          onPostCreate={openModal}
+        />
 
-        {posts.map((post) => (
-          <Post key={post.id} post={post} />
-        ))}
+        {posts.length > 0 ? (
+          posts.map((post) => <Post key={post.id} post={post} />)
+        ) : (
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm mt-4">
+            <i className="fas fa-stream text-4xl mb-3"></i>
+            <p>No posts to display in your feed.</p>
+            <p className="text-sm mt-1">
+              Start by creating a new post or connecting with others!
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="hidden lg:block lg:w-72 ml-4 ">
@@ -282,7 +257,6 @@ const HomePage = () => {
         />
       </div>
 
-      {/* Show CreatePostModal */}
       {isModalOpen && (
         <CreatePostModal
           onClose={closeModal}

@@ -82,10 +82,33 @@ interface BackendUserInfoInPostList {
   avtURL: string;
   studentId: string;
 }
+interface BackendGroupInfoInPostList {
+  id: string;
+  name: string;
+  avtURL: string;
+}
+
+interface BackendFanpageInfoInPostList {
+  id: string;
+  name: string;
+  avtURL: string;
+}
 
 interface GetPostsApiResponse {
   object: {
     listUserInfos: BackendUserInfoInPostList[];
+    listPost: BackendPost[];
+  };
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+interface GetHomePostsApiResponse {
+  object: {
+    listUserInfos: BackendUserInfoInPostList[];
+    listGroupInfos: BackendGroupInfoInPostList[];
+    listFanpageInfos: BackendFanpageInfoInPostList[];
     listPost: BackendPost[];
   };
   enumResponse: {
@@ -134,9 +157,11 @@ const formatDateTime = (isoDateString: string) => {
 
 const formatBackendPostToPostDataType = (
   backendPost: BackendPost,
-  allUserInfos: BackendUserInfoInPostList[]
+  allUserInfos: BackendUserInfoInPostList[],
+  allGroupInfos: BackendGroupInfoInPostList[] = [],
+  allFanpageInfos: BackendFanpageInfoInPostList[] = []
 ): PostDataType => {
-  const author = findAuthorInfo(backendPost.userId, allUserInfos);
+  const originalAuthor = findAuthorInfo(backendPost.userId, allUserInfos);
   const { date, time } = formatDateTime(backendPost.createdDate);
 
   let mediaList: { url: string; type: string }[] = [];
@@ -160,24 +185,32 @@ const formatBackendPostToPostDataType = (
   });
 
   let origin: PostOrigin | undefined;
+  let displayAuthor: AuthorInfo = { ...originalAuthor };
+
   if (backendPost.parentId) {
     const [type, id] = backendPost.parentId.split("||");
     if (type === "group") {
+      const groupInfo = allGroupInfos.find((g) => g.id === id);
       origin = {
         type: "group",
         groupInfo: {
           id: id,
-          name: `Group ${id.substring(0, 8)}`,
-          isJoined: false,
+          name: groupInfo?.name || `Group ${id.substring(0, 8)}`,
+          isJoined: true, // Default value, will need API to check
         },
       };
+      displayAuthor.name = groupInfo?.name || displayAuthor.name;
+      displayAuthor.avatar = groupInfo?.avtURL || displayAuthor.avatar;
     } else if (type === "fanpage") {
+      const fanpageInfo = allFanpageInfos.find((f) => f.id === id);
       origin = {
         type: "page",
         pageInfo: {
-          isFollowing: false,
+          isFollowing: true,
         },
       };
+      displayAuthor.name = fanpageInfo?.name || displayAuthor.name;
+      displayAuthor.avatar = fanpageInfo?.avtURL || displayAuthor.avatar;
     }
   }
 
@@ -188,7 +221,7 @@ const formatBackendPostToPostDataType = (
 
   return {
     id: backendPost.postId,
-    author: author,
+    author: displayAuthor, // Use the potentially overridden author info
     origin: origin,
     content: displayContent,
     fullContent: fullContent,
@@ -228,5 +261,38 @@ export const getPostsByUserId = async (
   const { listUserInfos, listPost } = response.object;
   return listPost.map((post) =>
     formatBackendPostToPostDataType(post, listUserInfos)
+  );
+};
+
+export const getHomePosts = async (): Promise<PostDataType[]> => {
+  const baseUrl = process.env.POST_API_URL || "http://localhost:8083";
+  const url = `${baseUrl}/post/list/home`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+
+  const response = await apiFetch<GetHomePostsApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_09_post") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch home feed posts"
+    );
+  }
+
+  const { listUserInfos, listGroupInfos, listFanpageInfos, listPost } =
+    response.object;
+  return listPost.map((post) =>
+    formatBackendPostToPostDataType(
+      post,
+      listUserInfos,
+      listGroupInfos,
+      listFanpageInfos
+    )
   );
 };
