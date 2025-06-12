@@ -6,13 +6,11 @@ import { FollowingItem } from "@/types/profile/FriendData";
 
 interface FollowingCardProps {
   item: FollowingItem;
-  profileId: string;
   isOwnProfile: boolean;
 }
 
 const FollowingCard: React.FC<FollowingCardProps> = ({
   item,
-  profileId,
   isOwnProfile,
 }) => {
   const handleChat = () => console.log(`Chat with ${item.id}`);

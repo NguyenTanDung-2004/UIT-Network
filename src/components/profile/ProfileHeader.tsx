@@ -132,10 +132,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profileData }) => {
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 break-words">
               {profileData.name}
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {/* <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {profileData.followerCount} followers · {profileData.friendCount}{" "}
               friends
-            </p>
+            </p> */}
           </div>
           <div className="flex-shrink-0 w-full md:w-auto flex justify-center md:justify-end">
             {renderActionButtons()}

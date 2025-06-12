@@ -76,8 +76,6 @@ const ProfileFriendsPage: React.FC<{ params: Promise<{ id: string }> }> = ({
             friendshipStatus: "self",
           });
         } else {
-          // For other profiles, you might need an API to get their basic info,
-          // or pass it down from the ProfileLayout. For now, hardcode.
           setHeaderData({
             id: profileId,
             name: "Other User", // Placeholder

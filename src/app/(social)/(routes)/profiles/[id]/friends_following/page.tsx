@@ -1,60 +1,18 @@
 "use client";
 
-import React, { useState, useMemo, use } from "react";
+import React, { useState, useEffect, useMemo, use } from "react";
+import ClipLoader from "react-spinners/ClipLoader";
 
 import FriendsNavigation from "@/components/profile/friends/FriendsNavigation";
 import SearchAndHeader from "@/components/profile/friends/SearchAndHeader";
 import FollowingCard from "@/components/profile/friends/FollowingCard";
 
-import { ProfileHeaderData } from "@/types/profile/ProfileData";
 import { FollowingItem } from "@/types/profile/FriendData";
+import { useUser } from "@/contexts/UserContext";
+import { getFollowingPages } from "@/services/fanpageGroupService";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
-const SAMPLE_AVATARS = [
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample.jpg",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270448/samples/upscale-face-1.jpg",
-  DEFAULT_AVATAR,
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270447/samples/chair-and-coffee-table.jpg",
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270446/samples/breakfast.jpg",
-];
-
-const getMockHeaderData = (id: string): ProfileHeaderData => ({
-  id: id,
-  name: id === "me" ? "Phan Nguyễn Trà Giang" : "Nguyễn Tấn Dũng",
-  avatar: DEFAULT_AVATAR,
-  coverPhoto: "",
-  followerCount: id === "me" ? 19 : 2,
-  friendCount: id === "me" ? 200 : 12,
-  friendshipStatus: id === "me" ? "self" : "friend",
-});
-
-const getMockFollowingData = (
-  id: string
-): {
-  following: FollowingItem[];
-  counts: { all: number; following: number; joined: number };
-} => {
-  const pageCount = 5; // Chỉ đếm số page
-  const mockFollowingPages: FollowingItem[] = Array.from({
-    length: pageCount,
-  }).map((_, i) => ({
-    type: "page",
-    id: `following-page-${id}-${i}`,
-    name: `Trang Đang Theo Dõi ${i + 1}`,
-    avatar: SAMPLE_AVATARS[SAMPLE_AVATARS.length - 1], // Use last avatar for pages
-    pageUrl: `/pages/following-page-${id}-${i}`,
-  }));
-
-  return {
-    following: mockFollowingPages,
-    counts: {
-      all: 10, // Placeholder: có thể là tổng số bạn bè hoặc liên quan khác
-      following: pageCount, // Chỉ đếm số page
-      joined: 5, // Placeholder: đếm số group đang join
-    },
-  };
-};
 
 const ProfileFollowingPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   params: paramsPromise,
@@ -62,23 +20,110 @@ const ProfileFollowingPage: React.FC<{ params: Promise<{ id: string }> }> = ({
   const params = use(paramsPromise);
   const profileId = params.id;
 
-  const headerData = getMockHeaderData(profileId);
-  const followingData = getMockFollowingData(profileId);
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
 
+  const [followingItems, setFollowingItems] = useState<FollowingItem[]>([]);
+  const [counts, setCounts] = useState<{
+    all: number;
+    following: number;
+    joined: number;
+  }>({
+    all: 0,
+    following: 0,
+    joined: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+
+    const fetchFollowingData = async () => {
+      try {
+        if (userContextLoading) {
+          return;
+        }
+
+        if (userContextError) {
+          throw new Error(userContextError);
+        }
+
+        if (!profileId) {
+          throw new Error("Invalid profile ID for following page.");
+        }
+
+        const isCurrentUserProfile =
+          user && (profileId === "me" || profileId === user.id);
+        const targetUserId = isCurrentUserProfile && user ? user.id : profileId;
+
+        const fetchedPages = await getFollowingPages(targetUserId);
+
+        if (isMounted) {
+          setFollowingItems(fetchedPages);
+          setCounts({
+            all: 0, // Placeholder for total friends/following, not fetched here
+            following: fetchedPages.length,
+            joined: 0, // Placeholder for joined groups, not fetched here
+          });
+        }
+      } catch (err: any) {
+        console.error("Error fetching following data:", err);
+        if (isMounted) {
+          setError(err.message || "Failed to load following data.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchFollowingData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileId, user, userContextLoading, userContextError]);
+
   const filteredFollowing = useMemo(() => {
-    if (!followingData?.following) return [];
-    if (!searchQuery) return followingData.following;
-    return followingData.following.filter((item) =>
+    if (!followingItems) return [];
+    if (!searchQuery) return followingItems;
+    return followingItems.filter((item) =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [followingData?.following, searchQuery]);
+  }, [followingItems, searchQuery]);
 
-  const isOwnProfile = headerData?.friendshipStatus === "self";
+  const isOwnProfile = !!(
+    user &&
+    (profileId === "me" || profileId === user.id)
+  );
 
-  if (!headerData || !followingData) {
-    return <div>Error loading profile data.</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
+        <ClipLoader
+          color="#FF69B4"
+          loading={true}
+          size={35}
+          aria-label="Loading Spinner"
+        />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center mt-8 text-red-600 dark:text-red-400 font-semibold bg-red-100 dark:bg-red-900/20 rounded-md max-w-md mx-auto">
+        {error}
+      </div>
+    );
   }
 
   return (
@@ -90,7 +135,7 @@ const ProfileFollowingPage: React.FC<{ params: Promise<{ id: string }> }> = ({
       <FriendsNavigation
         activeTab="following"
         profileId={profileId}
-        counts={followingData.counts}
+        counts={counts}
       />
 
       {filteredFollowing.length > 0 ? (
@@ -99,7 +144,6 @@ const ProfileFollowingPage: React.FC<{ params: Promise<{ id: string }> }> = ({
             <FollowingCard
               key={`${item.type}-${item.id}`}
               item={item}
-              profileId={profileId}
               isOwnProfile={isOwnProfile}
             />
           ))}
