@@ -18,6 +18,7 @@ import {
   getListFriendIds,
   getUserInfoCardsByIds,
 } from "@/services/friendService";
+import { getPostsByUserId } from "@/services/postService";
 import { Friend } from "@/types/profile/FriendData";
 
 const DEFAULT_AVATAR =
@@ -204,88 +205,6 @@ const ProfilePage: React.FC = () => {
             details: details,
           };
 
-          const samplePosts: PostDataType[] = [
-            {
-              id: `profile-${fetchedAboutData.id}-post1`,
-              author: {
-                id: fetchedAboutData.id,
-                name: fetchedAboutData.name,
-                avatar: fetchedAboutData.avtURL || DEFAULT_AVATAR,
-              },
-              content: `Đây là bài viết cá nhân của ${fetchedAboutData.name}. Chia sẻ một chút về ngày hôm nay!`,
-              fullContent: `Đây là bài viết cá nhân của ${fetchedAboutData.name}. Chia sẻ một chút về ngày hôm nay! Hôm nay thời tiết thật đẹp và tôi đã có một buổi làm việc hiệu quả.`,
-              date: "Sat, March 15, 2025",
-              time: "09:15 AM",
-              mediaList: [
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661303/cld-sample-2.jpg",
-                  type: "image",
-                },
-                {
-                  url: "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-                  type: "image",
-                },
-              ],
-              likes: Math.floor(Math.random() * 100 + 10),
-              comments: Math.floor(Math.random() * 20),
-              shares: Math.floor(Math.random() * 5),
-            },
-            {
-              id: "profile-post-page1",
-              author: {
-                id: "pageJavaDev",
-                name: "CLB Java Developer",
-                avatar: DEFAULT_AVATAR,
-              },
-              origin: {
-                type: "page",
-                pageInfo: { isFollowing: Math.random() > 0.5 },
-              },
-              content: "Thông báo: Workshop Java nâng cao sắp diễn ra!",
-              date: "Fri, March 14, 2025",
-              time: "04:00 PM",
-              likes: 150,
-              comments: 22,
-              shares: 5,
-            },
-            {
-              id: `profile-${fetchedAboutData.id}-post-group1`,
-              author: {
-                id: fetchedAboutData.id,
-                name: fetchedAboutData.name,
-                avatar: fetchedAboutData.avtURL || DEFAULT_AVATAR,
-              },
-              origin: {
-                type: "group",
-                groupInfo: {
-                  id: "groupUITK22",
-                  name: "UIT K22",
-                  isJoined: true,
-                },
-              },
-              content: "Có ai có tài liệu môn Cấu trúc dữ liệu không ạ?",
-              date: "Fri, March 14, 2025",
-              time: "11:30 AM",
-              likes: 45,
-              comments: 8,
-              shares: 2,
-            },
-            {
-              id: `profile-${fetchedAboutData.id}-post2`,
-              author: {
-                id: fetchedAboutData.id,
-                name: fetchedAboutData.name,
-                avatar: fetchedAboutData.avtURL || DEFAULT_AVATAR,
-              },
-              content: "Cuối tuần thư giãn với một cuốn sách hay.",
-              date: "Thu, March 13, 2025",
-              time: "08:00 PM",
-              likes: 55,
-              comments: 12,
-              shares: 3,
-            },
-          ];
-
           const newSummaries: ProfileSummaryData = {
             about: generatedAboutSummary,
             photos: [
@@ -313,9 +232,13 @@ const ProfilePage: React.FC = () => {
             ],
             friends: friendList,
           };
-
-          setPosts(samplePosts);
           setSummaries(newSummaries);
+
+          // Fetch posts
+          const fetchedPosts = await getPostsByUserId(fetchedAboutData.id);
+          if (isMounted) {
+            setPosts(fetchedPosts);
+          }
         } else if (isMounted) {
           throw new Error(`Profile with ID "${profileId}" not found.`);
         }

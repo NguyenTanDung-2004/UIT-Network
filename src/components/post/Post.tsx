@@ -42,7 +42,7 @@ interface PostOriginGroup {
   groupInfo: GroupInfo;
 }
 
-type PostOrigin = PostOriginPage | PostOriginGroup;
+export type PostOrigin = PostOriginPage | PostOriginGroup;
 
 export interface PostDataType {
   id: string;

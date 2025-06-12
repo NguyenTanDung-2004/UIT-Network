@@ -52,8 +52,7 @@ const formatFanpageToFollowingPage = (
 export const getJoinedGroups = async (
   userId: string
 ): Promise<JoinedGroup[]> => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_FANPAGE_GROUP_API_URL || "http://localhost:8084";
+  const baseUrl = process.env.FANPAGE_API_URL || "http://localhost:8084";
   const url = `${baseUrl}/group/notexternal/list/${userId}`;
   const options: RequestInit = {
     method: "GET",
@@ -73,8 +72,7 @@ export const getJoinedGroups = async (
 export const getFollowingPages = async (
   userId: string
 ): Promise<FollowingPage[]> => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_FANPAGE_GROUP_API_URL || "http://localhost:8084";
+  const baseUrl = process.env.FANPAGE_API_URL || "http://localhost:8084";
   const url = `${baseUrl}/fanpage/notexternal/list/${userId}`;
   const options: RequestInit = {
     method: "GET",
