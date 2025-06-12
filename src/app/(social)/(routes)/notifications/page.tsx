@@ -6,109 +6,19 @@ import NotificationFilter, {
 } from "@/components/notifications/NotificationFilter";
 import NotificationCard from "@/components/notifications/NotificationCard";
 import { ClipLoader } from "react-spinners";
+import { useUser } from "@/contexts/UserContext";
+import { getNotifications } from "@/services/notiService";
+import { NotificationItemData } from "@/services/notiService";
 
-interface NotificationItemData {
-  id: string;
-  avatar: string;
-  content: React.ReactNode;
-  timestamp: Date;
-  read: boolean;
-  link?: string;
-}
-
-const DEFAULT_AVATAR =
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 const ITEMS_PER_PAGE = 10;
 
-async function fetchNotifications(
-  page = 1,
-  limit = 25
-): Promise<{
-  notifications: NotificationItemData[];
-  total: number;
-  unreadCount: number;
-}> {
-  console.log(`Fetching notifications: page ${page}, limit ${limit}`);
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  const totalNotifications = 27;
-  let unreadCount = 0;
-
-  const mockData: NotificationItemData[] = Array.from({
-    length: totalNotifications,
-  })
-    .map((_, i) => {
-      const id = `notif-${i + 1}`;
-      const isRead = Math.random() > 0.4;
-      if (!isRead) {
-        unreadCount++;
-      }
-      const type = Math.floor(Math.random() * 4);
-      let content: React.ReactNode;
-      let link: string | undefined;
-      let timestamp = new Date(
-        Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 7
-      );
-
-      switch (type) {
-        case 0:
-          content = (
-            <>
-              <span className="font-semibold">User {i + 1}</span> sent you a
-              friend request.
-            </>
-          );
-          link = `/profiles/user-${i + 1}`;
-          break;
-        case 1:
-          content = (
-            <>
-              <span className="font-semibold">Another User</span> mentioned you
-              in a comment on{" "}
-              <span className="font-semibold">Post Title {i % 5}</span>.
-            </>
-          );
-          link = `/posts/post-abc${i % 5}`;
-          break;
-        case 2:
-          content = (
-            <>
-              <span className="font-semibold">Someone Else</span> and{" "}
-              {Math.floor(Math.random() * 5) + 1} others liked your post.
-            </>
-          );
-          link = `/posts/my-post-${i}`;
-          break;
-        case 3:
-          content = (
-            <>
-              <span className="font-semibold">Admin Person</span> invited you to
-              join the group{" "}
-              <span className="font-semibold">Awesome Group {i % 3}</span>.
-            </>
-          );
-          link = `/groups/group-${i % 3}`;
-          break;
-        default:
-          content = <>Generic notification content number {i + 1}.</>;
-          break;
-      }
-
-      return {
-        id,
-        avatar: DEFAULT_AVATAR,
-        content,
-        timestamp,
-        read: isRead,
-        link,
-      };
-    })
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-  return { notifications: mockData, total: totalNotifications, unreadCount };
-}
-
 const NotificationsPage = () => {
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
+
   const [activeFilter, setActiveFilter] =
     useState<NotificationFilterType>("all");
   const [allNotifications, setAllNotifications] = useState<
@@ -123,26 +33,46 @@ const NotificationsPage = () => {
     let isMounted = true;
     setLoading(true);
     setError(null);
-    fetchNotifications()
-      .then(({ notifications, unreadCount: fetchedUnreadCount }) => {
+
+    const fetchAllNotifications = async () => {
+      try {
+        if (userContextLoading) {
+          return;
+        }
+
+        if (userContextError) {
+          throw new Error(userContextError);
+        }
+
+        if (!user || !user.id) {
+          throw new Error("User not authenticated or ID not found.");
+        }
+
+        const fetchedNotifications = await getNotifications(user.id);
+
         if (isMounted) {
-          setAllNotifications(notifications);
-          setUnreadCount(fetchedUnreadCount);
+          const initialUnreadCount = fetchedNotifications.filter(
+            (n) => !n.read
+          ).length;
+          setAllNotifications(fetchedNotifications);
+          setUnreadCount(initialUnreadCount);
           setLoading(false);
         }
-      })
-      .catch((err) => {
+      } catch (err: any) {
         console.error("Failed to fetch notifications:", err);
         if (isMounted) {
-          setError("Could not load notifications.");
+          setError(err.message || "Could not load notifications.");
           setLoading(false);
         }
-      });
+      }
+    };
+
+    fetchAllNotifications();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user, userContextLoading, userContextError]);
 
   const filteredNotifications = useMemo(() => {
     if (activeFilter === "all") {
@@ -170,13 +100,15 @@ const NotificationsPage = () => {
   };
 
   const handleNotificationClick = (id: string, link?: string) => {
-    console.log(`Notification ${id} clicked.`);
     const notificationToUpdate = allNotifications.find((n) => n.id === id);
     if (notificationToUpdate && !notificationToUpdate.read) {
       setAllNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+    if (link) {
+      window.location.href = link;
     }
   };
 
@@ -189,7 +121,7 @@ const NotificationsPage = () => {
 
   const showMoreText = `Show ${Math.min(remainingCount, ITEMS_PER_PAGE)} more`;
 
-  if (loading) {
+  if (loading || userContextLoading) {
     return (
       <div className="flex justify-center items-center w-full min-h-screen dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6">
         <ClipLoader
@@ -202,10 +134,12 @@ const NotificationsPage = () => {
     );
   }
 
-  if (error) {
+  if (error || userContextError || !user) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 text-center text-red-600">
-        {error}
+        {error ||
+          userContextError ||
+          "Failed to load notifications. Please log in."}
       </div>
     );
   }
