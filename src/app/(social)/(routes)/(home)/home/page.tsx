@@ -10,8 +10,11 @@ import {
 } from "@/components/home/Connect";
 import CreatePostModal from "@/components/post/create/CreatePostModal";
 import { UploadedFile } from "@/components/post/create/CreatePostModal";
-import { getHomePosts } from "@/services/postService"; // Import getHomePosts
-import { useUser } from "@/contexts/UserContext"; // Import useUser
+import {
+  getHomePosts,
+  createPost as apiCreatePost,
+} from "@/services/postService";
+import { useUser } from "@/contexts/UserContext";
 import ClipLoader from "react-spinners/ClipLoader";
 
 const DEFAULT_AVATAR =
@@ -30,7 +33,6 @@ const HomePage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Mock data for widgets for now, will replace with API calls later
   const [peopleToConnect, setPeopleToConnect] = useState([
     {
       id: "user1",
@@ -135,46 +137,49 @@ const HomePage = () => {
     setIsModalOpen(false);
   };
 
-  const handleCreatePost = (
+  const handleCreatePost = async (
     content: string,
     mediaList: { url: string; type: string }[],
     file?: UploadedFile
   ) => {
-    if (!user) return; // Cannot create post if user is not loaded
-
-    let truncatedContent: string | undefined = undefined;
-    if (content.length > 200) {
-      truncatedContent = content.substring(0, 200);
+    if (!user) {
+      console.warn("User not logged in. Cannot create post.");
+      return;
     }
-    const newPost: PostDataType = {
-      id: `post${Date.now()}`, // Unique ID for new post
-      author: {
-        id: user.id,
-        name: user.name,
-        avatar: user.avtURL || DEFAULT_AVATAR,
-      },
-      content: truncatedContent || "",
-      fullContent: content,
-      date: new Date().toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      }),
-      time: new Date().toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "numeric",
-        hour12: true,
-      }),
-      mediaList: mediaList.length > 0 ? mediaList : undefined,
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      file: file,
-    };
 
-    setPosts([newPost, ...posts]);
-    closeModal();
+    try {
+      type MediaItem = {
+        typeId: 1 | 2 | 3;
+        url: string;
+        name?: string;
+        sizeValue?: number;
+        unit?: string;
+      };
+
+      const formattedMedia: MediaItem[] = mediaList.map((item) => ({
+        typeId: item.type === "image" ? 2 : item.type === "video" ? 3 : 1, // Default to 1 if not image/video
+        url: item.url,
+      }));
+
+      if (file) {
+        formattedMedia.push({
+          typeId: 1, // File type
+          url: file.url,
+          name: file.name,
+          sizeValue: file.size,
+          unit: "Bytes", // Assuming bytes, adjust if API needs specific units
+        });
+      }
+
+      // postTypeId mặc định là 2 (normal_student_post public)
+      const newPostData = await apiCreatePost(content, formattedMedia, 2);
+
+      setPosts((prevPosts) => [newPostData, ...prevPosts]);
+      closeModal();
+    } catch (err) {
+      console.error("Failed to create post:", err);
+      // Có thể hiển thị thông báo lỗi cho người dùng
+    }
   };
 
   const handleConnect = (userId: string) => {

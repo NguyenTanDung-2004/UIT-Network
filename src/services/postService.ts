@@ -9,6 +9,40 @@ import { Friend } from "@/types/profile/FriendData";
 import { getUserInfoCardsByIds } from "@/services/friendService";
 import { CommentType } from "@/components/post/detail/CommentItem";
 
+interface CreatePostMediaItem {
+  typeId: 1 | 2 | 3; // 1: File, 2: Image, 3: Video
+  url: string;
+  sizeValue?: number;
+  unit?: string;
+  name?: string;
+}
+
+interface CreatePostRequestBody {
+  caption: string;
+  media?: CreatePostMediaItem[];
+  postTypeId: number;
+}
+
+interface CreatePostApiResponse {
+  object: {
+    postId: string;
+    userId: string;
+    createdDate: string;
+    updatedDate: string;
+    caption: string;
+    statusgroup: string;
+    media: BackendMedia[];
+    postType: BackendPostType;
+    deletedDate: string | null;
+    parentId: string | null;
+    delete: boolean;
+  };
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
 interface ApiMediaItem {
   typeId: 1 | 2 | 3;
   url: string;
@@ -241,6 +275,65 @@ const formatBackendPostToPostDataType = (
     shares: 0,
     file: file,
   };
+};
+
+export const createPost = async (
+  caption: string,
+  media: CreatePostMediaItem[] = [],
+  postTypeId: number = 2 // Mặc định là normal_student_post public
+): Promise<PostDataType> => {
+  const url = `${POST_API_BASE_URL}/post/create`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const requestBody: CreatePostRequestBody = {
+    caption,
+    media,
+    postTypeId,
+  };
+
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(requestBody),
+  };
+
+  const response = await apiFetch<CreatePostApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_01_post") {
+    throw new Error(response.enumResponse.message || "Failed to create post");
+  }
+  const createdPostBackend = response.object;
+
+  const userInfos = await (async () => {
+    try {
+      const fetchedUserInfos = await getUserInfoCardsByIds([
+        createdPostBackend.userId,
+      ]);
+      return fetchedUserInfos;
+    } catch (e) {
+      console.error("Failed to fetch user info for new post author:", e);
+      return [];
+    }
+  })();
+
+  const formattedPost = formatBackendPostToPostDataType(
+    createdPostBackend,
+    userInfos.map((u) => ({
+      userId: u.id,
+      userName: u.name,
+      avtURL: u.avatar,
+      studentId: "",
+    })),
+    [],
+    [],
+    0
+  );
+
+  return formattedPost;
 };
 
 export const getNumberOfLikes = async (postId: string): Promise<number> => {
@@ -627,3 +720,5 @@ export const createComment = async (
     );
   }
 };
+
+// END COMMENT
