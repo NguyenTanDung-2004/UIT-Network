@@ -100,16 +100,7 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
           try {
             const fetchedComments = await getCommentsByPostId(post.id);
             if (isMounted) {
-              const flattenedComments: CommentType[] = [];
-              fetchedComments.forEach((mainComment) => {
-                flattenedComments.push(mainComment);
-                if (mainComment.replies && mainComment.replies.length > 0) {
-                  mainComment.replies.forEach((reply) => {
-                    flattenedComments.push({ ...reply, isReply: true });
-                  });
-                }
-              });
-              setComments(flattenedComments);
+              setComments(fetchedComments); // set trực tiếp, vì getCommentsByPostId đã format phẳng
             }
           } catch (err) {
             console.error("Failed to fetch comments for modal:", err);
@@ -185,7 +176,7 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
 
     let commentContentToSend = newComment.trim();
     let tagIds: string[] | null = null;
-    let parentIdToSend: string | null = replyingToCommentId;
+    let parentIdToSend: string | null = null;
 
     if (replyingToCommentId) {
       const mentionMatch = newComment.match(/^@(\S+)\s*/);
@@ -194,14 +185,18 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
           .substring(mentionMatch[0].length)
           .trim();
       }
-      const parentComment = comments.find((c) => c.id === replyingToCommentId);
-      if (parentComment) {
-        tagIds = [parentComment.author.id];
+      // Dùng commentId được pass vào onReply làm parentId
+      parentIdToSend = replyingToCommentId;
+
+      // Tìm người dùng được tag để gửi tagIds
+      const taggedComment = comments.find((c) => c.id === replyingToCommentId);
+      if (taggedComment) {
+        tagIds = [taggedComment.author.id];
       }
     }
 
     try {
-      await createComment(
+      const createdComment = await createComment(
         post.id,
         user.id,
         commentContentToSend,
@@ -209,17 +204,25 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
         parentIdToSend
       );
 
-      const updatedFetchedComments = await getCommentsByPostId(post.id);
-      const flattenedComments: CommentType[] = [];
-      updatedFetchedComments.forEach((mainComment) => {
-        flattenedComments.push(mainComment);
-        if (mainComment.replies && mainComment.replies.length > 0) {
-          mainComment.replies.forEach((reply) => {
-            flattenedComments.push({ ...reply, isReply: true });
-          });
+      // Cập nhật UI ngay lập tức với comment mới
+      setComments((prevComments) => {
+        if (createdComment.parentCommentId) {
+          // Nếu là reply, tìm vị trí cha và chèn vào
+          const parentIndex = prevComments.findIndex(
+            (c) => c.id === createdComment.parentCommentId
+          );
+          if (parentIndex !== -1) {
+            const newComments = [...prevComments];
+            newComments.splice(parentIndex + 1, 0, {
+              ...createdComment,
+              isReply: true,
+            });
+            return newComments;
+          }
         }
+        // Nếu không có parentId hoặc không tìm thấy parent, thêm vào cuối như comment top-level
+        return [...prevComments, createdComment];
       });
-      setComments(flattenedComments);
 
       setNewComment("");
       setReplyingToCommentId(null);

@@ -14,6 +14,7 @@ export interface CommentType {
   likes: number;
   replies?: CommentType[];
   isReply?: boolean;
+  parentCommentId?: string | null;
 }
 
 interface CommentItemProps {

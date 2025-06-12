@@ -544,6 +544,23 @@ interface GetCommentsApiResponse {
   };
 }
 
+// Interfaces mới cho API tạo comment
+interface CreateCommentRequestBody {
+  postId: string;
+  userId: string;
+  content: string;
+  tagIds?: string[] | null;
+  parentCommentId?: string | null;
+}
+
+interface CreateCommentApiResponse {
+  object: BackendComment;
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
 const formatTimestamp = (isoDateString: string): string => {
   const date = new Date(isoDateString);
   const now = new Date();
@@ -596,6 +613,7 @@ const formatBackendCommentToCommentType = (
     timestamp: formatTimestamp(backendComment.creatDate),
     likes: 0,
     replies: [],
+    parentCommentId: backendComment.parentCommentId, // Thêm trường này
   };
 };
 
@@ -636,53 +654,27 @@ export const getCommentsByPostId = async (
 
   const userInfos = await getUserInfoCardsByIds(allUserIdsInComments);
 
-  const commentsMap = new Map<string, CommentType>();
-
+  const finalComments: CommentType[] = [];
   backendCommentTrees.forEach((tree) => {
-    const parent = formatBackendCommentToCommentType(
+    const parentComment = formatBackendCommentToCommentType(
       tree.parentComment,
       userInfos
     );
-    commentsMap.set(parent.id, parent);
+    finalComments.push(parentComment);
 
     tree.listComment.forEach((reply) => {
-      const formattedReply = formatBackendCommentToCommentType(
-        reply,
-        userInfos
-      );
-      commentsMap.set(formattedReply.id, formattedReply);
+      // Đánh dấu reply bằng isReply và thêm parentCommentId để UI xử lý thụt lề
+      const formattedReply = {
+        ...formatBackendCommentToCommentType(reply, userInfos),
+        isReply: true,
+        parentCommentId: parentComment.id,
+      };
+      finalComments.push(formattedReply);
     });
-  });
-
-  const finalComments: CommentType[] = [];
-  backendCommentTrees.forEach((tree) => {
-    const parentComment = commentsMap.get(tree.parentComment.id);
-    if (parentComment) {
-      parentComment.replies = tree.listComment
-        .map((reply) => commentsMap.get(reply.id)!)
-        .filter(Boolean);
-      finalComments.push(parentComment);
-    }
   });
 
   return finalComments;
 };
-
-// Interfaces mới cho API tạo comment
-interface CreateCommentRequestBody {
-  postId: string;
-  userId: string;
-  content: string;
-  tagIds?: string[] | null;
-  parentCommentId?: string | null;
-}
-interface CreateCommentApiResponse {
-  object: any;
-  enumResponse: {
-    message: string;
-    code: string;
-  };
-}
 
 export const createComment = async (
   postId: string,
@@ -690,7 +682,8 @@ export const createComment = async (
   content: string,
   tagIds: string[] | null = null,
   parentCommentId: string | null = null
-): Promise<void> => {
+): Promise<CommentType> => {
+  // Hàm này giờ trả về CommentType
   const url = `${POST_API_BASE_URL}/comments`;
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
@@ -714,11 +707,27 @@ export const createComment = async (
 
   const response = await apiFetch<CreateCommentApiResponse>(url, options);
 
-  if (response.enumResponse.code !== "s_00_post") {
+  if (response.enumResponse.code !== "s_05_post") {
+    // Cập nhật code thành công
     throw new Error(
       response.enumResponse.message || "Failed to create comment"
     );
   }
+
+  const newCommentBackend = response.object;
+
+  // Lấy thông tin user cho comment mới được tạo
+  const userInfos = await (async () => {
+    try {
+      return await getUserInfoCardsByIds([newCommentBackend.userId]);
+    } catch (e) {
+      console.error("Failed to fetch user info for new comment author:", e);
+      return [];
+    }
+  })();
+
+  // Format và trả về CommentType
+  return formatBackendCommentToCommentType(newCommentBackend, userInfos);
 };
 
 // END COMMENT
