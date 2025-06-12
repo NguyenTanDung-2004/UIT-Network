@@ -9,7 +9,8 @@ import {
   getIsLiked,
   likePost,
   getCommentsByPostId,
-} from "@/services/postService"; // Import getCommentsByPostId
+  createComment,
+} from "@/services/postService";
 
 interface UploadedFile {
   name: string;
@@ -33,7 +34,6 @@ interface PostType {
   comments: number;
   shares: number;
   file?: UploadedFile;
-  // commentData?: CommentType[]; // Prop này sẽ không còn cần thiết nếu fetch từ API
 }
 
 interface DetailPostModalProps {
@@ -52,7 +52,7 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
   const { user } = useUser();
   const [isExpanded, setIsExpanded] = useState(false);
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState<CommentType[]>([]); // Khởi tạo mảng rỗng, sẽ fetch từ API
+  const [comments, setComments] = useState<CommentType[]>([]);
 
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(
     null
@@ -85,7 +85,6 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
       setSharesCount(post.shares);
 
       const fetchInitialData = async () => {
-        // Fetch like status
         if (user?.id && post.id) {
           try {
             const likedStatus = await getIsLiked(post.id, user.id);
@@ -97,17 +96,25 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
           }
         }
 
-        // Fetch comments
         if (post.id) {
           try {
             const fetchedComments = await getCommentsByPostId(post.id);
             if (isMounted) {
-              setComments(fetchedComments);
+              const flattenedComments: CommentType[] = [];
+              fetchedComments.forEach((mainComment) => {
+                flattenedComments.push(mainComment);
+                if (mainComment.replies && mainComment.replies.length > 0) {
+                  mainComment.replies.forEach((reply) => {
+                    flattenedComments.push({ ...reply, isReply: true });
+                  });
+                }
+              });
+              setComments(flattenedComments);
             }
           } catch (err) {
             console.error("Failed to fetch comments for modal:", err);
             if (isMounted) {
-              setComments([]); // Clear comments on error
+              setComments([]);
             }
           }
         }
@@ -118,7 +125,7 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, post.id, post.likes, post.shares, user?.id]); // Thêm post.id, post.likes, post.shares vào dependency array
+  }, [isOpen, post.id, post.likes, post.shares, user?.id]);
 
   const handleReply = (authorName: string, commentId: string) => {
     const nameWithoutSpaces = authorName.replace(/\s+/g, "");
@@ -172,60 +179,54 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
     setSharesCount(isShared ? sharesCount - 1 : sharesCount + 1);
   };
 
-  const addReplyToComment = (
-    commentsArray: CommentType[],
-    parentId: string,
-    newReply: CommentType
-  ): CommentType[] => {
-    return commentsArray.map((comment) => {
-      if (comment.id === parentId) {
-        return {
-          ...comment,
-          replies: [...(comment.replies || []), newReply],
-        };
-      }
-      if (comment.replies && comment.replies.length > 0) {
-        return {
-          ...comment,
-          replies: addReplyToComment(comment.replies, parentId, newReply),
-        };
-      }
-      return comment;
-    });
-  };
-
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newComment.trim() === "" || !user) return;
 
-    const newCommentData: CommentType = {
-      id: `new-${Date.now()}`,
-      author: {
-        id: user.id,
-        name: user.name,
-        avatar:
-          user.avtURL ||
-          "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      },
-      text: newComment,
-      timestamp: "Just now",
-      likes: 0,
-      replies: [],
-    };
+    let commentContentToSend = newComment.trim();
+    let tagIds: string[] | null = null;
+    let parentIdToSend: string | null = replyingToCommentId;
 
     if (replyingToCommentId) {
-      const updatedComments = addReplyToComment(
-        comments,
-        replyingToCommentId,
-        newCommentData
-      );
-      setComments(updatedComments);
-    } else {
-      setComments((prevComments) => [...prevComments, newCommentData]);
+      const mentionMatch = newComment.match(/^@(\S+)\s*/);
+      if (mentionMatch) {
+        commentContentToSend = newComment
+          .substring(mentionMatch[0].length)
+          .trim();
+      }
+      const parentComment = comments.find((c) => c.id === replyingToCommentId);
+      if (parentComment) {
+        tagIds = [parentComment.author.id];
+      }
     }
-    setNewComment("");
-    setReplyingToCommentId(null);
-    setShowEmojiPicker(false);
+
+    try {
+      await createComment(
+        post.id,
+        user.id,
+        commentContentToSend,
+        tagIds,
+        parentIdToSend
+      );
+
+      const updatedFetchedComments = await getCommentsByPostId(post.id);
+      const flattenedComments: CommentType[] = [];
+      updatedFetchedComments.forEach((mainComment) => {
+        flattenedComments.push(mainComment);
+        if (mainComment.replies && mainComment.replies.length > 0) {
+          mainComment.replies.forEach((reply) => {
+            flattenedComments.push({ ...reply, isReply: true });
+          });
+        }
+      });
+      setComments(flattenedComments);
+
+      setNewComment("");
+      setReplyingToCommentId(null);
+      setShowEmojiPicker(false);
+    } catch (err) {
+      console.error("Failed to add comment:", err);
+    }
   };
 
   const getFileIcon = (fileType: string): string => {
@@ -472,6 +473,7 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                 )}
               </div>
             </div>
+
             <div className="p-4 border-t  bg-gray-50 dark:bg-gray-800 dark:shadow-gray-700 dark:border-t-gray-500">
               <form
                 onSubmit={handleAddComment}

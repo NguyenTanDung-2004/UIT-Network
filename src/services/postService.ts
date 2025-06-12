@@ -574,3 +574,56 @@ export const getCommentsByPostId = async (
 
   return finalComments;
 };
+
+// Interfaces mới cho API tạo comment
+interface CreateCommentRequestBody {
+  postId: string;
+  userId: string;
+  content: string;
+  tagIds?: string[] | null;
+  parentCommentId?: string | null;
+}
+interface CreateCommentApiResponse {
+  object: any;
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
+export const createComment = async (
+  postId: string,
+  userId: string,
+  content: string,
+  tagIds: string[] | null = null,
+  parentCommentId: string | null = null
+): Promise<void> => {
+  const url = `${POST_API_BASE_URL}/comments`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const requestBody: CreateCommentRequestBody = {
+    postId,
+    userId,
+    content,
+    tagIds,
+    parentCommentId,
+  };
+
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(requestBody),
+  };
+
+  const response = await apiFetch<CreateCommentApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_00_post") {
+    throw new Error(
+      response.enumResponse.message || "Failed to create comment"
+    );
+  }
+};
