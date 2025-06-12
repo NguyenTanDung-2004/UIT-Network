@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import DetailPostModal from "./detail/DetailPostModal";
 import MediaViewerModal from "../profile/media/MediaViewerModal";
+import { useUser } from "@/contexts/UserContext";
+import { getIsLiked, likePost } from "@/services/postService";
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
@@ -57,6 +59,7 @@ export interface PostDataType {
   comments: number;
   shares: number;
   file?: UploadedFile;
+  // commentData?: CommentType[]; // Loại bỏ prop này, DetailPostModal sẽ tự fetch
 }
 
 interface PostProps {
@@ -64,6 +67,7 @@ interface PostProps {
 }
 
 const Post: React.FC<PostProps> = ({ post }) => {
+  const { user } = useUser();
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isShared, setIsShared] = useState(false);
@@ -82,11 +86,44 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const [isFollowingPage, setIsFollowingPage] = useState(initialIsFollowing);
   const [isJoinedGroup, setIsJoinedGroup] = useState(initialIsJoined);
 
-  const currentUser = { avatar: DEFAULT_AVATAR };
+  const currentUserAvatar = user?.avtURL || DEFAULT_AVATAR;
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+  useEffect(() => {
+    let isMounted = true;
+    if (user?.id && post.id) {
+      const fetchIsLikedStatus = async () => {
+        try {
+          const likedStatus = await getIsLiked(post.id, user.id);
+          if (isMounted) {
+            setIsLiked(likedStatus);
+          }
+        } catch (err) {
+          console.error("Failed to fetch like status:", err);
+        }
+      };
+      fetchIsLikedStatus();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, post.id]);
+
+  const handleLike = async () => {
+    if (!user?.id) {
+      console.warn("User not logged in. Cannot like post.");
+      return;
+    }
+
+    setIsLiked((prev) => !prev);
+    setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
+
+    try {
+      await likePost(post.id);
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+      setIsLiked((prev) => !prev);
+      setLikesCount((prev) => (isLiked ? prev + 1 : prev - 1));
+    }
   };
 
   const handleShare = () => {
@@ -172,7 +209,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         </div>
       );
     } else if (post.origin?.type === "group") {
-      const groupOrigin = post.origin as PostOriginGroup; // Type assertion for clarity
+      const groupOrigin = post.origin as PostOriginGroup;
       return (
         <div>
           <div className="flex items-center space-x-2 mb-1">
@@ -384,13 +421,11 @@ const Post: React.FC<PostProps> = ({ post }) => {
         </button>
 
         <button
-          onClick={() => setIsDetailModalOpen(true)}
+          onClick={() => setIsDetailModalOpen(true)} // Mở modal khi click vào nút Comments
           className="flex items-center space-x-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
         >
           <i className="far fa-comment-alt"></i>
-          <span>
-            {post.comments} {post.comments === 1 ? "Comment" : "Comments"}
-          </span>
+          <span>Comments</span>
         </button>
 
         <button
@@ -419,54 +454,10 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
       {isDetailModalOpen && (
         <DetailPostModal
-          post={{
-            ...post,
-            commentData: [
-              {
-                id: "c1",
-                author: {
-                  id: "phan",
-                  name: "Phan Giang",
-                  avatar:
-                    "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-                },
-                text: "Vietnam, located in Southeast Asia, is known for its rich history, diverse culture, and stunning landscapes, ranging from lush mountains to beautiful coastlines.",
-                timestamp: "15 hours ago",
-                likes: 5,
-                replies: [],
-              },
-              {
-                id: "c2",
-                author: {
-                  id: "tan",
-                  name: "Tấn Dũng",
-                  avatar:
-                    "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-                },
-                text: "Ohhh wooo yeee 😎 @PhanGiang",
-                timestamp: "16 hours ago",
-                likes: 2,
-                replies: [
-                  {
-                    id: "c3",
-                    author: {
-                      id: "phan",
-                      name: "Phan Giang",
-                      avatar:
-                        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-                    },
-                    text: "Thanks bạn!",
-                    timestamp: "15 hours ago",
-                    likes: 1,
-                    replies: [],
-                  },
-                ],
-              },
-            ],
-          }}
+          post={post} // Pass the entire post object
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
-          currentUserAvatar={currentUser.avatar}
+          currentUserAvatar={currentUserAvatar}
         />
       )}
     </div>

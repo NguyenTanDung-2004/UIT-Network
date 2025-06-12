@@ -4,6 +4,12 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import CommentItem, { CommentType } from "./CommentItem";
 import EmojiPicker from "../create/EmojiPicker";
+import { useUser } from "@/contexts/UserContext";
+import {
+  getIsLiked,
+  likePost,
+  getCommentsByPostId,
+} from "@/services/postService"; // Import getCommentsByPostId
 
 interface UploadedFile {
   name: string;
@@ -24,17 +30,17 @@ interface PostType {
   time: string;
   mediaList?: { url: string; type: string }[];
   likes: number;
-  comments: number; // Tổng số comment (có thể dùng để hiển thị ban đầu)
+  comments: number;
   shares: number;
   file?: UploadedFile;
-  commentData?: CommentType[]; // Mảng dữ liệu comment thực tế
+  // commentData?: CommentType[]; // Prop này sẽ không còn cần thiết nếu fetch từ API
 }
 
 interface DetailPostModalProps {
   post: PostType;
-  isOpen: boolean; // State để kiểm soát modal mở hay đóng
+  isOpen: boolean;
   onClose: () => void;
-  currentUserAvatar: string; // Avatar của người dùng hiện tại để hiển thị ở ô comment
+  currentUserAvatar: string;
 }
 
 const DetailPostModal: React.FC<DetailPostModalProps> = ({
@@ -43,27 +49,24 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
   onClose,
   currentUserAvatar,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false); // State cho viewmore content
-  const [newComment, setNewComment] = useState(""); // State cho input comment mới
-  const [comments, setComments] = useState<CommentType[]>(
-    post.commentData || []
-  );
+  const { user } = useUser();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [comments, setComments] = useState<CommentType[]>([]); // Khởi tạo mảng rỗng, sẽ fetch từ API
 
-  // --- Thêm state để lưu ID của comment đang được reply ---
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(
     null
   );
 
-  const [isLiked, setIsLiked] = useState(false); // Cần logic để đồng bộ với state gốc hoặc fetch lại
+  const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [isShared, setIsShared] = useState(false);
   const [sharesCount, setSharesCount] = useState(post.shares);
-  // Emoji picker state
+
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
 
-  //   ref  cho input new comment
   const commentInputRef = useRef<HTMLInputElement>(null);
   const focusCommentInput = () => {
     if (commentInputRef.current) {
@@ -71,7 +74,52 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
     }
   };
 
-  //   Handle reply comment
+  useEffect(() => {
+    let isMounted = true;
+    if (isOpen) {
+      setIsExpanded(false);
+      setNewComment("");
+      setReplyingToCommentId(null);
+      setShowEmojiPicker(false);
+      setLikesCount(post.likes);
+      setSharesCount(post.shares);
+
+      const fetchInitialData = async () => {
+        // Fetch like status
+        if (user?.id && post.id) {
+          try {
+            const likedStatus = await getIsLiked(post.id, user.id);
+            if (isMounted) {
+              setIsLiked(likedStatus);
+            }
+          } catch (err) {
+            console.error("Failed to fetch like status for modal:", err);
+          }
+        }
+
+        // Fetch comments
+        if (post.id) {
+          try {
+            const fetchedComments = await getCommentsByPostId(post.id);
+            if (isMounted) {
+              setComments(fetchedComments);
+            }
+          } catch (err) {
+            console.error("Failed to fetch comments for modal:", err);
+            if (isMounted) {
+              setComments([]); // Clear comments on error
+            }
+          }
+        }
+      };
+
+      fetchInitialData();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, post.id, post.likes, post.shares, user?.id]); // Thêm post.id, post.likes, post.shares vào dependency array
+
   const handleReply = (authorName: string, commentId: string) => {
     const nameWithoutSpaces = authorName.replace(/\s+/g, "");
     setNewComment(`@${nameWithoutSpaces} `);
@@ -79,22 +127,6 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
     focusCommentInput();
   };
 
-  // Reset state khi modal đóng/mở hoặc post thay đổi
-  useEffect(() => {
-    if (isOpen) {
-      setComments(post.commentData || []);
-      setIsExpanded(false);
-      setNewComment("");
-      setReplyingToCommentId(null);
-      setShowEmojiPicker(false);
-      setLikesCount(post.likes);
-      setSharesCount(post.shares);
-      // setIsLiked(...) // Lấy trạng thái like thực tế
-      // setIsShared(...) // Lấy trạng thái share thực tế
-    }
-  }, [isOpen, post]);
-
-  // Đóng EmojiPicker khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -117,17 +149,27 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
     setNewComment((prev) => prev + emoji);
   };
 
-  // Các hàm xử lý sự kiện cho like, share, comment
-  const handlePostLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
-    // TODO: Gọi API like/unlike post
+  const handlePostLike = async () => {
+    if (!user?.id) {
+      console.warn("User not logged in. Cannot like post.");
+      return;
+    }
+
+    setIsLiked((prev) => !prev);
+    setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
+
+    try {
+      await likePost(post.id);
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+      setIsLiked((prev) => !prev);
+      setLikesCount((prev) => (isLiked ? prev + 1 : prev - 1));
+    }
   };
 
   const handlePostShare = () => {
     setIsShared(!isShared);
     setSharesCount(isShared ? sharesCount - 1 : sharesCount + 1);
-    // TODO: Gọi API share/unshare post
   };
 
   const addReplyToComment = (
@@ -136,18 +178,16 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
     newReply: CommentType
   ): CommentType[] => {
     return commentsArray.map((comment) => {
-      // Nếu tìm thấy comment cha ở cấp hiện tại
       if (comment.id === parentId) {
         return {
           ...comment,
-          replies: [...(comment.replies || []), newReply], // Thêm vào mảng replies (tạo mới nếu chưa có)
+          replies: [...(comment.replies || []), newReply],
         };
       }
-      // Nếu comment hiện tại có replies, tìm kiếm đệ quy trong đó
       if (comment.replies && comment.replies.length > 0) {
         return {
           ...comment,
-          replies: addReplyToComment(comment.replies, parentId, newReply), // Gọi đệ quy
+          replies: addReplyToComment(comment.replies, parentId, newReply),
         };
       }
       return comment;
@@ -156,28 +196,22 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newComment.trim() === "") return;
+    if (newComment.trim() === "" || !user) return;
 
     const newCommentData: CommentType = {
-      id: `new-${Date.now()}`, // ID tạm thời
+      id: `new-${Date.now()}`,
       author: {
-        id: "currentUser",
-        name: "Phan Giang đây",
-        avatar: currentUserAvatar,
-      }, // Thay bằng thông tin người dùng hiện tại
+        id: user.id,
+        name: user.name,
+        avatar:
+          user.avtURL ||
+          "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
+      },
       text: newComment,
       timestamp: "Just now",
       likes: 0,
       replies: [],
     };
-
-    // TODO: Gọi API để gửi comment lên server
-    console.log(
-      "Submitting comment/reply:",
-      newCommentData,
-      "Replying to:",
-      replyingToCommentId
-    );
 
     if (replyingToCommentId) {
       const updatedComments = addReplyToComment(
@@ -189,15 +223,12 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
     } else {
       setComments((prevComments) => [...prevComments, newCommentData]);
     }
-    // Cập nhật UI (có thể đợi response từ API để chắc chắn)
     setNewComment("");
     setReplyingToCommentId(null);
     setShowEmojiPicker(false);
   };
 
-  // Các hàm helper copy từ Post component (nếu chưa export)
   const getFileIcon = (fileType: string): string => {
-    // Nên dùng fileType thay vì url để tránh lỗi
     if (fileType.includes("pdf")) return "/images/files/pdf-icon.png";
     if (fileType.includes("doc") || fileType.includes("docx"))
       return "/images/files/docx-icon.png";
@@ -211,11 +242,9 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  // Media Viewer state (nếu muốn mở media từ modal)
   const [showMediaViewer, setShowMediaViewer] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
-  // show media
   const openMediaViewer = (index: number) => {
     setCurrentMediaIndex(index);
     setShowMediaViewer(true);
@@ -242,7 +271,7 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose} // Đóng modal khi click vào backdrop
+          onClick={onClose}
         >
           <motion.div
             className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden"
@@ -250,9 +279,8 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            onClick={(e) => e.stopPropagation()} // Ngăn click bên trong modal đóng modal
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
             <div className="flex items-center p-4 border-b dark:border-gray-700">
               <h2 className="flex-1 text-center text-lg font-semibold text-gray-900 dark:text-gray-200 ">
                 Post of {post.author.name}
@@ -291,16 +319,8 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                     </span>
                   </div>
                 </div>
-                {/* Nút options (...) có thể thêm lại nếu cần */}
-                {/* <button
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                  //   onClick={() => setShowMoreOptions(!showMoreOptions)}
-                >
-                  <i className="fas fa-ellipsis-h"></i>
-                </button> */}
               </div>
 
-              {/* Post Content Text */}
               <div className="mb-3">
                 <p className="text-gray-800 dark:text-gray-300">
                   {post.content === ""
@@ -319,7 +339,6 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                 </p>
               </div>
 
-              {/* Post Media */}
               {post.mediaList && post.mediaList.length > 0 && (
                 <div
                   className={`grid gap-2 mb-3 ${
@@ -342,7 +361,7 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                             : "aspect-[16/9]"
                           : "aspect-[16/9]"
                       }`}
-                      onClick={() => openMediaViewer(index)} // Option: Mở viewer từ modal
+                      onClick={() => openMediaViewer(index)}
                     >
                       <div
                         className={`${
@@ -376,7 +395,6 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                 </div>
               )}
 
-              {/* Post File */}
               {post.file && (
                 <div
                   className="mt-3 border dark:border-gray-600 rounded-md shadow-sm p-3 w-full flex items-center gap-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -400,7 +418,6 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                 </div>
               )}
 
-              {/* Post Actions (Like, Comment Count, Share) - Đơn giản hóa trong modal */}
               <div className="flex justify-between items-center pt-3 mt-3 border-t dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
                 <button
                   onClick={handlePostLike}
@@ -439,7 +456,6 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                 </button>
               </div>
 
-              {/* === Phần hiển thị Comments === */}
               <div className="mt-4 pt-4 border-t dark:border-gray-700">
                 {comments.length > 0 ? (
                   comments.map((comment) => (
@@ -456,26 +472,22 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                 )}
               </div>
             </div>
-            {/* End Scrollable Content Area */}
-            {/* === Phần nhập Comment === */}
             <div className="p-4 border-t  bg-gray-50 dark:bg-gray-800 dark:shadow-gray-700 dark:border-t-gray-500">
               <form
                 onSubmit={handleAddComment}
                 className="flex items-center space-x-2"
               >
-                {/* Avatar người dùng hiện tại */}
                 <div className="w-8 h-8 relative rounded-full overflow-hidden flex-shrink-0 border dark:bg-gray-800 dark:shadow-gray-700">
                   <Image
                     src={
                       currentUserAvatar ||
                       "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg"
-                    } // Provide a fallback avatar
+                    }
                     alt="Your avatar"
                     fill
                     className="object-cover"
                   />
                 </div>
-                {/* Input */}
                 <div className="flex-grow relative">
                   <input
                     ref={commentInputRef}
@@ -485,11 +497,9 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                     placeholder="Add a comment..."
                     className="w-full border border-gray-300 rounded-full py-2 px-4 pr-16 text-sm focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-600 dark:border-gray-500 dark:text-gray-200 dark:placeholder-gray-400"
                   />
-                  {/* Action of comment */}
-                  {/* Emoji Icon */}
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
                     <button
-                      ref={emojiButtonRef} // Gán ref
+                      ref={emojiButtonRef}
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                       type="button"
                       className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -506,7 +516,6 @@ const DetailPostModal: React.FC<DetailPostModalProps> = ({
                       disabled={newComment.trim() === ""}
                     >
                       <i className="fas fa-paper-plane  "></i>
-                      {/* Send icon */}
                     </button>
                   </div>
                   {showEmojiPicker && (

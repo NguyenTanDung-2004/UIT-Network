@@ -5,6 +5,9 @@ import {
   PostOrigin,
   PostDataType,
 } from "@/components/post/Post";
+import { Friend } from "@/types/profile/FriendData";
+import { getUserInfoCardsByIds } from "@/services/friendService";
+import { CommentType } from "@/components/post/detail/CommentItem";
 
 interface ApiMediaItem {
   typeId: 1 | 2 | 3;
@@ -94,8 +97,33 @@ interface GetHomePostsApiResponse {
   };
 }
 
+interface GetLikesApiResponse {
+  object: number;
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
+interface GetIsLikedApiResponse {
+  object: boolean;
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
+interface LikePostApiResponse {
+  object: any;
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
+const POST_API_BASE_URL = process.env.POST_API_URL || "http://localhost:8083";
 
 const findAuthorInfo = (
   userId: string,
@@ -136,7 +164,8 @@ const formatBackendPostToPostDataType = (
   backendPost: BackendPost,
   allUserInfos: BackendUserInfoInPostList[],
   allGroupInfos: BackendGroupInfoInPostList[] = [],
-  allFanpageInfos: BackendFanpageInfoInPostList[] = []
+  allFanpageInfos: BackendFanpageInfoInPostList[] = [],
+  likesCount: number = 0
 ): PostDataType => {
   const originalAuthor = findAuthorInfo(backendPost.userId, allUserInfos);
   const { date, time } = formatDateTime(backendPost.createdDate);
@@ -173,7 +202,7 @@ const formatBackendPostToPostDataType = (
         groupInfo: {
           id: id,
           name: groupInfo?.name || `Group ${id.substring(0, 8)}`,
-          isJoined: true, // Default value, will need API to check
+          isJoined: true,
         },
       };
       displayAuthor.name =
@@ -200,25 +229,81 @@ const formatBackendPostToPostDataType = (
 
   return {
     id: backendPost.postId,
-    author: displayAuthor, // Use the potentially overridden author info
+    author: displayAuthor,
     origin: origin,
     content: displayContent,
     fullContent: fullContent,
     date: date,
     time: time,
     mediaList: mediaList.length > 0 ? mediaList : undefined,
-    likes: 0,
+    likes: likesCount,
     comments: 0,
     shares: 0,
     file: file,
   };
 };
 
+export const getNumberOfLikes = async (postId: string): Promise<number> => {
+  const url = `${POST_API_BASE_URL}/post/number-of-like/${postId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<GetLikesApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_00_post") {
+    throw new Error(
+      response.enumResponse.message || "Failed to get like count"
+    );
+  }
+  return response.object;
+};
+
+export const getIsLiked = async (
+  postId: string,
+  userId: string
+): Promise<boolean> => {
+  const url = `${POST_API_BASE_URL}/post/is-liked/${postId}/${userId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<GetIsLikedApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_00_post") {
+    throw new Error(
+      response.enumResponse.message || "Failed to check if post is liked"
+    );
+  }
+  return response.object;
+};
+
+export const likePost = async (postId: string): Promise<void> => {
+  const url = `${POST_API_BASE_URL}/post/like?postId=${postId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+  const options: RequestInit = {
+    method: "POST",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<LikePostApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_04_post") {
+    throw new Error(response.enumResponse.message || "Failed to like post");
+  }
+};
+
 export const getListMediaByUserId = async (
   userId: string
 ): Promise<MediaItem[]> => {
-  const baseUrl = process.env.POST_API_URL || "http://localhost:8083";
-  const url = `${baseUrl}/post/media/user/${userId}`;
+  const url = `${POST_API_BASE_URL}/post/media/user/${userId}`;
 
   const response = await apiFetch<MediaListApiResponse>(url);
 
@@ -229,9 +314,9 @@ export const getListMediaByUserId = async (
   }
 
   return response.object
-    .filter((item) => item.typeId === 2 || item.typeId === 3) // Chỉ lấy ảnh (2) và video (3)
+    .filter((item) => item.typeId === 2 || item.typeId === 3)
     .map((item, index) => ({
-      id: `${userId}-${item.typeId}-${index}`, // Tạo ID duy nhất
+      id: `${userId}-${item.typeId}-${index}`,
       url: item.url,
       type: item.typeId === 2 ? "image" : "video",
     }));
@@ -240,8 +325,7 @@ export const getListMediaByUserId = async (
 export const getPostsByUserId = async (
   userId: string
 ): Promise<PostDataType[]> => {
-  const baseUrl = process.env.POST_API_URL || "http://localhost:8083";
-  const url = `${baseUrl}/post/list/user/${userId}`;
+  const url = `${POST_API_BASE_URL}/post/list/user/${userId}`;
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
 
@@ -261,14 +345,30 @@ export const getPostsByUserId = async (
   }
 
   const { listUserInfos, listPost } = response.object;
-  return listPost.map((post) =>
-    formatBackendPostToPostDataType(post, listUserInfos)
+
+  const postsWithLikes = await Promise.all(
+    listPost.map(async (post) => {
+      try {
+        const likes = await getNumberOfLikes(post.postId);
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos,
+          [],
+          [],
+          likes
+        );
+      } catch (e) {
+        console.error(`Error fetching likes for post ${post.postId}:`, e);
+        return formatBackendPostToPostDataType(post, listUserInfos);
+      }
+    })
   );
+
+  return postsWithLikes;
 };
 
 export const getHomePosts = async (): Promise<PostDataType[]> => {
-  const baseUrl = process.env.POST_API_URL || "http://localhost:8083";
-  const url = `${baseUrl}/post/list/home`;
+  const url = `${POST_API_BASE_URL}/post/list/home`;
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
 
@@ -289,12 +389,188 @@ export const getHomePosts = async (): Promise<PostDataType[]> => {
 
   const { listUserInfos, listGroupInfos, listFanpageInfos, listPost } =
     response.object;
-  return listPost.map((post) =>
-    formatBackendPostToPostDataType(
-      post,
-      listUserInfos,
-      listGroupInfos,
-      listFanpageInfos
+
+  const postsWithLikes = await Promise.all(
+    listPost.map(async (post) => {
+      try {
+        const likes = await getNumberOfLikes(post.postId);
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos,
+          listGroupInfos,
+          listFanpageInfos,
+          likes
+        );
+      } catch (e) {
+        console.error(`Error fetching likes for post ${post.postId}:`, e);
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos,
+          listGroupInfos,
+          listFanpageInfos
+        ); // Return with default likes if fetch fails
+      }
+    })
+  );
+
+  return postsWithLikes;
+};
+
+// COMMENT
+interface BackendCommentMedia {
+  typeId: number | string;
+  url: string;
+}
+
+// Backend Comment Object
+interface BackendComment {
+  id: string;
+  postId: string;
+  userId: string;
+  content: string;
+  creatDate: string;
+  modifiedDate: string;
+  deletedDate: string | null;
+  mediaList: BackendCommentMedia[] | null;
+  tagIds: string[] | null;
+  parentCommentId: string | null;
+  deleted: boolean;
+}
+
+// Backend Comment Response Structure
+interface BackendCommentTreeItem {
+  parentComment: BackendComment;
+  listComment: BackendComment[]; // Replies to the parentComment
+}
+
+interface GetCommentsApiResponse {
+  object: BackendCommentTreeItem[];
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
+const formatTimestamp = (isoDateString: string): string => {
+  const date = new Date(isoDateString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+
+  if (seconds < 60) return `${seconds} seconds ago`;
+  if (minutes < 60) return `${minutes} minutes ago`;
+  if (hours < 24) return `${hours} hours ago`;
+  if (days < 7) return `${days} days ago`;
+  return `${weeks} weeks ago`;
+};
+
+// Hàm định dạng một comment từ backend sang frontend
+const formatBackendCommentToCommentType = (
+  backendComment: BackendComment,
+  allUserInfos: Friend[]
+): CommentType => {
+  const authorInfo = allUserInfos.find((u) => u.id === backendComment.userId);
+  const authorName = authorInfo?.name || "Unknown User";
+  const authorAvatar = authorInfo?.avatar || DEFAULT_AVATAR;
+
+  let commentText = backendComment.content;
+  if (backendComment.tagIds && backendComment.tagIds.length > 0) {
+    const tagNames = backendComment.tagIds
+      .map((tagId) => {
+        const taggedUser = allUserInfos.find((u) => u.id === tagId);
+        return taggedUser ? `@${taggedUser.name.replace(/\s+/g, "")}` : "";
+      })
+      .filter(Boolean)
+      .join(" ");
+    if (tagNames) {
+      commentText = `${commentText} ${tagNames}`;
+    }
+  }
+
+  return {
+    id: backendComment.id,
+    author: {
+      id: backendComment.userId,
+      name: authorName,
+      avatar: authorAvatar,
+    },
+    text: commentText,
+    timestamp: formatTimestamp(backendComment.creatDate),
+    likes: 0,
+    replies: [],
+  };
+};
+
+export const getCommentsByPostId = async (
+  postId: string
+): Promise<CommentType[]> => {
+  const url = `${POST_API_BASE_URL}/comments/${postId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+
+  const response = await apiFetch<GetCommentsApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_11_post") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch comments"
+    );
+  }
+
+  const backendCommentTrees = response.object;
+
+  const allUserIdsInComments = Array.from(
+    new Set(
+      backendCommentTrees.flatMap((tree) => [
+        tree.parentComment.userId,
+        ...(tree.parentComment.tagIds || []),
+        ...tree.listComment.map((c) => c.userId),
+        ...tree.listComment.flatMap((c) => c.tagIds || []),
+      ])
     )
   );
+
+  const userInfos = await getUserInfoCardsByIds(allUserIdsInComments);
+
+  const commentsMap = new Map<string, CommentType>();
+
+  backendCommentTrees.forEach((tree) => {
+    const parent = formatBackendCommentToCommentType(
+      tree.parentComment,
+      userInfos
+    );
+    commentsMap.set(parent.id, parent);
+
+    tree.listComment.forEach((reply) => {
+      const formattedReply = formatBackendCommentToCommentType(
+        reply,
+        userInfos
+      );
+      commentsMap.set(formattedReply.id, formattedReply);
+    });
+  });
+
+  const finalComments: CommentType[] = [];
+  backendCommentTrees.forEach((tree) => {
+    const parentComment = commentsMap.get(tree.parentComment.id);
+    if (parentComment) {
+      parentComment.replies = tree.listComment
+        .map((reply) => commentsMap.get(reply.id)!)
+        .filter(Boolean);
+      finalComments.push(parentComment);
+    }
+  });
+
+  return finalComments;
 };
