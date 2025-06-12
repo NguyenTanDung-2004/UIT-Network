@@ -1,14 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-
-export interface ChatItem {
-  id: string;
-  name: string;
-  avatar?: string; // Dùng cho Personal
-  type: 1 | 2; // 1: Group, 2: Personal
-  status?: "online" | "offline"; // Chỉ dùng cho Personal
-}
+import { ChatItem } from "@/types/chats/ChatData";
 
 interface RightBarProps {
   chats: ChatItem[];
@@ -20,7 +13,6 @@ const RightBar: React.FC<RightBarProps> = ({ chats }) => {
 
   return (
     <div className="w-full h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 bg-white pt-4 pb-20 border-l dark:bg-gray-800 dark:border-gray-700">
-      {/* Group Chats */}
       <div className="px-4 mb-4">
         <h3 className="text-base font-semibold mb-3 dark:text-gray-200">
           Group
@@ -29,7 +21,13 @@ const RightBar: React.FC<RightBarProps> = ({ chats }) => {
           {groupChats.map((chat) => (
             <li key={chat.id} className="mb-1">
               <Link href={`/chat/group/${chat.id}`}>
-                <div className="flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-gray-700">
+                <div
+                  className={`flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-gray-700 ${
+                    chat.isSeen
+                      ? "bg-transparent"
+                      : "bg-blue-50 dark:bg-blue-900/20"
+                  }`}
+                >
                   <div className="w-8 h-8 relative rounded-full overflow-hidden bg-blue-100 flex items-center justify-center border dark:bg-gray-700 dark:border-gray-600">
                     <Image
                       src={
@@ -44,6 +42,9 @@ const RightBar: React.FC<RightBarProps> = ({ chats }) => {
                   <span className="ml-2 truncate text-sm font-semibold dark:text-gray-300">
                     {chat.name}
                   </span>
+                  {!chat.isSeen && (
+                    <div className="ml-auto w-2 h-2 bg-pink-500 rounded-full"></div>
+                  )}
                 </div>
               </Link>
             </li>
@@ -51,7 +52,6 @@ const RightBar: React.FC<RightBarProps> = ({ chats }) => {
         </ul>
       </div>
 
-      {/* Personal Chats */}
       <div className="px-4">
         <h3 className="text-base font-semibold mb-3 dark:text-gray-200">
           Personal
@@ -60,7 +60,13 @@ const RightBar: React.FC<RightBarProps> = ({ chats }) => {
           {personalChats.map((chat) => (
             <li key={chat.id} className="mb-1">
               <Link href={`/chat/person/${chat.id}`}>
-                <div className="flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-gray-700">
+                <div
+                  className={`flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-gray-700 ${
+                    chat.isSeen
+                      ? "bg-transparent"
+                      : "bg-blue-50 dark:bg-blue-900/20"
+                  }`}
+                >
                   <div className="w-8 h-8 relative">
                     <div className="rounded-full overflow-hidden absolute inset-0 border">
                       <Image
@@ -80,6 +86,9 @@ const RightBar: React.FC<RightBarProps> = ({ chats }) => {
                   <span className="ml-2 truncate text-sm font-semibold dark:text-gray-300">
                     {chat.name}
                   </span>
+                  {!chat.isSeen && (
+                    <div className="ml-auto w-2 h-2 bg-pink-500 rounded-full"></div>
+                  )}
                 </div>
               </Link>
             </li>

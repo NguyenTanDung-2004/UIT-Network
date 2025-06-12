@@ -1,3 +1,12 @@
+export interface ChatItem {
+  id: string;
+  name: string;
+  avatar?: string;
+  type: 1 | 2;
+  status?: "online" | "offline";
+  isSeen: boolean;
+}
+
 export interface ChatData {
   id: string;
   type: "person" | "group";

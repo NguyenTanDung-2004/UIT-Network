@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from "react";
 import LeftBar from "@/components/home/layout/LeftBar";
 import RightBar from "@/components/home/layout/RightBar";
-import { ChatItem } from "@/components/home/layout/RightBar";
+import { ChatItem } from "@/types/chats/ChatData";
+import { getChatTopics } from "@/services/chatService";
+import ClipLoader from "react-spinners/ClipLoader";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,91 +15,10 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Sample data for testing
-  // const groups = [
-  //   { id: "rubik-club", name: "Rubik Club" },
-  //   { id: "taekwondo-judo", name: "Taekwondo & Judo" },
-  //   { id: "ban-hoc-tap", name: "Ban học tập khoa CNPM" },
-  // ];
+  const [chatItems, setChatItems] = useState<ChatItem[]>([]);
+  const [loadingChats, setLoadingChats] = useState(true);
+  const [errorChats, setErrorChats] = useState<string | null>(null);
 
-  const chatItems: ChatItem[] = [
-    {
-      id: "1",
-      name: "Nguyễn Tấn Dũng",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 2,
-      status: "online",
-    },
-    {
-      id: "2",
-      name: "Phan Giang",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 2,
-      status: "offline",
-    },
-    {
-      id: "3",
-      name: "Yến Trần",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 2,
-      status: "offline",
-    },
-    {
-      id: "4",
-      name: "Group Học giải tích",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 1,
-    },
-    {
-      id: "5",
-      name: "Group Học giải tích",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 1,
-    },
-    {
-      id: "6",
-      name: "Group Học giải tích",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 1,
-    },
-    {
-      id: "7",
-      name: "Group Học giải tích",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 1,
-    },
-    {
-      id: "8",
-      name: "Nguyễn  Văn A",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 2,
-      status: "online",
-    },
-    {
-      id: "9",
-      name: "Phan B",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 2,
-      status: "offline",
-    },
-    {
-      id: "10",
-      name: "Yến Trần 123",
-      avatar:
-        "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg",
-      type: 2,
-      status: "offline",
-    },
-  ];
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -117,17 +38,41 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
       }
     };
 
-    // Set initial state
     handleResize();
-
-    // Add event listener
     window.addEventListener("resize", handleResize);
-
-    // Clean up
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Toggle sidebars for mobile
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingChats(true);
+    setErrorChats(null);
+
+    const fetchChats = async () => {
+      try {
+        const fetchedChats = await getChatTopics();
+        if (isMounted) {
+          setChatItems(fetchedChats);
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch chat topics in HomeLayout:", err);
+        if (isMounted) {
+          setErrorChats(err.message || "Failed to load chat list.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingChats(false);
+        }
+      }
+    };
+
+    fetchChats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const toggleLeftSidebar = () => {
     setShowLeftSidebar(!showLeftSidebar);
     if (isMobile && !showLeftSidebar) {
@@ -139,9 +84,24 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
     setShowRightSidebar(!showRightSidebar);
   };
 
+  if (loadingChats) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <ClipLoader color="#FF69B4" loading={true} size={35} />
+      </div>
+    );
+  }
+
+  if (errorChats) {
+    return (
+      <div className="text-center p-4 text-red-600 dark:text-red-400 font-semibold bg-red-100 dark:bg-red-900/20 rounded-md max-w-md mx-auto mt-8">
+        {errorChats}
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Mobile Toggle Buttons*/}
       <div className="lg:hidden  flex  px-4 py-2 bg-white border-b">
         <button onClick={toggleLeftSidebar} className="text-gray-600 md:hidden">
           <i className={`fas ${showLeftSidebar ? "fa-times" : "fa-bars"}`}></i>
@@ -154,9 +114,7 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
         </button>
       </div>
 
-      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
         <div
           className={`${
             showLeftSidebar ? "translate-x-0" : "-translate-x-full"
@@ -165,12 +123,10 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
           <LeftBar />
         </div>
 
-        {/* Main Content */}
         <div className="flex-1 overflow-y-auto  scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
           <div className="max-w-5xl mx-auto py-4 px-4">{children}</div>
         </div>
 
-        {/* Right Sidebar */}
         {!isMobile && !showRightSidebar && window.innerWidth < 1024 ? null : (
           <div
             className={`${
@@ -182,7 +138,6 @@ const HomeLayout: React.FC<LayoutProps> = ({ children }) => {
         )}
       </div>
 
-      {/* Backdrop for mobile when sidebar is open */}
       {isMobile && (showLeftSidebar || showRightSidebar) && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-10"

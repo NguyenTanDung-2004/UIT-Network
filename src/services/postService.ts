@@ -25,29 +25,6 @@ export interface MediaItem {
   type: "image" | "video";
 }
 
-export const getListMediaByUserId = async (
-  userId: string
-): Promise<MediaItem[]> => {
-  const baseUrl = process.env.POST_API_URL || "http://localhost:8083";
-  const url = `${baseUrl}/post/media/user/${userId}`;
-
-  const response = await apiFetch<MediaListApiResponse>(url);
-
-  if (response.enumResponse.code !== "s_00_post") {
-    throw new Error(
-      response.enumResponse.message || "Failed to fetch user media"
-    );
-  }
-
-  return response.object
-    .filter((item) => item.typeId === 2 || item.typeId === 3) // Chỉ lấy ảnh (2) và video (3)
-    .map((item, index) => ({
-      id: `${userId}-${item.typeId}-${index}`, // Tạo ID duy nhất
-      url: item.url,
-      type: item.typeId === 2 ? "image" : "video",
-    }));
-};
-
 interface BackendMedia {
   typeId: number | string;
   url: string;
@@ -199,8 +176,10 @@ const formatBackendPostToPostDataType = (
           isJoined: true, // Default value, will need API to check
         },
       };
-      displayAuthor.name = groupInfo?.name || displayAuthor.name;
-      displayAuthor.avatar = groupInfo?.avtURL || displayAuthor.avatar;
+      displayAuthor.name =
+        displayAuthor.name || groupInfo?.name || "Unknown Group";
+      displayAuthor.avatar =
+        displayAuthor.avatar || groupInfo?.avtURL || DEFAULT_AVATAR;
     } else if (type === "fanpage") {
       const fanpageInfo = allFanpageInfos.find((f) => f.id === id);
       origin = {
@@ -233,6 +212,29 @@ const formatBackendPostToPostDataType = (
     shares: 0,
     file: file,
   };
+};
+
+export const getListMediaByUserId = async (
+  userId: string
+): Promise<MediaItem[]> => {
+  const baseUrl = process.env.POST_API_URL || "http://localhost:8083";
+  const url = `${baseUrl}/post/media/user/${userId}`;
+
+  const response = await apiFetch<MediaListApiResponse>(url);
+
+  if (response.enumResponse.code !== "s_00_post") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch user media"
+    );
+  }
+
+  return response.object
+    .filter((item) => item.typeId === 2 || item.typeId === 3) // Chỉ lấy ảnh (2) và video (3)
+    .map((item, index) => ({
+      id: `${userId}-${item.typeId}-${index}`, // Tạo ID duy nhất
+      url: item.url,
+      type: item.typeId === 2 ? "image" : "video",
+    }));
 };
 
 export const getPostsByUserId = async (

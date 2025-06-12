@@ -18,8 +18,9 @@ import {
   getListFriendIds,
   getUserInfoCardsByIds,
 } from "@/services/friendService";
-import { getPostsByUserId } from "@/services/postService";
+import { getPostsByUserId, getListMediaByUserId } from "@/services/postService"; // Import getListMediaByUserId
 import { Friend } from "@/types/profile/FriendData";
+import { MediaItem } from "@/services/postService"; // Import MediaItem from postService
 
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
@@ -133,6 +134,16 @@ const ProfilePage: React.FC = () => {
             console.error("Error fetching friends data:", friendError);
           }
 
+          let fetchedPhotos: PhotoSummary[] = [];
+          try {
+            const mediaItems: MediaItem[] = await getListMediaByUserId(
+              fetchedAboutData.id
+            );
+            fetchedPhotos = mediaItems.map((item) => ({ url: item.url }));
+          } catch (mediaError) {
+            console.error("Error fetching media data:", mediaError);
+          }
+
           const headerData = mapProfileAboutToProfileHeader(
             fetchedAboutData,
             friendshipStatus
@@ -207,34 +218,11 @@ const ProfilePage: React.FC = () => {
 
           const newSummaries: ProfileSummaryData = {
             about: generatedAboutSummary,
-            photos: [
-              {
-                url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample.jpg",
-              },
-              {
-                url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738273042/hobbies/njpufnhlajjpss384yuz.png",
-              },
-              {
-                url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738661303/cld-sample-2.jpg",
-              },
-              {
-                url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-              },
-              {
-                url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample-3.jpg",
-              },
-              {
-                url: "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/cld-sample-video.mp4",
-              },
-              {
-                url: "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/sea-turtle.mp4",
-              },
-            ],
+            photos: fetchedPhotos, // Sử dụng dữ liệu ảnh đã fetch
             friends: friendList,
           };
           setSummaries(newSummaries);
 
-          // Fetch posts
           const fetchedPosts = await getPostsByUserId(fetchedAboutData.id);
           if (isMounted) {
             setPosts(fetchedPosts);
