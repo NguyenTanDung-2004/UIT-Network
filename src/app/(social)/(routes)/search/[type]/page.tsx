@@ -5,37 +5,14 @@ import PeopleCard from "@/components/search/PeopleCard";
 import PageCard from "@/components/search/PageCard";
 import GroupCard from "@/components/search/GroupCard";
 import { ClipLoader } from "react-spinners";
-
-const DEFAULT_AVATAR =
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
-
-interface PersonData {
-  id: string;
-  type: "people";
-  name: string;
-  avatar: string;
-  followers?: number;
-  headline?: string;
-  isFriend: boolean;
-}
-
-interface PageData {
-  id: string;
-  type: "page";
-  name: string;
-  avatar: string;
-  descriptionLines: string[];
-  isFollowing: boolean;
-}
-
-interface GroupData {
-  id: string;
-  type: "group";
-  name: string;
-  avatar: string;
-  stats?: string;
-  isJoined: boolean;
-}
+import {
+  searchPeople,
+  searchFanpages,
+  searchGroups,
+  PersonData,
+  PageData,
+  GroupData,
+} from "@/services/searchService";
 
 type SearchResultItem = PersonData | PageData | GroupData;
 
@@ -58,107 +35,79 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const generateSampleData = async () => {
+    let isMounted = true;
+    const fetchResults = async () => {
       setLoading(true);
       setError(null);
+      setResults([]);
+
+      if (!q || q.trim() === "") {
+        setLoading(false);
+        setError("Please enter a search query.");
+        return;
+      }
 
       try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        let fetchedData: SearchResultItem[] = [];
 
-        let sampleData: SearchResultItem[] = [];
+        if (type === "people") {
+          const people = await searchPeople(q);
+          fetchedData = people.map((p) => ({
+            ...p,
+            isFriend: false,
+          }));
+        } else if (type === "pages") {
+          const pages = await searchFanpages(q);
+          fetchedData = pages.map((p) => ({
+            ...p,
+            isFollowing: false,
+          }));
+        } else if (type === "groups") {
+          const groups = await searchGroups(q);
+          fetchedData = groups.map((g) => ({
+            ...g,
+            isJoined: false,
+          }));
+        } else if (type === "top") {
+          const [peopleResults, pagesResults, groupsResults] =
+            await Promise.all([
+              searchPeople(q),
+              searchFanpages(q),
+              searchGroups(q),
+            ]);
 
-        if (type === "people" || type === "top") {
-          sampleData.push(
-            {
-              id: `sample-person-1`,
-              type: "people",
-              name: `Bạn Tấn Dũng`,
-              avatar: DEFAULT_AVATAR,
-              followers: 123,
-              headline: "Java Dev",
-              isFriend: false,
-            },
-            {
-              id: `Phan Nguyễn Trà Giang `,
-              type: "people",
-              name: `Fullstack Dev`,
-              avatar: DEFAULT_AVATAR,
-              followers: 45,
-              isFriend: true,
-            }
-          );
+          const combinedResults: SearchResultItem[] = [
+            ...peopleResults.map((p) => ({ ...p, isFriend: false })),
+            ...pagesResults.map((p) => ({ ...p, isFollowing: false })),
+            ...groupsResults.map((g) => ({ ...g, isJoined: false })),
+          ];
+          fetchedData = combinedResults;
+        } else {
+          setError("Invalid search type.");
+          setLoading(false);
+          return;
         }
 
-        if (type === "pages" || type === "top") {
-          sampleData.push(
-            {
-              id: `sample-page-card-1`,
-              type: "page",
-              name: `Page rubic - Kỹ thuật số`,
-              avatar: DEFAULT_AVATAR,
-              descriptionLines: [
-                "Personal Website · 38K followers · More than 10 posts in the past 2 weeks",
-                "University Infomation of Technology - ",
-              ],
-              isFollowing: true,
-            },
-            {
-              id: `sample-page-card-2`,
-              type: "page",
-              name: `Page Khoa Công nghệ phần mềm`,
-              avatar: DEFAULT_AVATAR,
-              descriptionLines: [
-                "38K followers · More than 10 posts in the past 2 weeks",
-                "University Infomation of Technology - Connect with fellow Java enthusiasts at UIT! ",
-              ],
-              isFollowing: false,
-            }
-          );
+        if (isMounted) {
+          setResults(fetchedData);
         }
-
-        if (type === "groups" || type === "top") {
-          sampleData.push(
-            {
-              id: `sample-group-card-1`,
-              type: "group",
-              name: `CLB CHẤT LƯỢNG MẶT TRỜI`,
-              avatar: DEFAULT_AVATAR,
-              stats: "10K members · 5 posts/day",
-              isJoined: false,
-            },
-            {
-              id: `sample-group-card-2`,
-              type: "group",
-              name: `CLB TOEIC WRITING - UIT`,
-              avatar: DEFAULT_AVATAR,
-              stats: "2K members · 1 posts/day",
-              isJoined: true,
-            }
-          );
+      } catch (err: any) {
+        if (isMounted) {
+          setError(err.message || "Failed to fetch search results.");
         }
-
-        if (type !== "top") {
-          sampleData = sampleData.filter((item) => {
-            if (type === "people") return item.type === "people";
-            if (type === "pages") return item.type === "page";
-            if (type === "groups") return item.type === "group";
-            return false;
-          });
-        }
-
-        setResults(sampleData);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "An unknown error occurred"
-        );
-        setResults([]);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    generateSampleData();
-  }, [type]);
+    fetchResults();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [type, q]);
 
   const renderContent = () => {
     if (loading) {
@@ -183,7 +132,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
     if (results.length === 0) {
       return (
         <div className="text-center p-10 text-gray-500 dark:text-gray-400">
-          No sample results available for this type.
+          No results found for "{q}".
         </div>
       );
     }
@@ -201,8 +150,6 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({
             case "group":
               return <GroupCard key={result.id} group={result as GroupData} />;
             default:
-              const _exhaustiveCheck: never = result;
-              console.warn("Unknown result type:", _exhaustiveCheck);
               return null;
           }
         })}

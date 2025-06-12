@@ -36,8 +36,7 @@ const DEFAULT_AVATAR =
 export const getNotifications = async (
   userId: string
 ): Promise<NotificationItemData[]> => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_NOTIFY_API_URL || "http://localhost:8081";
+  const baseUrl = process.env.NOTI_API_URL || "http://localhost:8081";
   const url = `${baseUrl}/notify/${userId}`;
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt") : null;

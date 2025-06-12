@@ -44,15 +44,15 @@ const PeopleCard: React.FC<PeopleCardProps> = ({ person }) => {
               {person.name}
             </h4>
           </Link>
-          {person.followers !== undefined && (
+          {/* {person.followers !== undefined && (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {person.followers} follower{person.followers !== 1 ? "s" : ""}
             </p>
-          )}
+          )} */}
         </div>
       </div>
       <div className="flex-shrink-0">
-        <button
+        {/* <button
           onClick={handleAction}
           className={`min-w-32 px-5 py-2 rounded-md text-sm font-medium focus:outline-none transition-colors duration-200 ${
             person.isFriend
@@ -61,7 +61,7 @@ const PeopleCard: React.FC<PeopleCardProps> = ({ person }) => {
           }`}
         >
           {person.isFriend ? "Unfriend" : "Add friend"}
-        </button>
+        </button> */}
       </div>
     </div>
   );
