@@ -5,42 +5,7 @@ import PageHeader from "@/components/pages/PageHeader";
 import PageTabs from "@/components/pages/PageTabs";
 import { ClipLoader } from "react-spinners";
 import { PageHeaderData } from "@/types/pages/PageData";
-
-const DEFAULT_AVATAR =
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270447/samples/chair-and-coffee-table.jpg";
-const DEFAULT_COVER =
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270446/samples/breakfast.jpg";
-
-async function fetchPageData(id: string): Promise<PageHeaderData | null> {
-  try {
-    if (id === "page-following") {
-      return {
-        id: "me",
-        name: "UIT Official Page",
-        avatar:
-          "https://res.cloudinary.com/dos914bk9/image/upload/v1738270447/samples/chair-and-coffee-table.jpg",
-        coverPhoto:
-          "https://res.cloudinary.com/dos914bk9/image/upload/v1738270446/samples/breakfast.jpg",
-        followerCount: 5000,
-        isFollowing: true,
-      };
-    } else {
-      return {
-        id: id,
-        name: `Java Backend Developer`,
-        avatar:
-          "https://res.cloudinary.com/dos914bk9/image/upload/v1738270447/samples/chair-and-coffee-table.jpg",
-        coverPhoto:
-          "https://res.cloudinary.com/dos914bk9/image/upload/v1738270446/samples/breakfast.jpg",
-        followerCount: 14000,
-        isFollowing: false,
-      };
-    }
-  } catch (error) {
-    console.error("Error fetching page data:", error);
-    return null;
-  }
-}
+import { getFanpageInfo } from "@/services/fanpageService"; // Import API
 
 const PageLayout = ({
   children,
@@ -52,7 +17,7 @@ const PageLayout = ({
   const params = React.use(paramsPromise);
   const { id: currentPageId } = params;
 
-  const [pageData, satPageData] = useState<PageHeaderData | null>(null);
+  const [pageData, setPageData] = useState<PageHeaderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,11 +27,12 @@ const PageLayout = ({
     if (currentPageId) {
       setLoading(true);
       setError(null);
-      fetchPageData(currentPageId)
-        .then((data) => {
+      getFanpageInfo(currentPageId)
+        .then(({ header, about }) => {
+          // Lấy cả header và about từ API
           if (isMounted) {
-            if (data) {
-              satPageData(data);
+            if (header) {
+              setPageData(header);
             } else {
               setError(`Page with ID "${currentPageId}" not found.`);
             }

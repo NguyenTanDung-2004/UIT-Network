@@ -88,3 +88,5 @@ export const getFollowingPages = async (
 
   return response.object.map(formatFanpageToFollowingPage);
 };
+
+// FOR FANPAGE

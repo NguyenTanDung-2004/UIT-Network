@@ -244,12 +244,19 @@ const formatBackendPostToPostDataType = (
       displayAuthor.avatar =
         displayAuthor.avatar || groupInfo?.avtURL || DEFAULT_AVATAR;
     } else if (type === "fanpage") {
+      displayAuthor.name = displayAuthor.name || "Fanpage";
       const fanpageInfo = allFanpageInfos.find((f) => f.id === id);
       origin = {
         type: "page",
         pageInfo: {
           isFollowing: true,
         },
+      };
+      // Author của bài post fanpage là fanpage đó
+      displayAuthor = {
+        id: id, // ID của fanpage
+        name: fanpageInfo?.name || `Fanpage ${id.substring(0, 8)}`,
+        avatar: fanpageInfo?.avtURL || DEFAULT_AVATAR,
       };
       displayAuthor.name = fanpageInfo?.name || displayAuthor.name;
       displayAuthor.avatar = fanpageInfo?.avtURL || displayAuthor.avatar;
@@ -731,3 +738,71 @@ export const createComment = async (
 };
 
 // END COMMENT
+
+// FANPAGE
+interface BackendFanpageInfoInPostListResponse {
+  id: string;
+  name: string;
+  avtURL: string;
+}
+
+interface GetPostsByFanpageApiResponse {
+  object: {
+    fanpageInfo: BackendFanpageInfoInPostListResponse;
+    listUserInfos: BackendUserInfoInPostList[]; // Người dùng tạo post trên fanpage
+    listPost: BackendPost[];
+  };
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
+export const getPostsByFanpageId = async (
+  fanpageId: string
+): Promise<PostDataType[]> => {
+  const url = `${POST_API_BASE_URL}/post/list/fanpage/${fanpageId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<GetPostsByFanpageApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_13_post") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch fanpage posts"
+    );
+  }
+
+  const { fanpageInfo, listUserInfos, listPost } = response.object;
+
+  const postsWithLikes = await Promise.all(
+    listPost.map(async (post) => {
+      try {
+        const likes = await getNumberOfLikes(post.postId);
+        // Khi định dạng post của fanpage, fanpageInfo là nơi lấy author của post
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos, // listUserInfos vẫn cần cho trường hợp bài viết của user trên fanpage
+          [], // Không có group info
+          [fanpageInfo], // Chỉ có fanpage info liên quan
+          likes
+        );
+      } catch (e) {
+        // console.error(`Error fetching likes for post ${post.postId}:`, e); // Bỏ console.error
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos,
+          [],
+          [fanpageInfo]
+        );
+      }
+    })
+  );
+
+  return postsWithLikes;
+};
