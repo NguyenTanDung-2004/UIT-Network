@@ -6,6 +6,8 @@ export type GroupHeaderData = {
   memberCount: number;
   isJoined: boolean | true;
   isPrivate: boolean | true;
+  bio?: string | null;
+  createdDate?: string | null;
 };
 
 export type GroupMemberRole = "admin" | "moderator" | "member";

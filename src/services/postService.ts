@@ -8,6 +8,7 @@ import {
 import { Friend } from "@/types/profile/FriendData";
 import { getUserInfoCardsByIds } from "@/services/friendService";
 import { CommentType } from "@/components/post/detail/CommentItem";
+import { getGroupInfo } from "./groupService";
 
 interface CreatePostMediaItem {
   typeId: 1 | 2 | 3; // 1: File, 2: Image, 3: Video
@@ -799,6 +800,87 @@ export const getPostsByFanpageId = async (
           listUserInfos,
           [],
           [fanpageInfo]
+        );
+      }
+    })
+  );
+
+  return postsWithLikes;
+};
+
+// POST OF GROUP
+interface BackendGroupInfoInPostListResponse {
+  id: string;
+  name: string;
+  avtURL: string;
+}
+
+interface GetPostsByGroupApiResponse {
+  object: {
+    listUserInfos: BackendUserInfoInPostList[];
+    listPost: BackendPost[];
+  };
+  enumResponse: {
+    message: string;
+    code: string;
+  };
+}
+
+export const getPostsByGroupId = async (
+  groupId: string
+): Promise<PostDataType[]> => {
+  const url = `${
+    process.env.POST_API_URL || "http://localhost:8083"
+  }/post/list/group/${groupId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const [postsResponse, groupDataResponse] = await Promise.all([
+    apiFetch<GetPostsByGroupApiResponse>(url, options),
+    getGroupInfo(groupId),
+  ]);
+
+  if (postsResponse.enumResponse.code !== "s_14_post") {
+    throw new Error(
+      postsResponse.enumResponse.message || "Failed to fetch group posts"
+    );
+  }
+
+  const { listUserInfos, listPost } = postsResponse.object;
+  const currentGroupInfo = groupDataResponse.data;
+
+  const groupInfoForFormatting: BackendGroupInfoInPostList[] = currentGroupInfo
+    ? [
+        {
+          id: currentGroupInfo.id,
+          name: currentGroupInfo.name,
+          avtURL: currentGroupInfo.avatar,
+        },
+      ]
+    : [];
+
+  const postsWithLikes = await Promise.all(
+    listPost.map(async (post) => {
+      try {
+        const likes = await getNumberOfLikes(post.postId);
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos,
+          groupInfoForFormatting,
+          [],
+          likes
+        );
+      } catch (e) {
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos,
+          groupInfoForFormatting,
+          []
         );
       }
     })

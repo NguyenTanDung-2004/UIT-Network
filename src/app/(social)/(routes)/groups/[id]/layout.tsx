@@ -5,31 +5,7 @@ import GroupHeader from "@/components/groups/GroupHeader";
 import GroupTabs from "@/components/groups/GroupTabs";
 import { ClipLoader } from "react-spinners";
 import { GroupHeaderData } from "@/types/groups/GroupData";
-
-const DEFAULT_AVATAR =
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270447/samples/chair-and-coffee-table.jpg";
-const DEFAULT_COVER =
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738270446/samples/breakfast.jpg";
-
-async function fetchGroupData(id: string): Promise<GroupHeaderData | null> {
-  try {
-    // console.log(`Fetching group data for ID: ${id}`);
-    // await new Promise((resolve) => setTimeout(resolve, 500));
-
-    return {
-      id: id,
-      name: `Group luyện thi cuối kỳ môn giải tích ${id}`,
-      avatar: DEFAULT_AVATAR,
-      coverPhoto: DEFAULT_COVER,
-      memberCount: 19000,
-      isJoined: true,
-      isPrivate: true,
-    };
-  } catch (error) {
-    console.error("Error fetching group data:", error);
-    return null;
-  }
-}
+import { getGroupInfo } from "@/services/groupService"; // Import API
 
 const GroupLayout = ({
   children,
@@ -51,8 +27,8 @@ const GroupLayout = ({
     if (currentGroupId) {
       setLoading(true);
       setError(null);
-      fetchGroupData(currentGroupId)
-        .then((data) => {
+      getGroupInfo(currentGroupId)
+        .then(({ data }) => {
           if (isMounted) {
             if (data) {
               setGroupData(data);

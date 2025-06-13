@@ -96,10 +96,10 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupData }) => {
               <span>
                 {groupData.isPrivate ? "Private Group" : "Public Group"}
               </span>
-              <span className="font-bold text-gray-600 dark:text-gray-300">
+              {/* <span className="font-bold text-gray-600 dark:text-gray-300">
                 ·
               </span>
-              <span>{formatMemberCount(groupData.memberCount)} members</span>
+              <span>{formatMemberCount(groupData.memberCount)} members</span> */}
             </div>
           </div>
           <div className="flex-shrink-0 w-full md:w-auto flex justify-center md:justify-end">

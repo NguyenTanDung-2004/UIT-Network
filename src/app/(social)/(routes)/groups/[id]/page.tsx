@@ -5,15 +5,17 @@ import { useParams } from "next/navigation";
 import Post from "@/components/post/Post";
 import CreatePost from "@/components/post/CreatePost";
 import CreatePostModal from "@/components/post/create/CreatePostModal";
-import AboutSummaryWidget from "@/components/groups/AboutSummaryWidget"; // Updated import
-import MediaSummaryWidget from "@/components/groups/MediaSummaryWidget"; // Updated import
-import { AuthorInfo, UploadedFile, PostDataType } from "@/components/post/Post";
+import AboutSummaryWidget from "@/components/groups/AboutSummaryWidget";
+import MediaSummaryWidget from "@/components/groups/MediaSummaryWidget";
+import { UploadedFile, PostDataType } from "@/components/post/Post";
 import ClipLoader from "react-spinners/ClipLoader";
 import { GroupHeaderData } from "@/types/groups/GroupData";
-const DEFAULT_AVATAR =
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
-const DEFAULT_COVER =
-  "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg";
+import {
+  getGroupInfo,
+  getListMediaAndFilesByGroupId,
+} from "@/services/groupService";
+import { getPostsByGroupId } from "@/services/postService";
+import { useUser } from "@/contexts/UserContext";
 
 interface GroupAboutSummary {
   bio: string;
@@ -23,220 +25,99 @@ interface GroupAboutSummary {
 interface PhotoSummary {
   url: string;
 }
-
 interface GroupSummaryData {
   about: GroupAboutSummary | null;
   mediaList: PhotoSummary[] | null;
 }
 
-const MOCK_CURRENT_USER: AuthorInfo = {
-  id: "user-123",
-  name: "Current User Name",
-  avatar: DEFAULT_AVATAR,
-};
-
-async function fetchGroupBasicData(
-  id: string
-): Promise<GroupHeaderData | null> {
-  try {
-    // console.log(`Fetching basic group data for ID: ${id}`);
-    // await new Promise((resolve) => setTimeout(resolve, 200));
-
-    return {
-      id: id,
-      name: `Group luyện thi cuối kỳ môn giải tích ${id}`,
-      avatar: DEFAULT_AVATAR, //
-      coverPhoto: DEFAULT_COVER,
-      memberCount: 19000,
-      isJoined: true,
-      isPrivate: true,
-    };
-  } catch (error) {
-    console.error("Error fetching basic group data:", error);
-    return null;
-  }
-}
-
-async function fetchGroupContent(
-  id: string,
-  groupName: string,
-  isJoined: boolean
-): Promise<{ posts: PostDataType[]; summaries: GroupSummaryData }> {
-  await new Promise((res) => setTimeout(res, 500));
-
-  const samplePosts: PostDataType[] = [
-    {
-      id: `group-${id}-post1`,
-      author: { id: "user-abc", name: "Member One", avatar: DEFAULT_AVATAR }, // A member posts
-      origin: {
-        type: "group",
-        groupInfo: { id: id, name: groupName, isJoined: isJoined },
-      },
-      content: `Bài viết trong group ${groupName}. Thảo luận về đề thi năm trước!`,
-      fullContent: `Bài viết trong group ${groupName}. Thảo luận về đề thi năm trước! Có ai có đáp án chi tiết không ạ?`,
-      date: "Sat, March 15, 2025",
-      time: "10:30 AM",
-      mediaList: [
-        {
-          url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample.jpg",
-          type: "image",
-        },
-      ],
-      likes: Math.floor(Math.random() * 50 + 5),
-      comments: Math.floor(Math.random() * 15),
-      shares: Math.floor(Math.random() * 3),
-    },
-    {
-      id: `group-${id}-post2`,
-      author: { id: "user-def", name: "Member Two", avatar: DEFAULT_AVATAR },
-      origin: {
-        type: "group",
-        groupInfo: { id: id, name: groupName, isJoined: isJoined },
-      },
-      content: "Chia sẻ tài liệu ôn tập Calculus mới sưu tầm được.",
-      date: "Fri, March 14, 2025",
-      time: "02:00 PM",
-      mediaList: [
-        {
-          url: "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/cld-sample-video.mp4",
-          type: "video",
-        },
-        {
-          url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-          type: "image",
-        },
-      ],
-      likes: 88,
-      comments: 19,
-      shares: 4,
-    },
-    {
-      id: `group-${id}-post3`,
-      author: { id: "user-ghi", name: "Member Three", avatar: DEFAULT_AVATAR },
-      origin: {
-        type: "group",
-        groupInfo: { id: id, name: groupName, isJoined: isJoined },
-      },
-      content: "Hỏi về lịch thi và địa điểm thi?",
-      date: "Thu, March 13, 2025",
-      time: "09:00 AM",
-      likes: 30,
-      comments: 5,
-      shares: 1,
-    },
-  ];
-
-  const sampleSummaries: GroupSummaryData = {
-    about: {
-      bio: `Đây là nơi trao đổi, chia sẻ tài liệu và kinh nghiệm ôn thi môn Giải tích cuối kỳ. Cùng nhau cố gắng nhé! Group ${id}.`,
-      isPrivate: true,
-      isVisible: true,
-    },
-    mediaList: [
-      {
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample.jpg",
-      },
-      {
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738273042/hobbies/njpufnhlajjpss384yuz.png",
-      },
-      {
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738661303/cld-sample-2.jpg",
-      },
-      {
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738661302/samples/cup-on-a-table.jpg",
-      },
-      {
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample-3.jpg",
-      },
-      {
-        url: "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/cld-sample-video.mp4",
-      },
-      {
-        url: "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/sea-turtle.mp4",
-      },
-    ],
-  };
-
-  return { posts: samplePosts, summaries: sampleSummaries };
-}
-
-// Renamed component
 const GroupPage: React.FC = () => {
   const params = useParams();
-  const groupId = params?.id as string; // Renamed variable
+  const groupId = params?.id as string;
 
-  // Renamed state and type
-  const [pageGroupData, setPageGroupData] = useState<GroupHeaderData | null>(
-    null
-  );
-  const [basicInfoLoading, setBasicInfoLoading] = useState(true);
-  const [basicInfoError, setBasicInfoError] = useState<string | null>(null);
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
+
+  const [groupData, setGroupData] = useState<GroupHeaderData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [posts, setPosts] = useState<PostDataType[]>([]);
-  // Updated state type
-  const [summaries, setSummaries] = useState<GroupSummaryData | null>(null);
-  const [contentLoading, setContentLoading] = useState(true);
+  const [photos, setPhotos] = useState<PhotoSummary[]>([]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    if (groupId) {
-      setBasicInfoLoading(true);
-      setBasicInfoError(null);
-      fetchGroupBasicData(groupId) // Use updated fetch function
-        .then((data) => {
-          if (isMounted) {
-            if (data) {
-              setPageGroupData(data); // Use updated state setter
-            } else {
-              setBasicInfoError(
-                `Basic group info for ID "${groupId}" not found.`
-              ); // Updated error message
-            }
-            setBasicInfoLoading(false);
+    setLoading(true);
+    setError(null);
+
+    const fetchData = async () => {
+      try {
+        if (userContextLoading) {
+          return;
+        }
+        if (userContextError) {
+          throw new Error(userContextError);
+        }
+        if (!groupId) {
+          throw new Error("Invalid group ID.");
+        }
+
+        const { data: fetchedGroupInfo } = await getGroupInfo(groupId);
+        if (isMounted) {
+          if (fetchedGroupInfo) {
+            setGroupData(fetchedGroupInfo);
+          } else {
+            throw new Error(`Group with ID "${groupId}" not found.`);
           }
-        })
-        .catch((error) => {
-          console.error("Failed to fetch basic group data:", error); // Updated log
-          if (isMounted) {
-            setBasicInfoError("Failed to load basic group info."); // Updated error
-            setBasicInfoLoading(false);
-          }
-        });
-    } else {
-      setBasicInfoError("Invalid group ID for page."); // Updated error
-      setBasicInfoLoading(false);
-    }
+        }
+
+        const fetchedPosts = await getPostsByGroupId(groupId); // Lấy posts theo GroupId
+        if (isMounted) {
+          setPosts(fetchedPosts);
+        }
+
+        const { media: fetchedMedia, files: fetchedFiles } =
+          await getListMediaAndFilesByGroupId(groupId);
+        if (isMounted) {
+          setPhotos(fetchedMedia.map((item) => ({ url: item.url })));
+          // Bạn có thể xử lý `fetchedFiles` ở đây nếu cần hiển thị chúng trong `MediaSummaryWidget`
+          // hoặc một widget riêng biệt. Hiện tại `MediaSummaryWidget` chỉ nhận `photos`.
+        }
+      } catch (err: any) {
+        console.error("Error fetching group data:", err);
+        if (isMounted) {
+          setError(err.message || "Could not load group information.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
     return () => {
       isMounted = false;
     };
-  }, [groupId]); // Dependency on groupId
+  }, [groupId, userContextLoading, userContextError]);
 
-  useEffect(() => {
-    // Fetch content only if basic group data loaded successfully
-    if (groupId && pageGroupData && !basicInfoLoading && !basicInfoError) {
-      setContentLoading(true);
-      fetchGroupContent(groupId, pageGroupData.name, pageGroupData.isJoined) // Use updated fetch function
-        .then(({ posts: fetchedPosts, summaries: fetchedSummaries }) => {
-          setPosts(fetchedPosts);
-          setSummaries(fetchedSummaries);
-          setContentLoading(false);
-        })
-        .catch((error) => {
-          console.error("Failed to fetch group content:", error); // Updated log
-          setContentLoading(false);
-        });
-    } else if (!groupId || basicInfoError) {
-      // Ensure content loading stops if basic info fails or ID is missing
-      setContentLoading(false);
-      if (!groupId) console.error("Group ID is missing for content fetch.");
-      if (basicInfoError)
-        console.error(
-          "Cannot fetch content due to basic info error:",
-          basicInfoError
-        );
-    }
-  }, [groupId, pageGroupData, basicInfoLoading, basicInfoError]); // Depend on pageGroupData
+  const groupAboutSummary: GroupAboutSummary | null = groupData
+    ? {
+        bio: groupData.bio || "No description available.",
+        isPrivate: groupData.isPrivate,
+        isVisible: true, // Giả định
+      }
+    : null;
+
+  const summaries: GroupSummaryData = {
+    about: groupAboutSummary,
+    mediaList: photos,
+  };
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -246,17 +127,26 @@ const GroupPage: React.FC = () => {
     mediaList?: { url: string; type: string }[],
     file?: UploadedFile
   ) => {
-    if (!pageGroupData) return;
+    // Logic tạo post mới trong group
+    console.log("Create post in group:", groupId, content, mediaList, file);
+    // TODO: Gọi API tạo post mới với parentId là groupId và postType phù hợp
+    // Ví dụ: await createPost(content, media, postTypeId, groupId);
+    // Sau đó cập nhật lại posts list hoặc thêm post mới vào state
+    if (!user || !groupData) return; // User và groupData phải có
 
     const newPost: PostDataType = {
       id: `new-group-post-${Date.now()}`,
-      author: MOCK_CURRENT_USER,
+      author: {
+        id: user.id, // Người tạo post
+        name: user.name,
+        avatar: user.avtURL || "",
+      },
       origin: {
         type: "group",
         groupInfo: {
-          id: pageGroupData.id,
-          name: pageGroupData.name,
-          isJoined: pageGroupData.isJoined,
+          id: groupData.id,
+          name: groupData.name,
+          isJoined: groupData.isJoined,
         },
       },
       content: content.length > 200 ? content.substring(0, 200) : content,
@@ -282,7 +172,7 @@ const GroupPage: React.FC = () => {
     closeModal();
   };
 
-  if (basicInfoLoading || contentLoading) {
+  if (loading || userContextLoading) {
     return (
       <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
         <ClipLoader
@@ -295,37 +185,36 @@ const GroupPage: React.FC = () => {
     );
   }
 
-  if (basicInfoError || !pageGroupData) {
+  if (error || !groupData) {
     return (
       <div className="text-center mt-8 text-red-600 dark:text-red-400 font-semibold p-4 bg-red-100 dark:bg-red-900/20 rounded-md max-w-md mx-auto">
-        {basicInfoError || "Could not load group information for this page."}
+        {error || "Could not load group information for this page."}
       </div>
     );
   }
 
-  const canPost = pageGroupData.isJoined;
+  const canPost = groupData.isJoined;
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 px-2 md:px-0 md:mb-16 mb-8">
       <div className="w-full lg:w-2/5 xl:w-1/3 space-y-4 flex-shrink-0 order-2 lg:order-1">
         {summaries?.about && (
-          <AboutSummaryWidget
-            data={summaries.about}
-            groupId={pageGroupData.id}
-          />
+          <AboutSummaryWidget data={summaries.about} groupId={groupData.id} />
         )}
         {summaries?.mediaList && summaries.mediaList.length > 0 && (
           <MediaSummaryWidget
             photos={summaries.mediaList}
-            groupId={pageGroupData.id}
+            groupId={groupData.id}
           />
         )}
       </div>
 
-      {/* (Posts) */}
       <div className="flex-1 min-w-0 order-1 lg:order-2 ">
-        {canPost && (
-          <CreatePost user={MOCK_CURRENT_USER} onPostCreate={openModal} />
+        {canPost && user && (
+          <CreatePost
+            user={{ id: user.id, name: user.name, avatar: user.avtURL || "" }}
+            onPostCreate={openModal}
+          />
         )}
         <div className={`mt-${canPost ? "4" : "0"} space-y-4`}>
           {posts.length > 0 ? (
@@ -342,7 +231,6 @@ const GroupPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Create Post Modal */}
       {isModalOpen && canPost && (
         <CreatePostModal onClose={closeModal} onPost={handleCreatePost} />
       )}
