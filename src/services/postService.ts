@@ -892,6 +892,70 @@ export const getPostsByGroupId = async (
   return postsWithLikes;
 };
 
+export const getPendingPostsByGroupId = async (
+  groupId: string
+): Promise<PostDataType[]> => {
+  const url = `${
+    process.env.POST_API_URL || "http://localhost:8083"
+  }/post/list/group/pending/${groupId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const [postsResponse, groupDataResponse] = await Promise.all([
+    apiFetch<GetPostsByGroupApiResponse>(url, options),
+    getGroupInfo(groupId),
+  ]);
+
+  if (postsResponse.enumResponse.code !== "s_14_post") {
+    throw new Error(
+      postsResponse.enumResponse.message ||
+        "Failed to fetch group pending posts"
+    );
+  }
+
+  const { listUserInfos, listPost } = postsResponse.object;
+  const currentGroupInfo = groupDataResponse.data;
+
+  const groupInfoForFormatting: BackendGroupInfoInPostList[] = currentGroupInfo
+    ? [
+        {
+          id: currentGroupInfo.id,
+          name: currentGroupInfo.name,
+          avtURL: currentGroupInfo.avatar,
+        },
+      ]
+    : [];
+
+  const postsWithLikes = await Promise.all(
+    listPost.map(async (post) => {
+      try {
+        const likes = await getNumberOfLikes(post.postId);
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos,
+          groupInfoForFormatting,
+          [],
+          likes
+        );
+      } catch (e) {
+        return formatBackendPostToPostDataType(
+          post,
+          listUserInfos,
+          groupInfoForFormatting,
+          []
+        );
+      }
+    })
+  );
+
+  return postsWithLikes;
+};
+
 export const createPostInGroup = async (
   groupId: string,
   caption: string,

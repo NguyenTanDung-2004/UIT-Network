@@ -229,3 +229,84 @@ export const getGroupMembers = async (
 
   return groupMembers;
 };
+
+interface GetGroupsListApiResponse {
+  object: {
+    listGroup: BackendGroupInfo[];
+    joinedList: boolean[];
+  };
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+export const getListGroups = async (): Promise<GroupHeaderData[]> => {
+  const url = `${FANPAGE_API_BASE_URL}/group/list`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+
+  const response = await apiFetch<GetGroupsListApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_012_fanpagegroup") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch groups list"
+    );
+  }
+
+  const { listGroup, joinedList } = response.object;
+
+  const groupHeaderDataList: GroupHeaderData[] = listGroup.map(
+    (group, index) => {
+      const memberCount = 0;
+      const isJoined = joinedList[index] || false;
+
+      return {
+        id: group.id,
+        name: group.name || "Unknown Group",
+        avatar: group.avtURL || DEFAULT_AVATAR,
+        coverPhoto: group.backgroundURL || DEFAULT_COVER,
+        memberCount: memberCount,
+        isJoined: true,
+        isPrivate: true,
+        bio: group.intro || null,
+        createdDate: group.createdDate || null,
+      };
+    }
+  );
+
+  return groupHeaderDataList;
+};
+
+export const getGroupInfoForManager = async (
+  groupId: string
+): Promise<{ header: GroupHeaderData; details: BackendGroupInfo }> => {
+  const url = `${FANPAGE_API_BASE_URL}/group/${groupId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<GetGroupInfoApiResponse>(url, options);
+  if (response.enumResponse.code !== "s_00_fanpagegroup") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch group info"
+    );
+  }
+
+  const backendGroup = response.object;
+
+  const headerData = formatGroupInfo(backendGroup, 0, false);
+  return { header: headerData, details: backendGroup };
+};

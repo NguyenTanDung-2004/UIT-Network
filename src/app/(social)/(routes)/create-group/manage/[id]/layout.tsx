@@ -8,7 +8,7 @@ import React, { ReactNode, use } from "react";
 
 interface GroupManageLayoutProps {
   children: ReactNode;
-  params: Promise<{ id: string }>; // params is now a Promise
+  params: Promise<{ id: string }>;
 }
 const GroupManageLayout: React.FC<GroupManageLayoutProps> = ({
   children,

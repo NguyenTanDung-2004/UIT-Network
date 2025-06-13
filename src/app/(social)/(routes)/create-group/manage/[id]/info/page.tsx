@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import Image from "next/image";
 import ClipLoader from "react-spinners/ClipLoader";
 import { useParams } from "next/navigation";
-import { getMockGroupInfo, mockUpdateGroupInfo, Group } from "@/lib/mockData";
+import { getGroupInfoForManager } from "@/services/groupService"; // ĐÃ SỬA IMPORT
+import { mockUpdateGroupInfo } from "@/lib/mockData"; // Giữ mock cho update vì chưa có API thật
+
+interface GroupFormState {
+  name?: string;
+  intro?: string;
+  phone?: string;
+  email?: string;
+  avtUrl?: string;
+  backgroundUrl?: string;
+}
 
 interface GroupIdParams {
   id: string;
@@ -14,34 +24,54 @@ const UpdateGroupInfoPage: React.FC = () => {
   const params = useParams();
   const groupId = params.id as string;
 
-  const [form, setForm] = useState<Partial<Group>>({});
+  const [form, setForm] = useState<Partial<GroupFormState>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [avtFile, setAvtFile] = useState<File | null>(null);
   const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     if (groupId) {
       setLoading(true);
-      const timer = setTimeout(() => {
-        const groupInfo = getMockGroupInfo(groupId);
-        if (groupInfo) {
-          setForm({
-            name: groupInfo.name,
-            intro: groupInfo.intro,
-            phone: groupInfo.phone,
-            email: groupInfo.email,
-            avtUrl: groupInfo.avtUrl,
-            backgroundUrl: groupInfo.backgroundUrl,
-          });
-        } else {
-          console.error(`Group with ID ${groupId} not found.`);
-          alert(`Group with ID ${groupId} not found.`);
-        }
-        setLoading(false);
-      }, 500);
-      return () => clearTimeout(timer);
+      setError(null);
+      getGroupInfoForManager(groupId) // ĐÃ SỬA GỌI HÀM
+        .then(({ header, details }) => {
+          if (isMounted) {
+            if (header && details) {
+              setForm({
+                name: header.name,
+                intro: details.intro,
+                phone: details.phone,
+                email: details.email,
+                avtUrl: header.avatar,
+                backgroundUrl: header.coverPhoto,
+              });
+            } else {
+              setError(`Group with ID ${groupId} not found.`);
+            }
+            setLoading(false);
+          }
+        })
+        .catch((err) => {
+          console.error(`Error fetching group ${groupId} info:`, err);
+          if (isMounted) {
+            setError(`Failed to load group information: ${err.message}`);
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoading(false);
+          }
+        });
+    } else {
+      setError("Invalid Group ID provided.");
+      setLoading(false);
     }
+    return () => {
+      isMounted = false;
+    };
   }, [groupId]);
 
   const handleInputChange = (
@@ -79,12 +109,13 @@ const UpdateGroupInfoPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
 
     try {
-      let updatedData: Partial<Group> = { ...form };
+      let updatedData: Partial<GroupFormState> = { ...form };
 
       if (avtFile) {
-        const avtUrl = await uploadImage(avtFile); //
+        const avtUrl = await uploadImage(avtFile);
         updatedData.avtUrl = avtUrl;
       }
 
@@ -100,12 +131,17 @@ const UpdateGroupInfoPage: React.FC = () => {
         alert("Group information updated successfully!");
         setAvtFile(null);
         setBackgroundFile(null);
+        setForm((prev) => ({
+          ...prev,
+          avtUrl: updatedData.avtUrl || prev.avtUrl,
+          backgroundUrl: updatedData.backgroundUrl || prev.backgroundUrl,
+        }));
       } else {
         alert("Failed to update group information.");
       }
-    } catch (error) {
-      console.error("Update failed:", error);
-      alert("Failed to update group information.");
+    } catch (updateError: any) {
+      console.error("Update failed:", updateError);
+      setError(`Failed to update group information: ${updateError.message}`);
     } finally {
       setSaving(false);
     }
@@ -119,8 +155,15 @@ const UpdateGroupInfoPage: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center mt-8 text-red-600 dark:text-red-400 font-semibold p-4 bg-red-100 dark:bg-red-900/20 rounded-md max-w-md mx-auto">
+        {error}
+      </div>
+    );
+  }
+
   return (
-    // The main container and title are handled by the layout
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label
@@ -140,7 +183,6 @@ const UpdateGroupInfoPage: React.FC = () => {
         />
       </div>
 
-      {/* Intro */}
       <div>
         <label
           htmlFor="intro"
@@ -159,7 +201,6 @@ const UpdateGroupInfoPage: React.FC = () => {
       </div>
 
       <div className="flex flex-wrap gap-4">
-        {/* Phone */}
         <div className="flex-1">
           <label
             htmlFor="phone"
@@ -177,7 +218,6 @@ const UpdateGroupInfoPage: React.FC = () => {
           />
         </div>
 
-        {/* Email */}
         <div className="flex-1">
           <label
             htmlFor="email"
@@ -196,7 +236,6 @@ const UpdateGroupInfoPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Avatar Upload */}
       <div>
         <label
           htmlFor="avatar"
@@ -224,7 +263,6 @@ const UpdateGroupInfoPage: React.FC = () => {
         )}
       </div>
 
-      {/* Background Upload */}
       <div>
         <label
           htmlFor="background"
@@ -252,7 +290,6 @@ const UpdateGroupInfoPage: React.FC = () => {
         )}
       </div>
 
-      {/* Submit Button */}
       <div className="flex justify-center">
         <button
           type="submit"
