@@ -5,7 +5,9 @@ import PageHeader from "@/components/pages/PageHeader";
 import PageTabs from "@/components/pages/PageTabs";
 import { ClipLoader } from "react-spinners";
 import { PageHeaderData } from "@/types/pages/PageData";
-import { getFanpageInfo } from "@/services/fanpageService"; // Import API
+import { getFanpageInfo } from "@/services/fanpageService";
+
+import { useUser } from "@/contexts/UserContext";
 
 const PageLayout = ({
   children,
@@ -20,6 +22,13 @@ const PageLayout = ({
   const [pageData, setPageData] = useState<PageHeaderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
+
+  const currentUserId = user?.id || "me"; // S
 
   useEffect(() => {
     let isMounted = true;
@@ -27,7 +36,7 @@ const PageLayout = ({
     if (currentPageId) {
       setLoading(true);
       setError(null);
-      getFanpageInfo(currentPageId)
+      getFanpageInfo(currentPageId, currentUserId)
         .then(({ header, about }) => {
           // Lấy cả header và about từ API
           if (isMounted) {

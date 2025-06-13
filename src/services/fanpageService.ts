@@ -73,7 +73,8 @@ const formatFanpageInfoToPageAboutData = (
 };
 
 export const getFanpageInfo = async (
-  pageId: string
+  pageId: string,
+  userId?: string // Thêm userId để kiểm tra trạng thái follow
 ): Promise<{ header: PageHeaderData; about: PageAboutData }> => {
   const url = `${FANPAGE_API_BASE_URL}/fanpage/${pageId}`;
   const token =
@@ -92,11 +93,19 @@ export const getFanpageInfo = async (
   }
 
   const backendFanpage = response.object;
+  let isFollowing = false;
+  if (userId) {
+    try {
+      isFollowing = await checkFanpageIsFollowing(pageId, userId);
+    } catch (e) {
+      console.error("Failed to check fanpage follow status:", e);
+    }
+  }
 
   const headerData = formatFanpageInfoToPageHeaderData(
     backendFanpage,
-    0,
-    false
+    0, // FollowerCount cần API riêng
+    isFollowing
   );
   const aboutData = formatFanpageInfoToPageAboutData(backendFanpage);
 
@@ -143,4 +152,37 @@ export const getListMediaByPostId = async (
       url: item.url,
       type: item.typeId === 2 ? "image" : "video",
     }));
+};
+
+// CHECK IS FOLLOWING
+interface IsFollowingApiResponse {
+  object: boolean;
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+export const checkFanpageIsFollowing = async (
+  fanpageId: string,
+  userId: string
+): Promise<boolean> => {
+  const url = `${FANPAGE_API_BASE_URL}/fanpage/isliked/${fanpageId}/${userId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<IsFollowingApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_00_fanpagegroup") {
+    throw new Error(
+      response.enumResponse.message || "Failed to check fanpage follow status"
+    );
+  }
+
+  return response.object;
 };

@@ -10,10 +10,10 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { PageHeaderData, PageAboutData } from "@/types/pages/PageData";
 import {
   getFanpageInfo,
-  getListMediaByPostId as getListMediaByPageId, // Đổi tên để tránh trùng
+  getListMediaByPostId as getListMediaByPageId,
 } from "@/services/fanpageService";
-import { getPostsByFanpageId } from "@/services/postService"; // Import API posts for fanpage
-import { MediaItem } from "@/services/fanpageService"; // Import MediaItem from fanpageService
+import { getPostsByFanpageId } from "@/services/postService";
+import { MediaItem } from "@/services/fanpageService";
 
 interface AboutSummary {
   bio: string;
