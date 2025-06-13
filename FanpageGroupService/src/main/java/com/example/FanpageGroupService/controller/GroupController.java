@@ -112,10 +112,10 @@ public class GroupController {
      * External APIs
      */
 
-    @GetMapping("/{groupId}/is-member/{userId}")
-    public ResponseEntity isMember(@PathVariable(name = "groupId") String groupId,
+    @GetMapping("/is-member/{groupId}/{userId}")
+    public ResponseEntity isMember1(@PathVariable(name = "groupId") String groupId,
             @PathVariable(name = "userId") String userId) {
-        return groupService.isMember(groupId, userId);
+        return groupService.isMember1(groupId, userId);
     }
 
     @GetMapping("/list/{userId}")
@@ -129,6 +129,12 @@ public class GroupController {
         return groupService.getListGroupInfos(ids);
     }
 
+    @GetMapping("/is-member/{GroupId}")
+    public ResponseEntity isMember(@PathVariable(name = "GroupId") String groupId,
+            @RequestHeader("Authorization") String authorizationHeader) {
+       return groupService.isMember(groupId, authorizationHeader);
+    }
+    
 
     /*
      * setup data

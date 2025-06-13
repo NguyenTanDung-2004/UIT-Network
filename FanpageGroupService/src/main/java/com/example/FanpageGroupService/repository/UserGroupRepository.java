@@ -32,7 +32,7 @@ public interface UserGroupRepository extends JpaRepository<UserGroup, UserGroupP
 
         @Query(value = """
                         select case
-                        	when exists (select 1 from user_group where user_id = :user)
+                        	when exists (select 1 from user_group where user_id = :userId)
                         	then 1
                         	else 0
                         end as result
@@ -74,4 +74,13 @@ public interface UserGroupRepository extends JpaRepository<UserGroup, UserGroupP
                         where ug.group_id = :groupid
                         """, nativeQuery = true)
         public List<UserGroup> getListMember(String groupid);
+
+        @Query(value = """
+                        select case
+                        	when exists (select 1 from user_group where group_id = :groupId and user_id = :userId and is_admin = true)
+                        	then 1
+                        	else 0
+                        end as result
+                                                """, nativeQuery = true)
+        public Boolean isMember(String userid, String groupId); 
 }

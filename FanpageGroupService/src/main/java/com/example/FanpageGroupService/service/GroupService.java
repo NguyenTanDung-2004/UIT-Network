@@ -412,4 +412,13 @@ public class GroupService {
         return ResponseEntity.ok(apiResponse);
     }
 
+    public ResponseEntity isMember1(String groupId, String userId) {
+        // check
+        int isMember = this.userGroupRepository.isMember(userId);
+
+        Boolean result = isMember > 0;
+
+        return ResponseEntity.ok(result);
+    }
+
 }

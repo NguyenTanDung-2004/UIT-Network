@@ -70,6 +70,12 @@ public class FanpageController {
         return fanpageService.getNumberFollowers(fanpageId);
     }
 
+    @GetMapping("/isliked/{fanpageId}/{userId}")
+    public ResponseEntity isLikedFanpage(@PathVariable(name = "userId") String userId, 
+            @PathVariable(name = "fanpageId") String fanpageId) {
+        return fanpageService.isLikedFanpage(userId, fanpageId);
+    }
+
     /**
      * External APIs
      */

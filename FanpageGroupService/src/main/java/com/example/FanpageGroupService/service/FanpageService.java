@@ -221,4 +221,19 @@ public class FanpageService {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    public ResponseEntity isLikedFanpage(String userid, String fanpageId) {
+        // check if user liked the fanpage
+        int isLiked = this.fanpageRepository.isUserReactFanpage(userid, fanpageId);
+        
+        Boolean b_isLiked = isLiked > 0;
+
+        // create response
+        ApiResponse apiResponse = ApiResponse.builder()
+                .object(b_isLiked)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
 }

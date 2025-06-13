@@ -33,4 +33,7 @@ public interface FanpageRepository extends JpaRepository<Fanpage, String> {
 
     @Query(value = "SELECT COUNT(*) FROM user_like_fanpage WHERE fanpage_id = :fanpageId", nativeQuery = true)
     public int getNumberFollowers(String fanpageId);
+
+    @Query(value = "SELECT COUNT(*) FROM user_like_fanpage WHERE user_id = :userId AND fanpage_id = :fanpageId", nativeQuery = true)
+    public int isUserReactFanpage(String userId, String fanpageId);
 }
