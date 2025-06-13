@@ -12,15 +12,27 @@ const apiFetch = async <T>(
   };
 
   try {
-    console.log("Fetching URL:", url, "with options:", defaultOptions);
     const response = await fetch(url, defaultOptions);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.enumResponse?.message || `HTTP error: ${response.status}`
-      );
+      let errorData: any = {};
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData.message = `HTTP error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorData.message || `HTTP error: ${response.status}`);
     }
-    return response.json() as Promise<T>;
+
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      // Sửa lỗi ở đây: PHẢI AWAIT response.json()
+      const data = await response.json();
+      return data as T;
+    } else {
+      // Trường hợp response không có JSON body (ví dụ 204 No Content)
+      return {} as T;
+    }
   } catch (error) {
     console.error(`Error fetching ${url}:`, error);
     throw error;

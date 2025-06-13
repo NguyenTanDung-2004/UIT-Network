@@ -1,27 +1,12 @@
 import React from "react";
 import Image from "next/image";
-import { GroupMember, FriendshipStatus } from "@/types/groups/GroupData";
-import {
-  UserPlus,
-  Check,
-  MoreHorizontal,
-  MessageSquare,
-  UserCheck,
-  UserX,
-} from "lucide-react";
+import { GroupMember } from "@/types/groups/GroupData";
 
 interface MemberCardInfoProps {
   member: GroupMember;
-  isCurrentUser: boolean;
-  onAddFriend: (memberId: string) => void;
 }
 
-const MemberCardInfo: React.FC<MemberCardInfoProps> = ({
-  member,
-  isCurrentUser,
-  onAddFriend,
-  // onRespondToRequest // Add this prop if needed
-}) => {
+const MemberCardInfo: React.FC<MemberCardInfoProps> = ({ member }) => {
   const renderRoleBadge = () => {
     if (member.role === "admin") {
       return (
@@ -40,66 +25,66 @@ const MemberCardInfo: React.FC<MemberCardInfoProps> = ({
     return null;
   };
 
-  const renderActionButton = () => {
-    if (isCurrentUser) {
-      return (
-        <button className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full focus:outline-none">
-          <MoreHorizontal size={20} />
-        </button>
-      );
-    }
+  // const renderActionButton = () => {
+  //   if (isCurrentUser) {
+  //     return (
+  //       <button className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full focus:outline-none">
+  //         <MoreHorizontal size={20} />
+  //       </button>
+  //     );
+  //   }
 
-    let friendButtonText = "Add Friend";
-    let friendButtonIcon = <UserPlus size={16} className="mr-1.5" />;
-    let friendButtonStyle =
-      "duration-200 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500";
-    let friendButtonAction = () => onAddFriend(member.id);
-    let isFriendActionDisabled = false;
+  //   let friendButtonText = "Add Friend";
+  //   let friendButtonIcon = <UserPlus size={16} className="mr-1.5" />;
+  //   let friendButtonStyle =
+  //     "duration-200 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500";
+  //   let friendButtonAction = () => onAddFriend(member.id);
+  //   let isFriendActionDisabled = false;
 
-    switch (member.friendshipStatus) {
-      case "friend":
-        friendButtonText = "Friend";
-        friendButtonIcon = <UserCheck size={16} className="mr-1.5" />;
-        friendButtonStyle =
-          "duration-200 bg-primary text-white hover:bg-opacity-80";
-        friendButtonAction = () =>
-          console.log("Already friends with:", member.id);
-        break;
-      case "pending_sent":
-        friendButtonText = "Request Sent";
-        friendButtonIcon = <UserX size={16} className="mr-1.5" />;
-        friendButtonStyle =
-          "duration-200 bg-pink-100 text-primary hover:bg-pink-200 hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80";
-        friendButtonAction = () =>
-          console.log("Cancel friend request to:", member.id);
-        break;
-      case "pending_received":
-        friendButtonText = "Respond";
-        friendButtonIcon = <UserPlus size={16} className="mr-1.5" />;
-        friendButtonStyle =
-          "duration-200 bg-pink-100 text-primary hover:bg-pink-200 hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80";
+  //   switch (member.friendshipStatus) {
+  //     case "friend":
+  //       friendButtonText = "Friend";
+  //       friendButtonIcon = <UserCheck size={16} className="mr-1.5" />;
+  //       friendButtonStyle =
+  //         "duration-200 bg-primary text-white hover:bg-opacity-80";
+  //       friendButtonAction = () =>
+  //         console.log("Already friends with:", member.id);
+  //       break;
+  //     case "pending_sent":
+  //       friendButtonText = "Request Sent";
+  //       friendButtonIcon = <UserX size={16} className="mr-1.5" />;
+  //       friendButtonStyle =
+  //         "duration-200 bg-pink-100 text-primary hover:bg-pink-200 hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80";
+  //       friendButtonAction = () =>
+  //         console.log("Cancel friend request to:", member.id);
+  //       break;
+  //     case "pending_received":
+  //       friendButtonText = "Respond";
+  //       friendButtonIcon = <UserPlus size={16} className="mr-1.5" />;
+  //       friendButtonStyle =
+  //         "duration-200 bg-pink-100 text-primary hover:bg-pink-200 hover:bg-opacity-80 dark:bg-primary dark:text-white dark:hover:bg-opacity-80";
 
-        friendButtonAction = () =>
-          console.log("Respond to friend request from:", member.id);
-        break;
-      case "not_friend":
-      default:
-        break;
-    }
+  //       friendButtonAction = () =>
+  //         console.log("Respond to friend request from:", member.id);
+  //       break;
+  //     case "not_friend":
+  //     default:
+  //       break;
+  //   }
 
-    return (
-      <button
-        onClick={friendButtonAction}
-        disabled={isFriendActionDisabled}
-        className={`min-w-32 px-3 py-1.5 rounded-md text-sm font-medium focus:outline-none flex items-center justify-center gap-1 ${friendButtonStyle} ${
-          isFriendActionDisabled ? "opacity-60 cursor-not-allowed" : ""
-        }`}
-      >
-        {friendButtonIcon}
-        {friendButtonText}
-      </button>
-    );
-  };
+  //   return (
+  //     <button
+  //       onClick={friendButtonAction}
+  //       disabled={isFriendActionDisabled}
+  //       className={`min-w-32 px-3 py-1.5 rounded-md text-sm font-medium focus:outline-none flex items-center justify-center gap-1 ${friendButtonStyle} ${
+  //         isFriendActionDisabled ? "opacity-60 cursor-not-allowed" : ""
+  //       }`}
+  //     >
+  //       {friendButtonIcon}
+  //       {friendButtonText}
+  //     </button>
+  //   );
+  // };
 
   return (
     <div className="flex items-center justify-between py-3">
@@ -119,11 +104,11 @@ const MemberCardInfo: React.FC<MemberCardInfoProps> = ({
             {renderRoleBadge()}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-            {member.description}
+            {member.joinedDate !== null ? `Joined on ${member.joinedDate}` : ""}
           </p>
         </div>
       </div>
-      <div className="ml-4 flex-shrink-0">{renderActionButton()}</div>
+      {/* <div className="ml-4 flex-shrink-0">{renderActionButton()}</div> */}
     </div>
   );
 };

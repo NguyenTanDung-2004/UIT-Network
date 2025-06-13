@@ -2,117 +2,18 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
-import MemberCardInfo from "@/components/groups/members/MemberCardInfo";
-import { GroupMember, GroupMemberRole } from "@/types/groups/GroupData";
 import { Search } from "lucide-react";
 import ClipLoader from "react-spinners/ClipLoader";
-
-const DEFAULT_AVATAR =
-  "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
-
-// --- Mock Current User ID (Replace with actual context/auth data) ---
-const CURRENT_USER_ID = "member-1";
-// --- End Mock ---
-
-// Mock function to fetch members - Replace with your actual API call
-async function fetchGroupMembers(
-  groupId: string
-): Promise<{ members: GroupMember[]; totalCount: number }> {
-  console.log(`Fetching members for group ${groupId}`);
-  await new Promise((resolve) => setTimeout(resolve, 700)); // Simulate network delay
-
-  const mockMembers: GroupMember[] = [
-    {
-      id: "member-1",
-      name: "Phan Giang",
-      avatar: DEFAULT_AVATAR,
-      description: "University Information of Technology",
-      role: "member",
-      friendshipStatus: "self",
-    },
-    {
-      id: "admin-1",
-      name: "Yen Tran",
-      avatar: DEFAULT_AVATAR,
-      description: "Works at University Information of Technology",
-      role: "admin",
-      friendshipStatus: "not_friend",
-    },
-    {
-      id: "admin-2",
-      name: "Trong Thanh Le",
-      avatar: DEFAULT_AVATAR,
-      description: "Works at University Information of Technology",
-      role: "admin",
-      friendshipStatus: "friend",
-    },
-    {
-      id: "mod-1",
-      name: "Tran Anh Dung",
-      avatar: DEFAULT_AVATAR,
-      description: "Works at University Information of Technology",
-      role: "moderator",
-      friendshipStatus: "not_friend",
-    },
-    {
-      id: "member-2",
-      name: "Tấn Dũng",
-      avatar: DEFAULT_AVATAR,
-      description: "University Information of Technology",
-      role: "member",
-      friendshipStatus: "friend",
-    },
-    {
-      id: "member-3",
-      name: "Bảo Phú",
-      avatar: DEFAULT_AVATAR,
-      description: "University Information of Technology",
-      role: "member",
-      friendshipStatus: "not_friend",
-    },
-    {
-      id: "member-4",
-      name: "Thắm Trần",
-      avatar: DEFAULT_AVATAR,
-      description: "University Information of Technology",
-      role: "member",
-      friendshipStatus: "pending_sent",
-    },
-    {
-      id: "member-5",
-      name: "Member Five",
-      avatar: DEFAULT_AVATAR,
-      description: "Student at UIT",
-      role: "member",
-      friendshipStatus: "not_friend",
-    },
-    {
-      id: "member-6",
-      name: "Member Six",
-      avatar: DEFAULT_AVATAR,
-      description: "Student at HCMUS",
-      role: "member",
-      friendshipStatus: "not_friend",
-    },
-    {
-      id: "member-7",
-      name: "Another Admin",
-      avatar: DEFAULT_AVATAR,
-      description: "UIT Staff",
-      role: "admin",
-      friendshipStatus: "not_friend",
-    },
-  ];
-
-  // Simulate a larger member count
-  const totalCount = 190293;
-
-  return { members: mockMembers, totalCount };
-}
+import MemberCardInfo from "@/components/groups/members/MemberCardInfo";
+import { GroupMember } from "@/types/groups/GroupData"; // Import GroupMember từ types
+import { getGroupMembers } from "@/services/groupService"; // Import API
+import { useUser } from "@/contexts/UserContext"; // Import useUser
 
 const MemberGroup = () => {
   const params = useParams();
   const groupId = params?.id as string;
+
+  const { user, loading: userContextLoading } = useUser(); // Lấy user hiện tại
 
   const [allMembers, setAllMembers] = useState<GroupMember[]>([]);
   const [totalMemberCount, setTotalMemberCount] = useState<number>(0);
@@ -125,18 +26,26 @@ const MemberGroup = () => {
     if (groupId) {
       setLoading(true);
       setError(null);
-      fetchGroupMembers(groupId)
-        .then(({ members, totalCount }) => {
+
+      // Chờ UserContext load xong mới fetch members
+      if (userContextLoading) {
+        return;
+      }
+
+      getGroupMembers(groupId)
+        .then((members) => {
           if (isMounted) {
-            setAllMembers(members);
-            setTotalMemberCount(totalCount);
+            // Lấy group members đã được accepted
+            const acceptedMembers = members.filter((m) => m.role === "member"); // Assuming all from API are accepted, and role is correctly assigned
+            setAllMembers(acceptedMembers);
+            setTotalMemberCount(acceptedMembers.length); // Cập nhật tổng số thành viên
             setLoading(false);
           }
         })
         .catch((err) => {
           console.error("Failed to fetch members:", err);
           if (isMounted) {
-            setError("Could not load members.");
+            setError(err.message || "Could not load members.");
             setLoading(false);
           }
         });
@@ -148,7 +57,7 @@ const MemberGroup = () => {
     return () => {
       isMounted = false;
     };
-  }, [groupId]);
+  }, [groupId, userContextLoading]); // Thêm userContextLoading vào dependency
 
   const filteredMembers = useMemo(() => {
     if (!searchTerm) {
@@ -161,30 +70,24 @@ const MemberGroup = () => {
   }, [allMembers, searchTerm]);
 
   const { currentUser, adminsAndMods, regularMembers } = useMemo(() => {
-    const currentUser = filteredMembers.find((m) => m.id === CURRENT_USER_ID);
+    const currentUserId = user?.id; // Lấy ID của người dùng hiện tại từ context
+    const currentUserMember = currentUserId
+      ? filteredMembers.find((m) => m.id === currentUserId)
+      : undefined;
     const adminsAndMods = filteredMembers
       .filter(
         (m) =>
           (m.role === "admin" || m.role === "moderator") &&
-          m.id !== CURRENT_USER_ID
+          m.id !== currentUserId
       )
       .sort((a, b) => a.name.localeCompare(b.name));
     const regularMembers = filteredMembers
-      .filter((m) => m.role === "member" && m.id !== CURRENT_USER_ID)
+      .filter((m) => m.role === "member" && m.id !== currentUserId)
       .sort((a, b) => a.name.localeCompare(b.name));
-    return { currentUser, adminsAndMods, regularMembers };
-  }, [filteredMembers]);
+    return { currentUser: currentUserMember, adminsAndMods, regularMembers };
+  }, [filteredMembers, user]);
 
-  const handleAddFriend = (memberId: string) => {
-    console.log(`Add friend request sent to member: ${memberId}`);
-    setAllMembers((prevMembers) =>
-      prevMembers.map((m) =>
-        m.id === memberId ? { ...m, friendshipStatus: "pending_sent" } : m
-      )
-    );
-  };
-
-  if (loading) {
+  if (loading || userContextLoading) {
     return (
       <div className="flex justify-center items-center w-full h-[calc(100vh-100px)]">
         <ClipLoader
@@ -224,25 +127,19 @@ const MemberGroup = () => {
           type="text"
           name="search-members"
           id="search-members"
-          className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md leading-5 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+          className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md leading-5 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
           placeholder="Search by name"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* Current User Section */}
       {currentUser && (
         <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-          <MemberCardInfo
-            member={currentUser}
-            isCurrentUser={true}
-            onAddFriend={handleAddFriend}
-          />
+          <MemberCardInfo member={currentUser} />
         </div>
       )}
 
-      {/* Admins & Moderators Section */}
       {adminsAndMods.length > 0 && (
         <div className="mb-5">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
@@ -253,35 +150,22 @@ const MemberGroup = () => {
           </h3>
           <div className="space-y-1">
             {adminsAndMods.map((member) => (
-              <MemberCardInfo
-                key={member.id}
-                member={member}
-                isCurrentUser={false}
-                onAddFriend={handleAddFriend}
-              />
+              <MemberCardInfo key={member.id} member={member} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Regular Members Section */}
       {regularMembers.length > 0 && (
         <div className="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
-          {/* Optional: Add a title like "Members" if needed, or just list them */}
           <div className="space-y-1">
             {regularMembers.map((member) => (
-              <MemberCardInfo
-                key={member.id}
-                member={member}
-                isCurrentUser={false}
-                onAddFriend={handleAddFriend}
-              />
+              <MemberCardInfo key={member.id} member={member} />
             ))}
           </div>
         </div>
       )}
 
-      {/* No Results */}
       {filteredMembers.length === 0 && searchTerm && !loading && (
         <div className="text-center py-10 text-gray-500 dark:text-gray-400">
           No members found matching "{searchTerm}".

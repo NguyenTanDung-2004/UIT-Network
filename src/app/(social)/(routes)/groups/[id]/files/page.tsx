@@ -26,9 +26,8 @@ const FilesGroup = () => {
     if (groupId) {
       setLoading(true);
       setError(null);
-      getListMediaAndFilesByGroupId(groupId) // Gọi API thực tế
+      getListMediaAndFilesByGroupId(groupId)
         .then(({ files }) => {
-          // Chỉ lấy phần `files` từ response
           if (isMounted) {
             setAllFiles(files);
             setLoading(false);

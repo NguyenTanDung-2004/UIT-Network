@@ -1,5 +1,11 @@
 import apiFetch from "./apiClient";
-import { GroupHeaderData, GroupMember } from "@/types/groups/GroupData";
+import {
+  GroupHeaderData,
+  GroupMember,
+  GroupMemberRole,
+} from "@/types/groups/GroupData";
+import { getUserInfoCardsByIds } from "@/services/friendService";
+import { Friend } from "@/types/profile/FriendData";
 
 interface BackendGroupInfo {
   id: string;
@@ -24,20 +30,34 @@ interface GetGroupInfoApiResponse {
   };
 }
 
+// MEMBERS
+interface BackendGroupMemberItem {
+  userId: string;
+  groupId: string;
+  requestedDate: string;
+  accepted: boolean;
+}
+interface GetGroupMembersFullApiResponse {
+  object: BackendGroupMemberItem[];
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 const DEFAULT_COVER =
   "https://res.cloudinary.com/dhf9phgk6/image/upload/v1738661302/samples/cup-on-a-table.jpg";
 
 const FANPAGE_API_BASE_URL =
-  process.env.NEXT_PUBLIC_FANPAGE_GROUP_API_URL || "http://localhost:8084";
-const POST_API_BASE_URL =
-  process.env.NEXT_PUBLIC_POST_API_URL || "http://localhost:8083";
+  process.env.FANPAGE_API_URL || "http://localhost:8084";
+const POST_API_BASE_URL = process.env.POST_API_URL || "http://localhost:8083";
 
 const formatGroupInfo = (
   group: BackendGroupInfo,
   memberCount: number = 0,
-  isJoined: boolean = false
+  isJoined: boolean = true
 ): GroupHeaderData => {
   return {
     id: group.id,
@@ -45,7 +65,7 @@ const formatGroupInfo = (
     avatar: group.avtURL || DEFAULT_AVATAR,
     coverPhoto: group.backgroundURL || DEFAULT_COVER,
     memberCount: memberCount,
-    isJoined: isJoined,
+    isJoined: true,
     isPrivate: true, // Giả định
     bio: group.intro || null,
     createdDate: group.createdDate || null,
@@ -152,4 +172,60 @@ export const getListMediaAndFilesByGroupId = async (
   });
 
   return { media, files };
+};
+
+export const getGroupMembers = async (
+  groupId: string
+): Promise<GroupMember[]> => {
+  const url = `${FANPAGE_API_BASE_URL}/group/members/${groupId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<GetGroupMembersFullApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_012_fanpagegroup") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch group members"
+    );
+  }
+
+  const backendMembers = response.object;
+
+  const acceptedBackendMembers = backendMembers.filter(
+    (member) => member.accepted
+  );
+  const acceptedMemberIds = acceptedBackendMembers.map(
+    (member) => member.userId
+  );
+
+  if (acceptedMemberIds.length === 0) {
+    return [];
+  }
+
+  const memberInfos: Friend[] = await getUserInfoCardsByIds(acceptedMemberIds);
+
+  const groupMembers: GroupMember[] = acceptedBackendMembers.map(
+    (backendMember) => {
+      const userInfo = memberInfos.find(
+        (info) => info.id === backendMember.userId
+      );
+
+      return {
+        id: backendMember.userId,
+        name: userInfo?.name || "Unknown Member",
+        avatar: userInfo?.avatar || DEFAULT_AVATAR,
+        joinedDate: backendMember.requestedDate
+          ? new Date(backendMember.requestedDate).toLocaleDateString("en-GB")
+          : null,
+        role: "member", // Mặc định là member, cần API để lấy role thật
+      };
+    }
+  );
+
+  return groupMembers;
 };

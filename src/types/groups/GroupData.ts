@@ -23,7 +23,6 @@ export type GroupMember = {
   id: string;
   name: string;
   avatar: string;
-  description: string; // e.g., University, Workplace
+  joinedDate?: string | null;
   role: GroupMemberRole;
-  friendshipStatus: FriendshipStatus;
 };
