@@ -1,9 +1,5 @@
 import apiFetch from "./apiClient";
-import {
-  GroupHeaderData,
-  GroupMember,
-  GroupMemberRole,
-} from "@/types/groups/GroupData";
+import { GroupHeaderData, GroupMember } from "@/types/groups/GroupData";
 import { getUserInfoCardsByIds } from "@/services/friendService";
 import { Friend } from "@/types/profile/FriendData";
 
@@ -309,4 +305,130 @@ export const getGroupInfoForManager = async (
 
   const headerData = formatGroupInfo(backendGroup, 0, false);
   return { header: headerData, details: backendGroup };
+};
+
+interface BackendJoinRequestItem {
+  userId: string;
+  userName: string;
+  avtURL: string;
+  date: string;
+  studentId: string;
+}
+
+interface GetGroupJoinRequestsApiResponse {
+  object: BackendJoinRequestItem[];
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+export const getGroupJoinRequests = async (
+  groupId: string
+): Promise<GroupMember[]> => {
+  const url = `${FANPAGE_API_BASE_URL}/group/${groupId}/join-requests`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<GetGroupJoinRequestsApiResponse>(
+    url,
+    options
+  );
+
+  if (response.enumResponse.code !== "s_08_fanpagegroup") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch group join requests"
+    );
+  }
+
+  const backendRequests = response.object;
+
+  // Vì API này đã trả về đủ thông tin (userId, userName, avtURL, date),
+  // không cần gọi getUserInfoCardsByIds nữa.
+  const joinRequests: GroupMember[] = backendRequests.map((request) => {
+    return {
+      id: request.userId,
+      name: request.userName || "Unknown User",
+      avatar: request.avtURL || DEFAULT_AVATAR,
+      joinedDate: request.date
+        ? new Date(request.date).toLocaleDateString("en-GB")
+        : null,
+      role: "member", // Mặc định là member, có thể có role khác nếu API cung cấp
+    };
+  });
+
+  return joinRequests;
+};
+
+interface ManageJoinRequestRequestBody {
+  userId: string;
+}
+
+interface ManageJoinRequestApiResponse {
+  object: any | null;
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+export const acceptGroupJoinRequest = async (
+  groupId: string,
+  userId: string
+): Promise<void> => {
+  const url = `${FANPAGE_API_BASE_URL}/group/${groupId}/join-requests`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const requestBody: ManageJoinRequestRequestBody = { userId };
+
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(requestBody),
+  };
+
+  const response = await apiFetch<ManageJoinRequestApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_09_fanpagegroup") {
+    throw new Error(
+      response.enumResponse.message || "Failed to accept group join request"
+    );
+  }
+};
+
+export const deleteGroupJoinRequest = async (
+  groupId: string,
+  userId: string
+): Promise<void> => {
+  const url = `${FANPAGE_API_BASE_URL}/group/${groupId}/join-requests`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const requestBody: ManageJoinRequestRequestBody = { userId };
+
+  const options: RequestInit = {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(requestBody),
+  };
+
+  const response = await apiFetch<ManageJoinRequestApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_010_fanpagegroup") {
+    throw new Error(
+      response.enumResponse.message || "Failed to delete group join request"
+    );
+  }
 };

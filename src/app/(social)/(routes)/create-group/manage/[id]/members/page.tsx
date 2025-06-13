@@ -1,37 +1,63 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import ClipLoader from "react-spinners/ClipLoader";
 import { useParams } from "next/navigation";
-import {
-  getMockGroupMembersAndRequests,
-  mockAcceptRequest,
-  mockRejectRequest,
-  mockRemoveMember,
-  User,
-} from "@/lib/mockData"; // Adjust path
 import MemberRequestItem from "@/components/createGroup/manage/MemberRequestItem";
+import {
+  getGroupMembers,
+  getGroupJoinRequests,
+  acceptGroupJoinRequest,
+  deleteGroupJoinRequest,
+} from "@/services/groupService";
+import { GroupMember } from "@/types/groups/GroupData";
+import { User } from "@/lib/mockData";
+import { useToast } from "@/hooks/use-toast";
+
+const mapGroupMemberToUser = (groupMember: GroupMember): User => {
+  let status: "member" | "pending" | "admin" = "member";
+  if (groupMember.role === "admin") status = "admin";
+
+  return {
+    id: groupMember.id,
+    name: groupMember.name,
+    avatar: groupMember.avatar,
+    status: status,
+  };
+};
 
 const ManageGroupMembersPage: React.FC = () => {
   const params = useParams();
   const groupId = params.id as string;
+  const { toast } = useToast(); // Khởi tạo toast
 
   const [members, setMembers] = useState<User[]>([]);
   const [requests, setRequests] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false); // For button states
+  const [error, setError] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    // Simulate fetching data
-    const timer = setTimeout(() => {
-      const data = getMockGroupMembersAndRequests(groupId);
-      setMembers(data.members);
-      setRequests(data.requests);
-      setLoading(false);
-    }, 500); // Simulate network delay
+    setError(null);
+    try {
+      const [fetchedMembers, fetchedRequests] = await Promise.all([
+        getGroupMembers(groupId),
+        getGroupJoinRequests(groupId),
+      ]);
 
-    return () => clearTimeout(timer);
+      setMembers(fetchedMembers.map(mapGroupMemberToUser));
+      setRequests(
+        fetchedRequests
+          .map(mapGroupMemberToUser)
+          .map((req) => ({ ...req, status: "pending" }))
+      );
+    } catch (err: any) {
+      console.error("Failed to fetch group members/requests:", err);
+      setError(err.message || "Could not load members/requests.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -43,49 +69,84 @@ const ManageGroupMembersPage: React.FC = () => {
   const handleAccept = async (userId: string) => {
     if (processing) return;
     setProcessing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    const success = mockAcceptRequest(groupId, userId);
-    if (success) {
-      // Refresh data or update state
+    try {
+      await acceptGroupJoinRequest(groupId, userId);
+      toast({
+        title: "Request Accepted",
+        description: `User ${userId} has been accepted into the group.`,
+        variant: "default",
+      });
       fetchData();
-      alert(`Accepted user ${userId}`);
-    } else {
-      alert(`Failed to accept user ${userId}`);
+    } catch (err: any) {
+      console.error("Error accepting request:", err);
+      toast({
+        title: "Failed to Accept Request",
+        description:
+          err.message || "An error occurred while accepting the request.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   const handleReject = async (userId: string) => {
     if (processing) return;
     setProcessing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    const success = mockRejectRequest(groupId, userId);
-    if (success) {
-      // Refresh data or update state
+    try {
+      await deleteGroupJoinRequest(groupId, userId);
+      toast({
+        title: "Request Rejected",
+        description: `User ${userId}'s join request has been rejected.`,
+        variant: "default",
+      });
       fetchData();
-      alert(`Rejected user ${userId}`);
-    } else {
-      alert(`Failed to reject user ${userId}`);
+    } catch (err: any) {
+      console.error("Error rejecting request:", err);
+      toast({
+        title: "Failed to Reject Request",
+        description:
+          err.message || "An error occurred while rejecting the request.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   const handleRemove = async (userId: string) => {
     if (processing) return;
     setProcessing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    const success = mockRemoveMember(groupId, userId);
-    if (success) {
-      // Refresh data or update state
-      fetchData();
-      alert(`Removed user ${userId}`);
-    } else {
-      alert(`Failed to remove user ${userId}. (Cannot remove admin in mock)`);
+    try {
+      // TODO: Call API to remove member (chưa có API này)
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const success = true; // Replace with actual API call result
+
+      if (success) {
+        toast({
+          title: "Member Removed",
+          description: `User ${userId} has been removed from the group.`,
+          variant: "default",
+        });
+        fetchData();
+      } else {
+        toast({
+          title: "Failed to Remove Member",
+          description: `Could not remove user ${userId}.`,
+          variant: "destructive",
+        });
+      }
+    } catch (err: any) {
+      console.error("Error removing member:", err);
+      toast({
+        title: "Failed to Remove Member",
+        description:
+          err.message || "An error occurred while removing the member.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   if (loading) {
@@ -96,10 +157,16 @@ const ManageGroupMembersPage: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 text-center text-red-600 min-h-[400px]">
+        {error}
+      </div>
+    );
+  }
+
   return (
-    // The main container and title are handled by the layout
     <div className="space-y-8">
-      {/* Pending Requests */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
           Pending Join Requests ({requests.length})
@@ -124,7 +191,6 @@ const ManageGroupMembersPage: React.FC = () => {
         )}
       </div>
 
-      {/* Members */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
           Group Members ({members.length})

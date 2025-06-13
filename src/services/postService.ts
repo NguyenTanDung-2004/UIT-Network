@@ -1031,3 +1031,119 @@ export const createPostInGroup = async (
 
   return formattedPost;
 };
+
+interface ApprovePostApiResponse {
+  object: BackendPost;
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+interface DeletePostApiResponse {
+  object: any | null;
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+export const approveGroupPost = async (
+  postId: string
+): Promise<PostDataType> => {
+  const url = `${POST_API_BASE_URL}/post/group/approve-post/${postId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+
+  const response = await apiFetch<ApprovePostApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_00_post") {
+    throw new Error(response.enumResponse.message || "Failed to approve post");
+  }
+
+  const approvedPostBackend = response.object;
+  const userInfos = await (async () => {
+    try {
+      const fetchedUserInfos = await getUserInfoCardsByIds([
+        approvedPostBackend.userId,
+      ]);
+      return fetchedUserInfos;
+    } catch (e) {
+      return [];
+    }
+  })();
+
+  let groupInfos: BackendGroupInfoInPostList[] = [];
+  let fanpageInfos: BackendFanpageInfoInPostList[] = [];
+
+  if (approvedPostBackend.parentId) {
+    const [type, id] = approvedPostBackend.parentId.split("||");
+    if (type === "group") {
+      try {
+        const { data: groupData } = await import("./groupService").then((mod) =>
+          mod.getGroupInfo(id)
+        );
+        groupInfos = [
+          { id: groupData.id, name: groupData.name, avtURL: groupData.avatar },
+        ];
+      } catch (e) {
+        /* handle error */
+      }
+    } else if (type === "fanpage") {
+      try {
+        const { header: fanpageData } = await import("./fanpageService").then(
+          (mod) => mod.getFanpageInfo(id)
+        );
+        fanpageInfos = [
+          {
+            id: fanpageData.id,
+            name: fanpageData.name,
+            avtURL: fanpageData.avatar,
+          },
+        ];
+      } catch (e) {
+        /* handle error */
+      }
+    }
+  }
+
+  const formattedPost = formatBackendPostToPostDataType(
+    approvedPostBackend,
+    userInfos.map((u) => ({
+      userId: u.id,
+      userName: u.name,
+      avtURL: u.avatar,
+      studentId: "",
+    })),
+    groupInfos,
+    fanpageInfos,
+    await getNumberOfLikes(approvedPostBackend.postId)
+  );
+
+  return formattedPost;
+};
+
+export const deletePost = async (postId: string): Promise<void> => {
+  const url = `${POST_API_BASE_URL}/post/delete?postId=${postId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "DELETE",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<DeletePostApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_03_post") {
+    throw new Error(response.enumResponse.message || "Failed to delete post");
+  }
+};
