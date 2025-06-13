@@ -14,8 +14,9 @@ import {
   getGroupInfo,
   getListMediaAndFilesByGroupId,
 } from "@/services/groupService";
-import { getPostsByGroupId } from "@/services/postService";
+import { getPostsByGroupId, createPostInGroup } from "@/services/postService";
 import { useUser } from "@/contexts/UserContext";
+import { CreatePostMediaItem } from "@/services/postService";
 
 interface GroupAboutSummary {
   bio: string;
@@ -75,7 +76,7 @@ const GroupPage: React.FC = () => {
           }
         }
 
-        const fetchedPosts = await getPostsByGroupId(groupId); // Lấy posts theo GroupId
+        const fetchedPosts = await getPostsByGroupId(groupId);
         if (isMounted) {
           setPosts(fetchedPosts);
         }
@@ -84,8 +85,6 @@ const GroupPage: React.FC = () => {
           await getListMediaAndFilesByGroupId(groupId);
         if (isMounted) {
           setPhotos(fetchedMedia.map((item) => ({ url: item.url })));
-          // Bạn có thể xử lý `fetchedFiles` ở đây nếu cần hiển thị chúng trong `MediaSummaryWidget`
-          // hoặc một widget riêng biệt. Hiện tại `MediaSummaryWidget` chỉ nhận `photos`.
         }
       } catch (err: any) {
         console.error("Error fetching group data:", err);
@@ -110,7 +109,7 @@ const GroupPage: React.FC = () => {
     ? {
         bio: groupData.bio || "No description available.",
         isPrivate: groupData.isPrivate,
-        isVisible: true, // Giả định
+        isVisible: true,
       }
     : null;
 
@@ -122,54 +121,45 @@ const GroupPage: React.FC = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const handleCreatePost = (
+  const handleCreatePost = async (
     content: string,
     mediaList?: { url: string; type: string }[],
     file?: UploadedFile
   ) => {
-    // Logic tạo post mới trong group
-    console.log("Create post in group:", groupId, content, mediaList, file);
-    // TODO: Gọi API tạo post mới với parentId là groupId và postType phù hợp
-    // Ví dụ: await createPost(content, media, postTypeId, groupId);
-    // Sau đó cập nhật lại posts list hoặc thêm post mới vào state
-    if (!user || !groupData) return; // User và groupData phải có
+    if (!user || !groupData) return;
 
-    const newPost: PostDataType = {
-      id: `new-group-post-${Date.now()}`,
-      author: {
-        id: user.id, // Người tạo post
-        name: user.name,
-        avatar: user.avtURL || "",
-      },
-      origin: {
-        type: "group",
-        groupInfo: {
-          id: groupData.id,
-          name: groupData.name,
-          isJoined: groupData.isJoined,
-        },
-      },
-      content: content.length > 200 ? content.substring(0, 200) : content,
-      fullContent: content.length > 200 ? content : undefined,
-      date: new Date().toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      }),
-      time: new Date().toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "numeric",
-        hour12: true,
-      }),
-      mediaList: mediaList,
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      file: file,
-    };
-    setPosts([newPost, ...posts]);
-    closeModal();
+    try {
+      // Map mediaList (images/videos) to CreatePostMediaItem
+      const formattedMedia: CreatePostMediaItem[] = (mediaList || [])
+        .filter((item) => item.type === "image" || item.type === "video") // Chỉ lấy image/video từ mediaList
+        .map((item) => ({
+          typeId: item.type === "image" ? 2 : 3, // 2 cho image, 3 cho video
+          url: item.url,
+        }));
+
+      // Add file to formattedMedia if it exists
+      if (file) {
+        formattedMedia.push({
+          typeId: 1, // 1 for file
+          url: file.url,
+          name: file.name,
+          sizeValue: file.size,
+          unit: "Bytes",
+        });
+      }
+
+      const newPostData = await createPostInGroup(
+        groupId,
+        content,
+        formattedMedia,
+        7
+      );
+
+      setPosts((prevPosts) => [newPostData, ...prevPosts]);
+      closeModal();
+    } catch (err) {
+      console.error("Failed to create post in group:", err);
+    }
   };
 
   if (loading || userContextLoading) {

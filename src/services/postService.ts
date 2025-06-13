@@ -10,7 +10,7 @@ import { getUserInfoCardsByIds } from "@/services/friendService";
 import { CommentType } from "@/components/post/detail/CommentItem";
 import { getGroupInfo } from "./groupService";
 
-interface CreatePostMediaItem {
+export interface CreatePostMediaItem {
   typeId: 1 | 2 | 3; // 1: File, 2: Image, 3: Video
   url: string;
   sizeValue?: number;
@@ -22,6 +22,9 @@ interface CreatePostRequestBody {
   caption: string;
   media?: CreatePostMediaItem[];
   postTypeId: number;
+}
+interface CreatePostInGroupRequestBody extends CreatePostRequestBody {
+  parentId: string; // ID của group hoặc fanpage
 }
 
 interface CreatePostApiResponse {
@@ -887,4 +890,80 @@ export const getPostsByGroupId = async (
   );
 
   return postsWithLikes;
+};
+
+export const createPostInGroup = async (
+  groupId: string,
+  caption: string,
+  media: CreatePostMediaItem[] = [],
+  postTypeId: number = 7
+): Promise<PostDataType> => {
+  const url = `${POST_API_BASE_URL}/post/create`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const requestBody: CreatePostInGroupRequestBody = {
+    caption,
+    media,
+    postTypeId,
+    parentId: groupId,
+  };
+
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(requestBody),
+  };
+
+  const response = await apiFetch<CreatePostApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_01_post") {
+    throw new Error(
+      response.enumResponse.message || "Failed to create post in group"
+    );
+  }
+
+  const createdPostBackend = response.object;
+
+  const userInfos = await (async () => {
+    try {
+      const fetchedUserInfos = await getUserInfoCardsByIds([
+        createdPostBackend.userId,
+      ]);
+      return fetchedUserInfos;
+    } catch (e) {
+      return [];
+    }
+  })();
+
+  const groupInfo = await (async () => {
+    try {
+      const { data } = await import("./groupService").then((mod) =>
+        mod.getGroupInfo(groupId)
+      );
+      return data;
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  const formattedPost = formatBackendPostToPostDataType(
+    createdPostBackend,
+    userInfos.map((u) => ({
+      userId: u.id,
+      userName: u.name,
+      avtURL: u.avatar,
+      studentId: "",
+    })),
+    groupInfo
+      ? [{ id: groupInfo.id, name: groupInfo.name, avtURL: groupInfo.avatar }]
+      : [],
+    [],
+    0
+  );
+
+  return formattedPost;
 };
