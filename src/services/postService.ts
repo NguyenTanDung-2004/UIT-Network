@@ -393,7 +393,7 @@ export const likePost = async (postId: string): Promise<void> => {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
   const options: RequestInit = {
-    method: "POST",
+    method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
   };
 
