@@ -324,4 +324,21 @@ public class GroupService {
         return ResponseEntity.ok(response);
     }
 
+    public ResponseEntity getListMemberInGroup(String groupid) {
+        // get list member in group
+        List<String> ids = this.groupRepository.findListMemberInGroup(groupid);
+
+        if (ids == null || ids.size() == 0) {
+            ids = new ArrayList<>();
+        }
+
+        // create response
+        ApiResponse response = ApiResponse.builder()
+                .object(ids)
+                .enumResponse(EnumResponse.toJson(EnumResponse.SUCCESS))
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
 }

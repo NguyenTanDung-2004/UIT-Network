@@ -159,6 +159,13 @@ public interface GroupRepository extends JpaRepository<Group, String> {
     """, nativeQuery = true)
     List<Object[]> findListGroupInHome(String userid);
 
+    @Query(value = 
+    """
+        SELECT * FROM user_group
+        WHERE groupid = :groupid
+    """, nativeQuery = true)
+    List<String> findListMemberInGroup(String groupid);
+
     
     
 }
