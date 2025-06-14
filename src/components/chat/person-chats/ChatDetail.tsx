@@ -21,11 +21,10 @@ import SharedFilesView from "./SharedFilesView";
 import SharedLinksView from "./SharedLinksView";
 import MembersView from "../group-chats/MembersView";
 import SchedulesView from "../group-chats/SchedulesView";
-import ScheduleListItem, {
-  ScheduleItemData,
-} from "../group-chats/ScheduleListItem";
+import ScheduleListItem from "../group-chats/ScheduleListItem";
+import { BackendWorksheetItemWithFrontendFields } from "@/services/workSheetService";
 import { GroupMemberInfo } from "@/types/chats/ChatData";
-
+import { Friend } from "@/types/profile/FriendData";
 interface ChatDetailProps {
   type: "person" | "group";
   partnerName?: string;
@@ -36,7 +35,7 @@ interface ChatDetailProps {
   sharedFiles: SharedFileItem[];
   sharedLinks: SharedLinkItem[];
   groupMembers?: GroupMemberInfo[];
-  schedules: ScheduleItemData[];
+  schedules: BackendWorksheetItemWithFrontendFields[];
   currentUserInfo: GroupMemberInfo;
   onClose: () => void;
   onViewMembers?: () => void;
@@ -50,8 +49,12 @@ interface ChatDetailProps {
   onChatMember: (memberId: string) => void;
   onRemoveMember: (memberId: string, memberName: string) => void;
   onCreateSchedule: () => void;
-  onViewScheduleDetails: (schedule: ScheduleItemData) => void;
+  onViewScheduleDetails: (
+    schedule: BackendWorksheetItemWithFrontendFields
+  ) => void;
   onDeleteSchedule: (scheduleId: string, scheduleTitle: string) => void;
+  groupId: string;
+  userMap: Map<string, Friend>;
 }
 
 type DetailView =
@@ -84,6 +87,8 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
   onCreateSchedule,
   onViewScheduleDetails,
   onDeleteSchedule,
+  groupId,
+  userMap,
 }) => {
   const [currentView, setCurrentView] = useState<DetailView>("details");
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
@@ -99,12 +104,11 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
     }
   };
 
-  // Sửa đổi renderSection để luôn hiển thị tiêu đề và số lượng, ngay cả khi không có item
   const renderSection = (
     title: string,
-    content: React.ReactNode | null, // Có thể là null nếu không có item
+    content: React.ReactNode | null,
     viewAllHandler?: () => void,
-    itemCount: number = 0 // Sử dụng tham số này
+    itemCount: number = 0
   ) => {
     return (
       <div className="mb-5">
@@ -123,7 +127,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
           )}
         </div>
         <div className="px-4">
-          {content && (Array.isArray(content) ? content.length > 0 : true) ? ( // Kiểm tra content có phải mảng và có độ dài > 0 không
+          {content && (Array.isArray(content) ? content.length > 0 : true) ? (
             content
           ) : (
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
@@ -170,7 +174,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
           </button>
         ))}
       </div>
-    ) : null; // Giữ null nếu không có media để renderSection tự xử lý
+    ) : null;
 
   const filesPreviewContent =
     sharedFiles.length > 0
@@ -200,7 +204,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
             </div>
           </a>
         ))
-      : null; // Giữ null nếu không có files
+      : null;
 
   const linksPreviewContent =
     sharedLinks.length > 0
@@ -229,7 +233,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
             </div>
           </a>
         ))
-      : null; // Giữ null nếu không có links
+      : null;
 
   const membersPreviewContent =
     type === "group" && groupMembers && groupMembers.length > 0 ? (
@@ -254,26 +258,22 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
           </div>
         )}
       </div>
-    ) : null; // Giữ null nếu không có members
+    ) : null;
 
   const schedulePreviewContent =
     type === "group" && schedules && schedules.length > 0
-      ? schedules.slice(0, 2).map((schedule) => (
-          <ScheduleListItem
-            key={schedule.id}
-            schedule={schedule}
-            onViewDetails={() => {
-              console.log("View schedule from preview");
-              if (onViewScheduleDetails) onViewScheduleDetails(schedule);
-            }}
-            onDelete={() => {
-              console.log("Delete schedule from preview (disabled usually)");
-              if (onDeleteSchedule)
-                onDeleteSchedule(schedule.id, schedule.title);
-            }}
-          />
-        ))
-      : null; // Giữ null nếu không có schedules
+      ? schedules
+          .slice(0, 2)
+          .map((schedule) => (
+            <ScheduleListItem
+              key={schedule.id}
+              schedule={schedule}
+              userMap={userMap}
+              onViewDetails={onViewScheduleDetails}
+              onDelete={onDeleteSchedule}
+            />
+          ))
+      : null;
 
   const renderActionButtons = () => {
     interface ActionButtonConfig {
@@ -293,7 +293,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
         action: onToggleNotifications,
       },
       members: { icon: Users, label: "Members", viewTarget: "members" },
-      schedule: { icon: Calendar, label: "Schedule", viewTarget: "schedule" },
+      schedule: { icon: Calendar, label: "Worksheets", viewTarget: "schedule" },
       leave: {
         icon: LogOut,
         label: "Leave",
@@ -405,7 +405,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
         if (type === "group") {
           return (
             <SchedulesView
-              schedules={schedules}
+              groupId={groupId}
               onBack={() => setCurrentView("details")}
               onCreateSchedule={onCreateSchedule}
               onViewScheduleDetails={onViewScheduleDetails}
@@ -469,7 +469,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
                 </div>
                 <div id="detail-section-schedule">
                   {renderSection(
-                    "Schedule",
+                    "Worksheets",
                     schedulePreviewContent,
                     () => setCurrentView("schedule"),
                     schedules?.length || 0
@@ -486,7 +486,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
                       Leave Group
                     </h4>
                     <button
-                      // onClick={viewAllHandler}
+                      onClick={onLeaveGroup}
                       className="text-xs font-medium text-red-500 hover:text-red-300 dark:text-red-300 dark:hover:text-red-200 p-1 -mr-1"
                       aria-label="Leave group"
                     >

@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/image"; // Import Image từ next/image
+import Image from "next/image";
 import { Message } from "@/types/chats/ChatData";
 import { getFileIcon, formatFileSize } from "@/utils/ViewFilesUtils";
 
@@ -37,14 +37,29 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
     ? "rounded-l-lg rounded-br-lg"
     : "rounded-r-lg rounded-bl-lg";
 
+  const renderContentText = (text: string) => {
+    const parts = text.split(/(@AIAssist)/g); // Tách chuỗi theo "@AIAssist"
+    return (
+      <p className="text-sm break-words whitespace-pre-wrap">
+        {parts.map((part, index) =>
+          part === "@AIAssist" ? (
+            <span key={index} className="font-bold text-black dark:text-white">
+              {part}
+            </span>
+          ) : (
+            part
+          )
+        )}
+      </p>
+    );
+  };
+
   const renderMessageContentAndMedia = () => {
     return (
       <>
-        {message.content && message.content.trim() !== "" && (
-          <p className="text-sm break-words whitespace-pre-wrap">
-            {message.content}
-          </p>
-        )}
+        {message.content &&
+          message.content.trim() !== "" &&
+          renderContentText(message.content)}
 
         {message.mediaUrl &&
           (message.type === "image" || message.type === "video") && (
@@ -95,7 +110,6 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             </div>
           )}
 
-        {/* Hiển thị File */}
         {message.mediaUrl && message.type === "file" && (
           <a
             href={message.mediaUrl}

@@ -17,14 +17,20 @@ import {
   GroupMemberInfo,
 } from "@/types/chats/ChatData";
 import AddMemberModal from "@/components/chat/group-chats/AddMemberModal";
-import ScheduleModal, {
-  ScheduleItemData,
-} from "@/components/chat/group-chats/ScheduleModal";
+import ScheduleModal from "@/components/chat/group-chats/ScheduleModal";
 import ConfirmationModal from "@/components/chat/group-chats/ConfirmationModal";
+import { Friend } from "@/types/profile/FriendData";
 
 import { getListMessages } from "@/services/chatService";
 import { useUser } from "@/contexts/UserContext";
 import { useChatList } from "../../ChatListContext";
+import { getGroupMembers } from "@/services/groupService";
+import {
+  getWorksheetsByGroupId as getGroupWorksheets,
+  createWorksheet,
+  BackendWorksheetItemWithFrontendFields,
+  CreateWorksheetRequestBody,
+} from "@/services/workSheetService";
 
 interface MediaItem {
   url: string;
@@ -42,84 +48,11 @@ const DEFAULT_AVATAR =
 const DEFAULT_GROUP_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
-async function fetchMockGroupMembers(
-  groupId: string
-): Promise<GroupMemberInfo[]> {
-  await new Promise((res) => setTimeout(res, 350));
-  return [
-    {
-      id: "mock-user-1",
-      name: "Phan Giang",
-      avatar: DEFAULT_AVATAR,
-      role: "admin",
-    },
-    {
-      id: "mock-user-2",
-      name: "Bảo Phú",
-      avatar: DEFAULT_AVATAR,
-      role: "member",
-    },
-    {
-      id: "mock-user-3",
-      name: "Nguyễn Tấn Dũng",
-      avatar: DEFAULT_AVATAR,
-      role: "member",
-    },
-    {
-      id: "mock-user-4",
-      name: "Yen Tran",
-      avatar: DEFAULT_AVATAR,
-      role: "moderator",
-    },
-  ];
-}
-
 async function fetchSharedItems(chatId: string): Promise<{
-  media: SharedMediaItem[];
-  files: SharedFileItem[];
   links: SharedLinkItem[];
 }> {
   await new Promise((res) => setTimeout(res, 400));
   return {
-    media: [
-      {
-        id: "media-fixed-1",
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample.jpg",
-        type: "image",
-      },
-      {
-        id: "media-fixed-2",
-        url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-        type: "video",
-      },
-      {
-        id: "media-fixed-3",
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample-3.jpg",
-        type: "image",
-      },
-      {
-        id: "media-fixed-4",
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738273042/hobbies/njpufnhlajjpss384yuz.png",
-        type: "image",
-      },
-      {
-        id: "media-fixed-5",
-        url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-        type: "video",
-      },
-      {
-        id: "media-fixed-6",
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738270446/samples/breakfast.jpg",
-        type: "image",
-      },
-    ],
-    files: Array.from({ length: 5 }).map((_, i) => ({
-      id: `file-${i}`,
-      name: `Đề ôn thi cuối kỳ 24-25-${i}.pdf`,
-      size: 100 * 1024 + i * 1024,
-      url: `/mock-files/shared-${i}.pdf`,
-      type: "application/pdf",
-    })),
     links: Array.from({ length: 5 }).map((_, i) => ({
       id: `link-${i}`,
       url:
@@ -129,36 +62,6 @@ async function fetchSharedItems(chatId: string): Promise<{
       title: i % 2 === 0 ? "TikTok - Eser Fang" : "Java deve...",
     })),
   };
-}
-
-async function fetchSchedules(groupId: string): Promise<ScheduleItemData[]> {
-  await new Promise((res) => setTimeout(res, 450));
-  return [
-    {
-      id: "sched-1",
-      title: "Lịch họp hằng tuần",
-      startTime: "21:00",
-      endTime: "22:00",
-      date: new Date(2023, 8, 12),
-      location: "Google Meet Link 1",
-    },
-    {
-      id: "sched-2",
-      title: "Họp đột xuất",
-      startTime: "10:00",
-      endTime: "11:00",
-      date: new Date(2023, 8, 14),
-      description: "Bàn về deadline project",
-    },
-    {
-      id: "sched-3",
-      title: "Họp offline",
-      startTime: "15:00",
-      endTime: "17:00",
-      date: new Date(2023, 8, 16),
-      location: "Phòng họp B4.1",
-    },
-  ].sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 const GroupChat = () => {
@@ -179,7 +82,10 @@ const GroupChat = () => {
   const [groupInfo, setGroupInfo] = useState<GroupChatInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [groupMembers, setGroupMembers] = useState<GroupMemberInfo[]>([]);
-  const [schedules, setSchedules] = useState<ScheduleItemData[]>([]);
+  const [schedules, setSchedules] = useState<
+    BackendWorksheetItemWithFrontendFields[]
+  >([]);
+  const [userMap, setUserMap] = useState<Map<string, Friend>>(new Map());
   const [sharedMedia, setSharedMedia] = useState<SharedMediaItem[]>([]);
   const [sharedFiles, setSharedFiles] = useState<SharedFileItem[]>([]);
   const [sharedLinks, setSharedLinks] = useState<SharedLinkItem[]>([]);
@@ -201,7 +107,7 @@ const GroupChat = () => {
     "create"
   );
   const [selectedSchedule, setSelectedSchedule] =
-    useState<ScheduleItemData | null>(null);
+    useState<BackendWorksheetItemWithFrontendFields | null>(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [confirmationContext, setConfirmationContext] = useState<{
     type: "removeMember" | "deleteSchedule" | "leaveGroup";
@@ -261,25 +167,39 @@ const GroupChat = () => {
           avatar: currentChatTopic.avatar || DEFAULT_GROUP_AVATAR,
         });
 
-        const [messagesResponse, membersData, fetchedSchedules, shared] =
-          await Promise.all([
-            getListMessages(currentChatTopic.id),
-            fetchMockGroupMembers(currentChatTopic.id),
-            fetchSchedules(currentChatTopic.id),
-            fetchSharedItems(currentChatTopic.id),
-          ]);
+        const [
+          messagesResult,
+          membersData,
+          schedulesResult,
+          sharedLinksResult,
+        ] = await Promise.all([
+          getListMessages(currentChatTopic.id),
+          getGroupMembers(currentChatTopic.id),
+          getGroupWorksheets(currentChatTopic.id),
+          fetchSharedItems(currentChatTopic.id),
+        ]);
 
         if (!isMounted) return;
 
-        setMessages(messagesResponse.messages);
-        setSharedMedia(messagesResponse.media); // Lấy media từ response getListMessages
-        setSharedFiles(messagesResponse.files); // Lấy files từ response getListMessages
-        setSharedLinks(shared.links); // Shared links vẫn mock
+        setMessages(messagesResult.messages);
+        setSharedMedia(messagesResult.media);
+        setSharedFiles(messagesResult.files);
+        setSharedLinks(sharedLinksResult.links);
 
-        setGroupMembers(membersData);
-        setSchedules(fetchedSchedules);
+        setGroupMembers(
+          membersData.map((m) => ({
+            id: m.id,
+            name: m.name,
+            avatar: m.avatar,
+            role: m.role,
+          }))
+        );
+        setSchedules(schedulesResult.worksheets);
+        setUserMap(schedulesResult.userMap);
 
-        const currentMemberInfo = membersData.find((m) => m.id === user.id);
+        const currentMemberInfo = membersData.find(
+          (m: GroupMemberInfo) => m.id === user.id
+        );
         setCurrentUserInfo(currentMemberInfo || null);
       } catch (err: any) {
         console.error("Failed to fetch group chat data:", err);
@@ -386,7 +306,7 @@ const GroupChat = () => {
   const handleAddMember = () => setIsAddMemberModalOpen(true);
   const handleConfirmAddMembers = async (selectedIds: string[]) => {
     console.log("Adding members:", selectedIds);
-    /* TODO: API Call */ await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
     setGroupMembers((prev) => [
       ...prev,
       ...selectedIds.map(
@@ -410,7 +330,7 @@ const GroupChat = () => {
       message: `Are you sure you want to remove ${memberName} from the group?`,
       onConfirm: async () => {
         console.log("Removing member:", memberId);
-        /* TODO: API Call */ await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 500));
         setGroupMembers((prev) => prev.filter((m) => m.id !== memberId));
         setIsConfirmationOpen(false);
       },
@@ -424,7 +344,7 @@ const GroupChat = () => {
       message: "Are you sure you want to leave this group?",
       onConfirm: async () => {
         console.log("Leaving group");
-        /* TODO: API Call */ await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 500));
         router.push("/chat");
         setIsConfirmationOpen(false);
       },
@@ -437,27 +357,43 @@ const GroupChat = () => {
     setScheduleModalMode("create");
     setIsScheduleModalOpen(true);
   };
-  const handleViewScheduleDetails = (schedule: ScheduleItemData) => {
+  const handleViewScheduleDetails = (
+    schedule: BackendWorksheetItemWithFrontendFields
+  ) => {
     setSelectedSchedule(schedule);
     setScheduleModalMode("view");
     setIsScheduleModalOpen(true);
   };
-  const handleSubmitSchedule = async (data: Omit<ScheduleItemData, "id">) => {
-    console.log("Creating schedule:", data);
-    /* TODO: API Call */ await new Promise((r) => setTimeout(r, 500));
-    const newSchedule = { ...data, id: `sched-${Date.now()}` };
-    setSchedules((prev) =>
-      [...prev, newSchedule].sort((a, b) => a.date.getTime() - b.date.getTime())
-    );
+  const handleSubmitSchedule = async (data: CreateWorksheetRequestBody) => {
+    try {
+      const newWorksheetItem = await createWorksheet(data);
+      setSchedules((prev) =>
+        [...prev, newWorksheetItem].sort((a, b) => {
+          const dateA = a.fromdate
+            ? new Date(a.fromdate)
+            : new Date(a.createddate);
+          const dateB = b.fromdate
+            ? new Date(b.fromdate)
+            : new Date(b.createddate);
+          return dateA.getTime() - dateB.getTime();
+        })
+      );
+    } catch (error) {
+      console.error("Failed to create worksheet:", error);
+      throw error;
+    }
   };
-  const handleDeleteSchedule = (scheduleId: string, scheduleTitle: string) => {
+  const handleDeleteSchedule = async (
+    scheduleId: string,
+    scheduleTitle: string
+  ) => {
     setConfirmationContext({
       type: "deleteSchedule",
       data: { scheduleId, scheduleTitle },
-      message: `Are you sure you want to delete the schedule "${scheduleTitle}"?`,
+      message: `Are you sure you want to delete the worksheet "${scheduleTitle}"?`,
       onConfirm: async () => {
-        console.log("Deleting schedule:", scheduleId);
-        /* TODO: API Call */ await new Promise((r) => setTimeout(r, 500));
+        console.log("Deleting worksheet:", scheduleId);
+        await new Promise((r) => setTimeout(r, 500));
         setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
         setIsConfirmationOpen(false);
       },
@@ -522,7 +458,7 @@ const GroupChat = () => {
             <button
               onClick={handleCreateSchedule}
               className="p-2 text-primary dark:text-primary-light rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
-              title="Add Member"
+              title="Add Worksheet"
             >
               <CalendarPlus2 size={18} />
             </button>
@@ -576,7 +512,7 @@ const GroupChat = () => {
                   key={msg.id}
                   message={msg}
                   isSender={msg.senderId === user.id}
-                  isGroup={false}
+                  isGroup={true}
                   onMediaClick={() =>
                     msg.mediaUrl &&
                     (msg.type === "image" || msg.type === "video")
@@ -627,6 +563,8 @@ const GroupChat = () => {
             onToggleNotifications={() =>
               console.log("Toggle group notifications")
             }
+            groupId={chatId}
+            userMap={userMap}
           />
         )}
       </div>
@@ -651,17 +589,13 @@ const GroupChat = () => {
         onSubmit={handleSubmitSchedule}
         onDelete={
           scheduleModalMode === "view" && selectedSchedule
-            ? async (scheduleId: string) => {
-                if (scheduleId === selectedSchedule.id) {
-                  await handleDeleteSchedule(
-                    selectedSchedule.id,
-                    selectedSchedule.title
-                  );
-                }
+            ? async (scheduleId: string, scheduleName: string) => {
+                await handleDeleteSchedule(scheduleId, scheduleName);
               }
             : undefined
         }
         groupMembers={groupMembers}
+        groupId={chatId}
       />
       <ConfirmationModal
         isOpen={isConfirmationOpen}
@@ -671,7 +605,7 @@ const GroupChat = () => {
           confirmationContext?.type === "removeMember"
             ? "Remove Member"
             : confirmationContext?.type === "deleteSchedule"
-            ? "Delete Schedule"
+            ? "Delete Worksheet"
             : "Leave Group"
         }
         message={confirmationContext?.message || "Are you sure?"}

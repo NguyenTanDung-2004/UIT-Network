@@ -6,6 +6,8 @@ import React, { useMemo, useState } from "react";
 import ChatListItem from "./ChatListItem";
 import { ChatData } from "@/types/chats/ChatData";
 import Image from "next/image";
+import { seenMessage } from "@/services/chatService";
+import { useChatList } from "@/app/(message)/(routes)/chat/ChatListContext";
 
 interface ChatLeftBarProps {
   chats: ChatData[];
@@ -15,8 +17,22 @@ interface ChatLeftBarProps {
 const ChatLeftBar: React.FC<ChatLeftBarProps> = ({ chats, activeChatId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
+  const {
+    chats: currentChats,
+    loading: chatListLoading,
+    error: chatListError,
+  } = useChatList();
 
-  const handleChatClick = (id: string, type: "person" | "group") => {
+  const handleChatClick = async (id: string, type: "person" | "group") => {
+    const chatToMarkSeen = currentChats.find((chat) => chat.id === id);
+    if (chatToMarkSeen && chatToMarkSeen.unread) {
+      try {
+        await seenMessage(id);
+      } catch (err) {
+        console.error("Failed to mark message as seen:", err);
+      }
+    }
+
     const path = type === "group" ? `/chat/group/${id}` : `/chat/person/${id}`;
     router.push(path);
   };

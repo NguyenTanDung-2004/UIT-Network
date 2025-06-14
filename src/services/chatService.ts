@@ -168,9 +168,10 @@ const parseMessageContentAndMedia = (
 const formatBackendMessageToMessage = (
   backendMessage: BackendMessageItem
 ): Message => {
-  const { content, media } = parseMessageContentAndMedia(
+  const { content: parsedContent, media } = parseMessageContentAndMedia(
     backendMessage.message
   );
+  let messageContent: string = parsedContent; // Dùng biến tạm để có thể thay đổi
   let messageType: Message["type"] = "text";
   let mediaUrl: string | undefined = undefined;
   let fileName: string | undefined = undefined;
@@ -203,8 +204,11 @@ const formatBackendMessageToMessage = (
   } else {
     switch (backendMessage.type) {
       case 1:
+        messageType = "text";
+        break;
       case 5:
         messageType = "text";
+        messageContent = "@AIAssist " + parsedContent;
         break;
       case 2:
         messageType = "image";
@@ -224,7 +228,7 @@ const formatBackendMessageToMessage = (
   return {
     id: backendMessage.id,
     senderId: backendMessage.senderid,
-    content: content,
+    content: messageContent,
     timestamp: new Date(backendMessage.createddate),
     type: messageType,
     mediaUrl: mediaUrl,
@@ -301,4 +305,33 @@ export const getListMessages = async (
   messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
   return { messages: messages, media: mediaItems, files: fileItems };
+};
+
+interface SeenMessageApiResponse {
+  object: any | null;
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+export const seenMessage = async (chatId: string): Promise<void> => {
+  const url = `${CHAT_API_BASE_URL}/chat/group/seen/${chatId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "PUT",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+
+  const response = await apiFetch<SeenMessageApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_06_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to mark message as seen"
+    );
+  }
 };
