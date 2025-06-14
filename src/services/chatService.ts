@@ -6,7 +6,11 @@ import {
   ChatPartnerInfo,
   SharedMediaItem,
   SharedFileItem,
+  GroupMemberInfo,
 } from "@/types/chats/ChatData";
+import { getUserInfoCardsByIds } from "@/services/friendService";
+
+import { Friend } from "@/types/profile/FriendData";
 
 interface BackendChatItem {
   id: string;
@@ -334,4 +338,55 @@ export const seenMessage = async (chatId: string): Promise<void> => {
       response.enumResponse.message || "Failed to mark message as seen"
     );
   }
+};
+
+interface GetChatGroupMembersApiResponse {
+  object: string[]; // Mảng các userId
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+export const getChatGroupMembers = async (
+  groupId: string
+): Promise<GroupMemberInfo[]> => {
+  const url = `${CHAT_API_BASE_URL}/chat/group/members/${groupId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  };
+
+  const response = await apiFetch<GetChatGroupMembersApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_00_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch chat group members"
+    );
+  }
+
+  const memberIds = response.object;
+
+  if (memberIds.length === 0) {
+    return [];
+  }
+
+  // Gọi getUserInfoCardsByIds để lấy thông tin chi tiết (name, avatar)
+  const memberInfos: Friend[] = await getUserInfoCardsByIds(memberIds);
+
+  const groupMembers: GroupMemberInfo[] = memberIds.map((userId) => {
+    const userInfo = memberInfos.find((info) => info.id === userId);
+
+    return {
+      id: userId,
+      name: userInfo?.name || "Unknown Member",
+      avatar: userInfo?.avatar || DEFAULT_AVATAR,
+      role: "member",
+    };
+  });
+
+  return groupMembers;
 };

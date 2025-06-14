@@ -24,7 +24,7 @@ import { Friend } from "@/types/profile/FriendData";
 import { getListMessages } from "@/services/chatService";
 import { useUser } from "@/contexts/UserContext";
 import { useChatList } from "../../ChatListContext";
-import { getGroupMembers } from "@/services/groupService";
+import { getChatGroupMembers as getGroupMembers } from "@/services/chatService";
 import {
   getWorksheetsByGroupId as getGroupWorksheets,
   createWorksheet,
