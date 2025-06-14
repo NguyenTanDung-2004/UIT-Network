@@ -1,5 +1,10 @@
 import apiFetch from "./apiClient";
-import { ChatItem } from "@/types/chats/ChatData";
+import {
+  ChatItem,
+  ChatData,
+  Message,
+  ChatPartnerInfo,
+} from "@/types/chats/ChatData";
 
 interface BackendChatItem {
   id: string;
@@ -26,6 +31,8 @@ interface GetChatTopicsApiResponse {
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
+const CHAT_API_BASE_URL = process.env.CHAT_API_URL || "http://localhost:8085";
+
 const formatBackendChatItemToChatItem = (
   backendChat: BackendChatItem
 ): ChatItem => {
@@ -39,9 +46,28 @@ const formatBackendChatItemToChatItem = (
   };
 };
 
+const formatBackendChatItemToChatData = (
+  backendChat: BackendChatItem
+): ChatData => {
+  const chatType = backendChat.type === 1 ? "group" : "person";
+  const timestamp = new Date(
+    backendChat.modifieddate || backendChat.createddate
+  );
+
+  return {
+    id: backendChat.id,
+    type: chatType,
+    avatar: backendChat.avturl || DEFAULT_AVATAR,
+    name: backendChat.name,
+    lastMessage: "No recent messages",
+    timestamp: timestamp,
+    unread: backendChat.isseen === 0,
+    isOnline: chatType === "person" ? backendChat.status === "ACTIVE" : false,
+  };
+};
+
 export const getChatTopics = async (): Promise<ChatItem[]> => {
-  const baseUrl = process.env.CHAT_API_URL || "http://localhost:8085";
-  const url = `${baseUrl}/chat/group/list`;
+  const url = `${CHAT_API_BASE_URL}/chat/group/list`;
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
 
@@ -61,4 +87,176 @@ export const getChatTopics = async (): Promise<ChatItem[]> => {
   }
 
   return response.object.map(formatBackendChatItemToChatItem);
+};
+
+export const getTopicsForChatPage = async (): Promise<ChatData[]> => {
+  const url = `${CHAT_API_BASE_URL}/chat/group/list`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+
+  const response = await apiFetch<GetChatTopicsApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_07_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch chat list summary"
+    );
+  }
+
+  return response.object.map(formatBackendChatItemToChatData);
+};
+
+interface BackendMessageItem {
+  id: string;
+  parentid: string | null;
+  senderid: string;
+  message: string; // Có thể là JSON string
+  tags: string[] | null;
+  type: number; // 1: text, 2: image, 3: video, 4: file, 5: AI question/rich text
+  createddate: string;
+  modifieddate: string;
+  status: string;
+  groupid: string | null;
+  isowner: boolean;
+  avturl: string;
+  sendername: string;
+}
+
+interface BackendMessageMedia {
+  typeId: number;
+  url: string;
+  name?: string; // Dành cho file
+  sizeValue?: number; // Dành cho file
+  unit?: string; // Dành cho file
+}
+
+interface ParsedMessageContent {
+  // Cấu trúc JSON bên trong trường 'message'
+  content?: string;
+  media?: BackendMessageMedia[];
+}
+
+interface GetListMessageApiResponse {
+  object: BackendMessageItem[];
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+const parseMessageContentAndMedia = (
+  messageString: string
+): { content: string; media?: BackendMessageMedia[] } => {
+  try {
+    const parsed: ParsedMessageContent = JSON.parse(messageString);
+    let content = parsed.content || messageString; // Nếu không có content field, dùng nguyên chuỗi
+    let media = parsed.media;
+    return { content, media };
+  } catch (e) {
+    return { content: messageString }; // Nếu không phải JSON, trả về nguyên chuỗi
+  }
+};
+
+const formatBackendMessageToMessage = (
+  backendMessage: BackendMessageItem
+): Message => {
+  const { content, media } = parseMessageContentAndMedia(
+    backendMessage.message
+  );
+  let messageType: Message["type"] = "text";
+  let mediaUrl: string | undefined = undefined;
+  let fileName: string | undefined = undefined;
+  let fileSize: number | undefined = undefined;
+  let fileType: string | undefined = undefined;
+
+  // Nếu có media trong JSON, ưu tiên dùng nó để xác định loại
+  if (media && media.length > 0) {
+    const firstMedia = media[0]; // Lấy media đầu tiên để xác định type
+    switch (firstMedia.typeId) {
+      case 2:
+        messageType = "image";
+        mediaUrl = firstMedia.url;
+        break;
+      case 3:
+        messageType = "video";
+        mediaUrl = firstMedia.url;
+        break;
+      case 4:
+        messageType = "file";
+        mediaUrl = firstMedia.url;
+        fileName = firstMedia.name;
+        fileSize = firstMedia.sizeValue;
+        fileType = firstMedia.name
+          ? firstMedia.name.split(".").pop()?.toLowerCase()
+          : "unknown";
+        break;
+      default:
+        messageType = "text"; // Fallback nếu typeId không khớp
+    }
+  } else {
+    // Nếu không có media, dựa vào backendMessage.type (type của tin nhắn)
+    switch (backendMessage.type) {
+      case 1: // Text
+      case 5: // AI question/rich text
+        messageType = "text";
+        break;
+      // Các trường hợp 2, 3, 4 ở đây có thể xảy ra nếu 'message' không phải JSON
+      // và API truyền thẳng type, nhưng thường sẽ có media đi kèm
+      case 2:
+        messageType = "image";
+        break;
+      case 3:
+        messageType = "video";
+        break;
+      case 4:
+        messageType = "file";
+        break;
+      default:
+        messageType = "text";
+        break;
+    }
+  }
+
+  return {
+    id: backendMessage.id,
+    senderId: backendMessage.senderid,
+    content: content,
+    timestamp: new Date(backendMessage.createddate),
+    type: messageType,
+    mediaUrl: mediaUrl,
+    fileName: fileName,
+    fileSize: fileSize,
+    fileType: fileType,
+    senderName: backendMessage.sendername,
+    senderAvatar: backendMessage.avturl || DEFAULT_AVATAR,
+  };
+};
+
+export const getListMessages = async (chatId: string): Promise<Message[]> => {
+  const url = `${CHAT_API_BASE_URL}/chat/message/${chatId}`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "GET",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+
+  const response = await apiFetch<GetListMessageApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_08_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to fetch messages"
+    );
+  }
+
+  return response.object.map(formatBackendMessageToMessage);
 };

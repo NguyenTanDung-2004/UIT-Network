@@ -3,16 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import {
-  Phone,
-  Video,
-  Info,
-  Smile,
-  Paperclip,
-  Image as ImageIcon,
-  SendHorizontal,
-  ArrowDown,
-} from "lucide-react";
+import { Phone, Video, Info } from "lucide-react";
 import { ClipLoader } from "react-spinners";
 
 import ChatMessageItem from "@/components/chat/person-chats/ChatMessageItem";
@@ -25,6 +16,9 @@ import {
   SharedFileItem,
   SharedLinkItem,
 } from "@/types/chats/ChatData";
+import { getListMessages } from "@/services/chatService";
+import { useUser } from "@/contexts/UserContext";
+import { useChatList } from "../../ChatListContext";
 
 interface MediaItem {
   url: string;
@@ -37,100 +31,15 @@ interface ChatPartnerInfo {
   isOnline: boolean;
 }
 
-const CURRENT_USER_ID = "my-user-id";
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
-// --- Mock Fetch Functions (Replace with API calls) ---
-async function fetchPersonInfo(
-  personId: string
-): Promise<ChatPartnerInfo | null> {
-  console.log("Fetching info for person:", personId);
-  await new Promise((res) => setTimeout(res, 300));
-  if (personId === "not-found") return null;
-  return {
-    id: personId,
-    name: `Nguyễn Tấn Dũng ${personId.split("-")[1] || ""}`,
-    avatar: DEFAULT_AVATAR,
-    isOnline: Math.random() > 0.3,
-  };
-}
-
-async function fetchMessages(
-  chatId: string, // chatId could be personId for 1-on-1
-  limit = 20,
-  offset = 0
-): Promise<Message[]> {
-  console.log(
-    `Fetching messages for ${chatId}, limit ${limit}, offset ${offset}`
-  );
-  await new Promise((res) => setTimeout(res, 500));
-  const messages: Message[] = [];
-  const messageCount = 30; // Total mock messages
-  const startIndex = offset;
-  const endIndex = Math.min(offset + limit, messageCount);
-
-  for (let i = startIndex; i < endIndex; i++) {
-    const isSender = Math.random() > 0.5;
-    const msgType = Math.random();
-    let type: Message["type"] = "text";
-    let content = `This is message number ${messageCount - i}. `;
-    let mediaUrl: string | undefined;
-    let fileName: string | undefined;
-    let fileSize: number | undefined;
-    let fileType: string | undefined;
-
-    if (msgType < 0.15) {
-      // Image
-      type = "image";
-      content = i % 3 === 0 ? "" : "A beautiful picture."; // Sometimes no text with image
-      mediaUrl = `https://picsum.photos/seed/${chatId}-${i}/600/400`; // Slightly larger images
-    } else if (msgType < 0.2) {
-      // Video
-      type = "video";
-      content = "Check this out!";
-      mediaUrl =
-        "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"; // Sample video
-    } else if (msgType < 0.25) {
-      // File
-      type = "file";
-      content = ""; // Usually no text with file
-      mediaUrl = "/mock-files/sample-file.pdf";
-      fileName = `Sample Document ${i}.pdf`;
-      fileSize = Math.floor(Math.random() * 1000 * 1024) + 50 * 1024;
-      fileType = "application/pdf";
-    } else {
-      content += "Some more text to make it longer. ".repeat(
-        Math.floor(Math.random() * 3)
-      );
-      if (i % 5 === 0) content = "Ok";
-      if (i % 7 === 0) content = "Wooooo waoo !!!!\nCá nhà ngủ ngon ✨✨✨";
-    }
-
-    messages.push({
-      id: `msg-${chatId}-${messageCount - i}`,
-      senderId: isSender ? CURRENT_USER_ID : chatId,
-      content,
-      timestamp: new Date(
-        Date.now() - (i * 5 * 60 * 1000 + Math.random() * 60 * 1000)
-      ), // ~5 min intervals + randomness
-      type,
-      mediaUrl,
-      fileName,
-      fileSize,
-      fileType,
-    });
-  }
-  // Return sorted oldest first, same as before
-  return messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-}
-
+// Mock function for shared items (no API provided yet)
 async function fetchSharedItems(chatId: string): Promise<{
   media: SharedMediaItem[];
   files: SharedFileItem[];
   links: SharedLinkItem[];
 }> {
-  console.log("Fetching shared items for:", chatId);
   await new Promise((res) => setTimeout(res, 400));
   return {
     media: [
@@ -141,7 +50,7 @@ async function fetchSharedItems(chatId: string): Promise<{
       },
       {
         id: "media-fixed-2",
-        url: "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/cld-sample-video.mp4",
+        url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
         type: "video",
       },
       {
@@ -156,7 +65,7 @@ async function fetchSharedItems(chatId: string): Promise<{
       },
       {
         id: "media-fixed-5",
-        url: "https://res.cloudinary.com/dos914bk9/video/upload/v1738270440/samples/sea-turtle.mp4",
+        url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
         type: "video",
       },
       {
@@ -183,10 +92,19 @@ async function fetchSharedItems(chatId: string): Promise<{
   };
 }
 
-// --- Main Page Component ---
 const PersonChatPage = () => {
   const params = useParams();
-  const personId = params?.id as string;
+  const chatId = params?.id as string; // Đây là topicId/chatId
+  const {
+    user,
+    loading: userContextLoading,
+    error: userContextError,
+  } = useUser();
+  const {
+    chats,
+    loading: chatListLoading,
+    error: chatListError,
+  } = useChatList(); // Lấy chats từ context
 
   const [partnerInfo, setPartnerInfo] = useState<ChatPartnerInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -194,7 +112,6 @@ const PersonChatPage = () => {
   const [sharedFiles, setSharedFiles] = useState<SharedFileItem[]>([]);
   const [sharedLinks, setSharedLinks] = useState<SharedLinkItem[]>([]);
 
-  const [isLoadingInfo, setIsLoadingInfo] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const [isLoadingShared, setIsLoadingShared] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -202,73 +119,100 @@ const PersonChatPage = () => {
 
   const [showDetails, setShowDetails] = useState(true);
 
-  // State for the profile's MediaViewerModal
   const [mediaViewerOpen, setMediaViewerOpen] = useState(false);
   const [mediaViewerList, setMediaViewerList] = useState<MediaItem[]>([]);
   const [mediaViewerStartIndex, setMediaViewerStartIndex] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatListRef = useRef<HTMLDivElement>(null);
+  const chatListRef = useRef<HTMLDivElement>(null); // Có thể bỏ nếu không dùng
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  // Fetch initial data
+  // Effect để tìm partnerInfo từ chatList
   useEffect(() => {
-    if (!personId) {
-      setError("Invalid chat ID.");
-      setIsLoadingInfo(false);
-      setIsLoadingMessages(false);
-      setIsLoadingShared(false);
+    if (chatListLoading || userContextLoading) {
+      setError(null); // Clear error while loading
+      return;
+    }
+
+    if (chatListError || userContextError) {
+      setError(chatListError || userContextError);
+      setPartnerInfo(null);
+      return;
+    }
+
+    const currentChatTopic = chats.find(
+      (chat) => chat.id === chatId && chat.type === "person"
+    );
+
+    if (currentChatTopic) {
+      setPartnerInfo({
+        id: currentChatTopic.id, // Đây là chatId, dùng làm ID đại diện cho cuộc trò chuyện
+        name: currentChatTopic.name,
+        avatar: currentChatTopic.avatar,
+        isOnline: currentChatTopic.isOnline,
+      });
+      setError(null);
+    } else {
+      setError("Chat partner not found for this conversation ID.");
+      setPartnerInfo(null);
+    }
+  }, [
+    chatId,
+    chats,
+    chatListLoading,
+    chatListError,
+    userContextLoading,
+    userContextError,
+  ]);
+
+  // Fetch messages and shared items
+  useEffect(() => {
+    if (!partnerInfo || !user || !user.id) {
+      // Chờ partnerInfo và user có đủ
+      setIsLoadingMessages(true);
+      setIsLoadingShared(true);
       return;
     }
 
     let isMounted = true;
-    setIsLoadingInfo(true);
     setIsLoadingMessages(true);
     setIsLoadingShared(true);
     setError(null);
 
-    const fetchData = async () => {
+    const fetchChatContent = async () => {
       try {
-        const [info, initialMessages, shared] = await Promise.all([
-          fetchPersonInfo(personId),
-          fetchMessages(personId, 20, 0),
-          fetchSharedItems(personId),
+        const [chatMessages, sharedItems] = await Promise.all([
+          getListMessages(chatId), // Sử dụng chatId để fetch messages
+          fetchSharedItems(chatId), // Giữ mock cho shared items vì chưa có API
         ]);
 
         if (!isMounted) return;
 
-        if (!info) {
-          setError("Chat partner not found.");
-        } else {
-          setPartnerInfo(info);
-          setMessages(initialMessages);
-          setSharedMedia(shared.media);
-          setSharedFiles(shared.files);
-          setSharedLinks(shared.links);
-        }
-      } catch (err) {
-        console.error("Failed to fetch chat data:", err);
-        if (isMounted) setError("Could not load chat data.");
+        setMessages(chatMessages);
+        setSharedMedia(sharedItems.media);
+        setSharedFiles(sharedItems.files);
+        setSharedLinks(sharedItems.links);
+      } catch (err: any) {
+        console.error("Failed to fetch chat content:", err);
+        if (isMounted) setError(err.message || "Could not load chat content.");
       } finally {
         if (isMounted) {
-          setIsLoadingInfo(false);
           setIsLoadingMessages(false);
           setIsLoadingShared(false);
         }
       }
     };
 
-    fetchData();
+    fetchChatContent();
 
     return () => {
       isMounted = false;
     };
-  }, [personId]);
+  }, [chatId, partnerInfo, user]); // Thêm partnerInfo và user vào dependencies
 
-  // Scroll to bottom when messages load or new messages are added
   useEffect(() => {
     if (!isLoadingMessages) {
       setTimeout(scrollToBottom, 100);
@@ -276,7 +220,7 @@ const PersonChatPage = () => {
   }, [messages, isLoadingMessages, scrollToBottom]);
 
   const handleSendMessage = async (text: string, attachments?: any[]) => {
-    if (!partnerInfo) return;
+    if (!partnerInfo || !user) return;
     setIsSending(true);
     console.log("Sending:", { text, attachments });
 
@@ -289,7 +233,7 @@ const PersonChatPage = () => {
           att.type === "image" || att.type === "video" ? att.type : "file";
         optimisticMessages.push({
           id: `temp-${Date.now()}-${index}`,
-          senderId: CURRENT_USER_ID,
+          senderId: user.id,
           content: index === attachments.length - 1 ? text : "",
           timestamp: timestamp,
           type: msgType,
@@ -302,7 +246,7 @@ const PersonChatPage = () => {
     } else if (text) {
       optimisticMessages.push({
         id: `temp-${Date.now()}`,
-        senderId: CURRENT_USER_ID,
+        senderId: user.id,
         content: text,
         timestamp: timestamp,
         type: "text",
@@ -316,8 +260,8 @@ const PersonChatPage = () => {
     try {
       await new Promise((res) => setTimeout(res, 700));
       console.log("Message supposedly sent.");
-    } catch (error) {
-      console.error("Failed to send message:", error);
+    } catch (sendError) {
+      console.error("Failed to send message:", sendError);
       setError("Failed to send message.");
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
     } finally {
@@ -326,16 +270,14 @@ const PersonChatPage = () => {
     }
   };
 
-  // Updated handler to prepare data for the profile MediaViewerModal
   const handleMediaClick = (clickedMessageId: string) => {
     const mediaMessages = messages.filter(
       (msg) => (msg.type === "image" || msg.type === "video") && msg.mediaUrl
     );
 
     const viewerItems: MediaItem[] = mediaMessages.map((msg) => ({
-      // id: msg.id, // Profile viewer doesn't use ID in its MediaItem type
       url: msg.mediaUrl!,
-      type: msg.type, // Type is already 'image' or 'video'
+      type: msg.type,
     }));
 
     const clickedIndex = mediaMessages.findIndex(
@@ -351,10 +293,9 @@ const PersonChatPage = () => {
 
   const closeMediaViewer = () => {
     setMediaViewerOpen(false);
-    // No need to reset currentMediaView as it's removed
   };
 
-  if (isLoadingInfo || isLoadingMessages) {
+  if (chatListLoading || userContextLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <ClipLoader color="#FF69B4" size={40} />
@@ -362,10 +303,10 @@ const PersonChatPage = () => {
     );
   }
 
-  if (error) {
+  if (error || userContextError || !user) {
     return (
       <div className="flex items-center justify-center h-full p-10 text-center text-red-500">
-        {error}
+        {error || userContextError || "User not logged in or data unavailable."}
       </div>
     );
   }
@@ -429,9 +370,8 @@ const PersonChatPage = () => {
             <ChatMessageItem
               key={msg.id}
               message={msg}
-              isSender={msg.senderId === CURRENT_USER_ID}
+              isSender={msg.senderId === user.id}
               isGroup={false}
-              // Pass message ID to handler
               onMediaClick={() =>
                 msg.mediaUrl && (msg.type === "image" || msg.type === "video")
                   ? handleMediaClick(msg.id)
@@ -444,46 +384,41 @@ const PersonChatPage = () => {
         <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />
       </div>
 
-      {showDetails &&
-        partnerInfo && ( // Thêm kiểm tra partnerInfo để đảm bảo có dữ liệu
-          <ChatDetail
-            type="person"
-            partnerName={partnerInfo.name}
-            partnerAvatar={partnerInfo.avatar}
-            sharedMedia={sharedMedia}
-            sharedFiles={sharedFiles}
-            sharedLinks={sharedLinks}
-            onClose={() => setShowDetails(false)}
-            // === Cung cấp các props mới với giá trị mặc định/không phù hợp ===
-            schedules={[]} // Person chat không có schedule chung
-            // Cần lấy thông tin người dùng hiện tại từ context/auth
-            currentUserInfo={{
-              id: CURRENT_USER_ID,
-              name: "You",
-              avatar: DEFAULT_AVATAR,
-              role: "member",
-            }} // Mock tạm thời
-            groupMembers={undefined} // Không có group members
-            // Cung cấp hàm rỗng cho các action không áp dụng với person chat
-            onAddMember={() => {}}
-            onChatMember={() => {}}
-            onRemoveMember={() => {}}
-            onCreateSchedule={() => {}}
-            onViewScheduleDetails={() => {}}
-            onDeleteSchedule={() => {}}
-            // Có thể giữ lại các action chung nếu cần
-            onBlockUser={() => console.log("Block user action")}
-            onToggleNotifications={() =>
-              console.log("Toggle notifications action")
-            }
-          />
-        )}
+      {showDetails && partnerInfo && (
+        <ChatDetail
+          type="person"
+          partnerName={partnerInfo.name}
+          partnerAvatar={partnerInfo.avatar}
+          sharedMedia={sharedMedia}
+          sharedFiles={sharedFiles}
+          sharedLinks={sharedLinks}
+          onClose={() => setShowDetails(false)}
+          schedules={[]}
+          currentUserInfo={{
+            id: user.id,
+            name: user.name,
+            avatar: user.avtURL || DEFAULT_AVATAR,
+            role: "member",
+          }}
+          groupMembers={undefined}
+          onAddMember={() => {}}
+          onChatMember={() => {}}
+          onRemoveMember={() => {}}
+          onCreateSchedule={() => {}}
+          onViewScheduleDetails={() => {}}
+          onDeleteSchedule={() => {}}
+          onBlockUser={() => console.log("Block user action")}
+          onToggleNotifications={() =>
+            console.log("Toggle notifications action")
+          }
+        />
+      )}
 
       <MediaViewerModal
         isOpen={mediaViewerOpen}
         onClose={closeMediaViewer}
-        mediaList={mediaViewerList} // Pass the prepared list
-        startIndex={mediaViewerStartIndex} // Pass the calculated start index
+        mediaList={mediaViewerList}
+        startIndex={mediaViewerStartIndex}
       />
     </div>
   );

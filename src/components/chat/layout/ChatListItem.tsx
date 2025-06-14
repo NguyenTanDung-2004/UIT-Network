@@ -89,7 +89,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
             {name}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
-            {formatTimestamp(timestamp)}
+            {}
           </p>
         </div>
         <div className="flex justify-between items-center">
@@ -100,7 +100,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
                 : "text-gray-600 dark:text-gray-400"
             }`}
           >
-            {lastMessage}
+            {}
           </p>
           {unread && (
             <span className="ml-2 flex-shrink-0 w-2.5 h-2.5 bg-primary rounded-full"></span>

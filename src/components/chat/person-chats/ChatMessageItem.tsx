@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/image";
+import Image from "next/image"; // Import Image từ next/image
 import { Message } from "@/types/chats/ChatData";
 import { getFileIcon, formatFileSize } from "@/utils/ViewFilesUtils";
 
@@ -9,6 +9,9 @@ interface ChatMessageItemProps {
   isGroup: boolean;
   onMediaClick: (url: string, type: "image" | "video") => void;
 }
+
+const DEFAULT_AVATAR =
+  "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
 const formatTime = (date: Date): string => {
   return date
@@ -34,68 +37,95 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
     ? "rounded-l-lg rounded-br-lg"
     : "rounded-r-lg rounded-bl-lg";
 
-  const renderContent = () => {
-    switch (message.type) {
-      case "image":
-        return (
-          <img
-            src={message.mediaUrl}
-            alt="Sent Image"
-            className="max-w-xs md:max-w-sm rounded-lg cursor-pointer object-cover"
-            onClick={() =>
-              message.mediaUrl && onMediaClick(message.mediaUrl, "image")
-            }
-          />
-        );
-      case "video":
-        return (
-          <video
-            src={message.mediaUrl}
-            controls // Hiển thị controls mặc định cho video
-            className="max-w-xs md:max-w-sm rounded-lg cursor-pointer"
-            onClick={(e) => {
-              // Mở viewer khi click vào video, không phải controls
-              if (e.target === e.currentTarget && message.mediaUrl) {
-                onMediaClick(message.mediaUrl, "video");
+  const renderMessageContentAndMedia = () => {
+    return (
+      <>
+        {message.content && message.content.trim() !== "" && (
+          <p className="text-sm break-words whitespace-pre-wrap">
+            {message.content}
+          </p>
+        )}
+
+        {message.mediaUrl &&
+          (message.type === "image" || message.type === "video") && (
+            <div
+              className={`mt-2 ${
+                message.content && message.content.trim() !== ""
+                  ? ""
+                  : "max-w-xs"
+              } relative rounded-lg overflow-hidden cursor-pointer`}
+              onClick={() =>
+                message.mediaUrl &&
+                onMediaClick(
+                  message.mediaUrl,
+                  message.type as "image" | "video"
+                )
               }
-            }}
-          >
-            Your browser does not support the video tag.
-          </video>
-        );
-      case "file":
-        return (
+            >
+              {message.type === "image" ? (
+                <Image
+                  src={message.mediaUrl}
+                  alt="Chat media"
+                  width={200}
+                  height={150}
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              ) : (
+                <video
+                  src={message.mediaUrl}
+                  controls={false}
+                  className="w-full h-auto max-h-[150px] object-cover"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+              {message.type === "video" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 text-white">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          )}
+
+        {/* Hiển thị File */}
+        {message.mediaUrl && message.type === "file" && (
           <a
             href={message.mediaUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`flex items-center gap-2 p-2 rounded-lg ${
+            className={`mt-2 flex items-center gap-2 p-2 rounded-lg ${
               isSender
                 ? "hover:bg-pink-600"
                 : "hover:bg-gray-300 dark:hover:bg-gray-500"
             } transition-colors`}
           >
-            <img
-              src={getFileIcon(message.fileType)}
-              alt="file icon"
-              className="w-6 h-6 flex-shrink-0"
+            <Image
+              src={getFileIcon(message.fileType || "")}
+              alt="File icon"
+              width={24}
+              height={24}
+              className="flex-shrink-0"
             />
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{message.fileName}</p>
+              <p className="text-sm font-medium truncate">
+                {message.fileName || "File"}
+              </p>
               <p className="text-xs opacity-80">
                 {formatFileSize(message.fileSize)}
               </p>
             </div>
           </a>
-        );
-      case "text":
-      default:
-        return (
-          <p className="text-sm break-words whitespace-pre-wrap">
-            {message.content}
-          </p>
-        );
-    }
+        )}
+      </>
+    );
   };
 
   return (
@@ -103,11 +133,11 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
       {isGroup && !isSender && message.senderName && (
         <div className="flex items-center mb-1">
           <Image
-            src={message.senderAvatar || "/default-avatar.png"}
+            src={message.senderAvatar || DEFAULT_AVATAR}
             width={20}
             height={20}
             alt={message.senderName}
-            className="w-5 h-5 rounded-full mr-1.5"
+            className="w-5 h-5 rounded-full mr-1.5 object-cover"
           />
           <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
             {message.senderName}
@@ -120,7 +150,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         } items-end max-w-[75%]`}
       >
         <div className={`px-3 py-2 ${bubbleColor} ${bubbleRadius} shadow-sm`}>
-          {renderContent()}
+          {renderMessageContentAndMedia()}
         </div>
       </div>
       <span

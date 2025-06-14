@@ -18,6 +18,13 @@ export interface ChatData {
   isOnline: boolean | false;
 }
 
+export interface ChatPartnerInfo {
+  id: string;
+  name: string;
+  avatar: string;
+  isOnline: boolean;
+}
+
 export interface Message {
   id: string;
   senderId: string;
