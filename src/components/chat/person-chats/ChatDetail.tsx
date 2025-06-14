@@ -46,7 +46,6 @@ interface ChatDetailProps {
   onToggleNotifications?: () => void;
   onMediaItemClick?: (mediaItem: SharedMediaItem, index: number) => void;
 
-  // GROUP
   onAddMember: () => void;
   onChatMember: (memberId: string) => void;
   onRemoveMember: (memberId: string, memberName: string) => void;
@@ -91,7 +90,6 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
   const [mediaViewerList, setMediaViewerList] = useState<SharedMediaItem[]>([]);
   const [mediaViewerStartIndex, setMediaViewerStartIndex] = useState(0);
 
-  // Hàm xử lý click media mở modal
   const handleMediaClick = (media: SharedMediaItem, index: number) => {
     setMediaViewerList(sharedMedia);
     setMediaViewerStartIndex(index);
@@ -101,36 +99,181 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
     }
   };
 
+  // Sửa đổi renderSection để luôn hiển thị tiêu đề và số lượng, ngay cả khi không có item
   const renderSection = (
     title: string,
-    content: React.ReactNode,
+    content: React.ReactNode | null, // Có thể là null nếu không có item
     viewAllHandler?: () => void,
-    itemCountForTitle?: number
+    itemCount: number = 0 // Sử dụng tham số này
   ) => {
-    const displayCount = itemCountForTitle;
-    if (!content || (Array.isArray(content) && content.length === 0))
-      return null;
-
     return (
       <div className="mb-5">
         <div className="flex justify-between items-center mb-2 px-4">
           <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-            {title} {displayCount !== undefined ? `(${displayCount})` : ""}
+            {title} ({itemCount})
           </h4>
           {viewAllHandler && (
             <button
               onClick={viewAllHandler}
-              className="text-xs font-medium text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary-light p-1 -mr-1" // Make clickable area slightly larger
+              className="text-xs font-medium text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary-light p-1 -mr-1"
               aria-label={`View all ${title}`}
             >
               <ChevronRight size={18} />
             </button>
           )}
         </div>
-        <div className="px-4">{content}</div>
+        <div className="px-4">
+          {content && (Array.isArray(content) ? content.length > 0 : true) ? ( // Kiểm tra content có phải mảng và có độ dài > 0 không
+            content
+          ) : (
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
+              No items to display.
+            </p>
+          )}
+        </div>
       </div>
     );
   };
+
+  const mediaPreviewContent =
+    sharedMedia.length > 0 ? (
+      <div className="grid grid-cols-3 gap-1.5">
+        {sharedMedia.slice(0, 6).map((media, index) => (
+          <button
+            key={media.id}
+            onClick={() => handleMediaClick(media, index)}
+            className="aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 cursor-pointer relative group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            title={`View media ${index + 1}`}
+          >
+            {media.type === "image" ? (
+              <Image
+                src={media.url}
+                alt="Shared media preview"
+                fill
+                sizes="(max-width: 768px) 33vw, 100px"
+                className="object-cover transition-transform duration-200 group-hover:scale-105"
+              />
+            ) : (
+              <>
+                <video
+                  src={media.url}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <i className="fas fa-play text-white text-3xl"></i>
+                </div>
+              </>
+            )}
+          </button>
+        ))}
+      </div>
+    ) : null; // Giữ null nếu không có media để renderSection tự xử lý
+
+  const filesPreviewContent =
+    sharedFiles.length > 0
+      ? sharedFiles.slice(0, 3).map((file) => (
+          <a
+            key={file.id}
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 mb-1 transition-colors"
+            title={`Open ${file.name}`}
+          >
+            <div className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-600 rounded-full flex-shrink-0">
+              <img
+                src={getFileIcon(file.type)}
+                alt="file icon"
+                className="w-4 h-4"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                {file.name}
+              </p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                {formatFileSize(file.size)}
+              </p>
+            </div>
+          </a>
+        ))
+      : null; // Giữ null nếu không có files
+
+  const linksPreviewContent =
+    sharedLinks.length > 0
+      ? sharedLinks.slice(0, 3).map((link) => (
+          <a
+            key={link.id}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 mb-1 transition-colors"
+            title={`Open link: ${link.url}`}
+          >
+            <div className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-600 rounded-full flex-shrink-0">
+              <LinkIcon
+                size={16}
+                className="text-gray-600 dark:text-gray-400"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                {link.title || link.url}
+              </p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                {link.domain || new URL(link.url).hostname.replace("www.", "")}
+              </p>
+            </div>
+          </a>
+        ))
+      : null; // Giữ null nếu không có links
+
+  const membersPreviewContent =
+    type === "group" && groupMembers && groupMembers.length > 0 ? (
+      <div className="flex -space-x-2 overflow-hidden">
+        {groupMembers.slice(0, 7).map((member) => (
+          <Image
+            key={member.id}
+            src={member.avatar}
+            width={28}
+            height={28}
+            alt={member.name}
+            title={member.name}
+            className="inline-block h-7 w-7 rounded-full ring-2 ring-white dark:ring-gray-800 object-cover"
+          />
+        ))}
+        {groupMembers.length > 7 && (
+          <div
+            title={`${groupMembers.length - 7} more members`}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 ring-2 ring-white dark:ring-gray-800 text-xs font-medium text-gray-600 dark:text-gray-300"
+          >
+            +{groupMembers.length - 7}
+          </div>
+        )}
+      </div>
+    ) : null; // Giữ null nếu không có members
+
+  const schedulePreviewContent =
+    type === "group" && schedules && schedules.length > 0
+      ? schedules.slice(0, 2).map((schedule) => (
+          <ScheduleListItem
+            key={schedule.id}
+            schedule={schedule}
+            onViewDetails={() => {
+              console.log("View schedule from preview");
+              if (onViewScheduleDetails) onViewScheduleDetails(schedule);
+            }}
+            onDelete={() => {
+              console.log("Delete schedule from preview (disabled usually)");
+              if (onDeleteSchedule)
+                onDeleteSchedule(schedule.id, schedule.title);
+            }}
+          />
+        ))
+      : null; // Giữ null nếu không có schedules
 
   const renderActionButtons = () => {
     interface ActionButtonConfig {
@@ -218,145 +361,6 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
     );
   };
 
-  const mediaPreviewContent =
-    sharedMedia.length > 0 ? (
-      <div className="grid grid-cols-3 gap-1.5">
-        {sharedMedia.slice(0, 6).map((media, index) => (
-          <button
-            key={media.id}
-            onClick={() => handleMediaClick(media, index)}
-            className="aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 cursor-pointer relative group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-            title={`View media ${index + 1}`}
-          >
-            {media.type === "image" ? (
-              <Image
-                src={media.url}
-                alt="Shared media preview"
-                fill
-                sizes="(max-width: 768px) 33vw, 100px"
-                className="object-cover transition-transform duration-200 group-hover:scale-105"
-              />
-            ) : (
-              <>
-                <video
-                  src={media.url}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  muted
-                  playsInline
-                  preload="metadata"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <i className="fas fa-play text-white text-3xl"></i>
-                </div>
-              </>
-            )}
-          </button>
-        ))}
-      </div>
-    ) : null;
-
-  const filesPreviewContent =
-    sharedFiles.length > 0
-      ? sharedFiles.slice(0, 3).map((file) => (
-          <a
-            key={file.id}
-            href={file.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 mb-1 transition-colors"
-            title={`Open ${file.name}`}
-          >
-            <div className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-600 rounded-full flex-shrink-0">
-              <img
-                src={getFileIcon(file.type)}
-                alt="file icon"
-                className="w-4 h-4"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
-                {file.name}
-              </p>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                {formatFileSize(file.size)}
-              </p>
-            </div>
-          </a>
-        ))
-      : null;
-
-  const linksPreviewContent =
-    sharedLinks.length > 0
-      ? sharedLinks.slice(0, 3).map((link) => (
-          <a
-            key={link.id}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 mb-1 transition-colors"
-            title={`Open link: ${link.url}`}
-          >
-            <div className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-600 rounded-full flex-shrink-0">
-              <LinkIcon
-                size={16}
-                className="text-gray-600 dark:text-gray-400"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
-                {link.title || link.url}
-              </p>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                {link.domain || new URL(link.url).hostname.replace("www.", "")}
-              </p>
-            </div>
-          </a>
-        ))
-      : null;
-  const membersPreviewContent =
-    type === "group" && groupMembers && groupMembers.length > 0 ? (
-      <div className="flex -space-x-2 overflow-hidden">
-        {groupMembers.slice(0, 7).map((member) => (
-          <Image
-            key={member.id}
-            src={member.avatar}
-            width={28}
-            height={28}
-            alt={member.name}
-            title={member.name}
-            className="inline-block h-7 w-7 rounded-full ring-2 ring-white dark:ring-gray-800 object-cover"
-          />
-        ))}
-        {groupMembers.length > 7 && (
-          <div
-            title={`${groupMembers.length - 7} more members`}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 ring-2 ring-white dark:ring-gray-800 text-xs font-medium text-gray-600 dark:text-gray-300"
-          >
-            +{groupMembers.length - 7}
-          </div>
-        )}
-      </div>
-    ) : null;
-
-  const schedulePreviewContent =
-    type === "group" && schedules && schedules.length > 0
-      ? schedules.slice(0, 2).map((schedule) => (
-          <ScheduleListItem
-            key={schedule.id}
-            schedule={schedule}
-            onViewDetails={() => {
-              console.log("View schedule from preview");
-              if (onViewScheduleDetails) onViewScheduleDetails(schedule);
-            }}
-            onDelete={() => {
-              console.log("Delete schedule from preview (disabled usually)");
-              if (onDeleteSchedule)
-                onDeleteSchedule(schedule.id, schedule.title);
-            }}
-          />
-        ))
-      : null;
-
   const renderCurrentView = () => {
     switch (currentView) {
       case "media":
@@ -364,7 +368,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
           <SharedMediaView
             mediaList={sharedMedia}
             onBack={() => setCurrentView("details")}
-            onMediaItemClick={(item, index) => handleMediaClick(item, index)} // Pass both media and index
+            onMediaItemClick={(item, index) => handleMediaClick(item, index)}
           />
         );
       case "files":
@@ -453,25 +457,25 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
               )}
             </div>
 
-            {type === "group" && membersPreviewContent && (
-              <div id="detail-section-members">
-                {renderSection(
-                  "Members",
-                  membersPreviewContent,
-                  () => setCurrentView("members"),
-                  groupMembers?.length
-                )}
-              </div>
-            )}
-            {type === "group" && schedulePreviewContent && (
-              <div id="detail-section-schedule">
-                {renderSection(
-                  "Schedule",
-                  schedulePreviewContent,
-                  () => setCurrentView("schedule"),
-                  schedules?.length
-                )}
-              </div>
+            {type === "group" && (
+              <>
+                <div id="detail-section-members">
+                  {renderSection(
+                    "Members",
+                    membersPreviewContent,
+                    () => setCurrentView("members"),
+                    groupMembers?.length || 0
+                  )}
+                </div>
+                <div id="detail-section-schedule">
+                  {renderSection(
+                    "Schedule",
+                    schedulePreviewContent,
+                    () => setCurrentView("schedule"),
+                    schedules?.length || 0
+                  )}
+                </div>
+              </>
             )}
 
             {type === "group" && (

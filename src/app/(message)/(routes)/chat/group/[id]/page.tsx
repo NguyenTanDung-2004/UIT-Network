@@ -261,7 +261,7 @@ const GroupChat = () => {
           avatar: currentChatTopic.avatar || DEFAULT_GROUP_AVATAR,
         });
 
-        const [chatMessages, membersData, fetchedSchedules, shared] =
+        const [messagesResponse, membersData, fetchedSchedules, shared] =
           await Promise.all([
             getListMessages(currentChatTopic.id),
             fetchMockGroupMembers(currentChatTopic.id),
@@ -271,12 +271,13 @@ const GroupChat = () => {
 
         if (!isMounted) return;
 
-        setMessages(chatMessages);
+        setMessages(messagesResponse.messages);
+        setSharedMedia(messagesResponse.media); // Lấy media từ response getListMessages
+        setSharedFiles(messagesResponse.files); // Lấy files từ response getListMessages
+        setSharedLinks(shared.links); // Shared links vẫn mock
+
         setGroupMembers(membersData);
         setSchedules(fetchedSchedules);
-        setSharedMedia(shared.media);
-        setSharedFiles(shared.files);
-        setSharedLinks(shared.links);
 
         const currentMemberInfo = membersData.find((m) => m.id === user.id);
         setCurrentUserInfo(currentMemberInfo || null);
@@ -493,7 +494,6 @@ const GroupChat = () => {
       </div>
     );
   }
-  // Loại bỏ kiểm tra !groupInfo || !currentUserInfo ở đầu, xử lý nó trực tiếp ở nơi sử dụng (nếu cần)
 
   return (
     <div className="flex h-full bg-gray-50 dark:bg-gray-900">
@@ -564,23 +564,31 @@ const GroupChat = () => {
           className="flex-1 overflow-y-auto p-4 flex flex-col-reverse"
         >
           <div ref={messagesEndRef} />
-          {[...messages].reverse().map((msg) => (
-            <ChatMessageItem
-              key={msg.id}
-              message={msg}
-              isSender={msg.senderId === user.id}
-              isGroup={true}
-              onMediaClick={() =>
-                msg.mediaUrl && (msg.type === "image" || msg.type === "video")
-                  ? handleMediaClick(msg.id)
-                  : undefined
-              }
-            />
-          ))}
+          {messages.length === 0 ? (
+            <div className="text-center text-gray-500 py-4 mb-16">
+              No messages yet
+            </div>
+          ) : (
+            [...messages]
+              .reverse()
+              .map((msg) => (
+                <ChatMessageItem
+                  key={msg.id}
+                  message={msg}
+                  isSender={msg.senderId === user.id}
+                  isGroup={false}
+                  onMediaClick={() =>
+                    msg.mediaUrl &&
+                    (msg.type === "image" || msg.type === "video")
+                      ? handleMediaClick(msg.id)
+                      : undefined
+                  }
+                />
+              ))
+          )}
         </div>
 
         <div className="flex-shrink-0 mt-auto">
-          {/* Luôn show ChatInput và ChatDetail */}
           <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />
         </div>
       </div>
@@ -590,39 +598,37 @@ const GroupChat = () => {
           showDetails ? "w-80 md:w-96" : "w-0"
         } overflow-hidden flex-shrink-0 h-full`}
       >
-        {showDetails &&
-          groupInfo && ( // Kiểm tra groupInfo để đảm bảo có dữ liệu
-            <ChatDetail
-              type="group"
-              groupName={groupInfo.name}
-              groupAvatar={groupInfo.avatar}
-              sharedMedia={sharedMedia}
-              sharedFiles={sharedFiles}
-              sharedLinks={sharedLinks}
-              groupMembers={groupMembers}
-              schedules={schedules}
-              // Mặc định currentUserInfo là user từ context nếu không tìm thấy trong GroupMembers
-              currentUserInfo={
-                currentUserInfo || {
-                  id: user.id,
-                  name: user.name,
-                  avatar: user.avtURL || DEFAULT_AVATAR,
-                  role: "member",
-                }
+        {showDetails && groupInfo && (
+          <ChatDetail
+            type="group"
+            groupName={groupInfo.name}
+            groupAvatar={groupInfo.avatar}
+            sharedMedia={sharedMedia}
+            sharedFiles={sharedFiles}
+            sharedLinks={sharedLinks}
+            groupMembers={groupMembers}
+            schedules={schedules}
+            currentUserInfo={
+              currentUserInfo || {
+                id: user.id,
+                name: user.name,
+                avatar: user.avtURL || DEFAULT_AVATAR,
+                role: "member",
               }
-              onClose={() => setShowDetails(false)}
-              onAddMember={handleAddMember}
-              onChatMember={handleChatMember}
-              onRemoveMember={handleRemoveMember}
-              onCreateSchedule={handleCreateSchedule}
-              onViewScheduleDetails={handleViewScheduleDetails}
-              onDeleteSchedule={handleDeleteSchedule}
-              onLeaveGroup={handleLeaveGroup}
-              onToggleNotifications={() =>
-                console.log("Toggle group notifications")
-              }
-            />
-          )}
+            }
+            onClose={() => setShowDetails(false)}
+            onAddMember={handleAddMember}
+            onChatMember={handleChatMember}
+            onRemoveMember={handleRemoveMember}
+            onCreateSchedule={handleCreateSchedule}
+            onViewScheduleDetails={handleViewScheduleDetails}
+            onDeleteSchedule={handleDeleteSchedule}
+            onLeaveGroup={handleLeaveGroup}
+            onToggleNotifications={() =>
+              console.log("Toggle group notifications")
+            }
+          />
+        )}
       </div>
 
       <MediaViewerModal

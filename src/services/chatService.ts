@@ -4,6 +4,8 @@ import {
   ChatData,
   Message,
   ChatPartnerInfo,
+  SharedMediaItem,
+  SharedFileItem,
 } from "@/types/chats/ChatData";
 
 interface BackendChatItem {
@@ -175,9 +177,8 @@ const formatBackendMessageToMessage = (
   let fileSize: number | undefined = undefined;
   let fileType: string | undefined = undefined;
 
-  // Nếu có media trong JSON, ưu tiên dùng nó để xác định loại
   if (media && media.length > 0) {
-    const firstMedia = media[0]; // Lấy media đầu tiên để xác định type
+    const firstMedia = media[0];
     switch (firstMedia.typeId) {
       case 2:
         messageType = "image";
@@ -197,17 +198,14 @@ const formatBackendMessageToMessage = (
           : "unknown";
         break;
       default:
-        messageType = "text"; // Fallback nếu typeId không khớp
+        messageType = "text";
     }
   } else {
-    // Nếu không có media, dựa vào backendMessage.type (type của tin nhắn)
     switch (backendMessage.type) {
-      case 1: // Text
-      case 5: // AI question/rich text
+      case 1:
+      case 5:
         messageType = "text";
         break;
-      // Các trường hợp 2, 3, 4 ở đây có thể xảy ra nếu 'message' không phải JSON
-      // và API truyền thẳng type, nhưng thường sẽ có media đi kèm
       case 2:
         messageType = "image";
         break;
@@ -238,7 +236,13 @@ const formatBackendMessageToMessage = (
   };
 };
 
-export const getListMessages = async (chatId: string): Promise<Message[]> => {
+export const getListMessages = async (
+  chatId: string
+): Promise<{
+  messages: Message[];
+  media: SharedMediaItem[];
+  files: SharedFileItem[];
+}> => {
   const url = `${CHAT_API_BASE_URL}/chat/message/${chatId}`;
   const token =
     typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
@@ -258,5 +262,43 @@ export const getListMessages = async (chatId: string): Promise<Message[]> => {
     );
   }
 
-  return response.object.map(formatBackendMessageToMessage);
+  const backendMessages = response.object;
+
+  const messages: Message[] = [];
+  const mediaItems: SharedMediaItem[] = [];
+  const fileItems: SharedFileItem[] = [];
+
+  backendMessages.forEach((backendMsg) => {
+    const formattedMessage = formatBackendMessageToMessage(backendMsg);
+    messages.push(formattedMessage);
+
+    if (formattedMessage.mediaUrl) {
+      if (
+        formattedMessage.type === "image" ||
+        formattedMessage.type === "video"
+      ) {
+        mediaItems.push({
+          id: formattedMessage.id,
+          url: formattedMessage.mediaUrl,
+          type: formattedMessage.type,
+        });
+      } else if (
+        formattedMessage.type === "file" &&
+        formattedMessage.fileName &&
+        formattedMessage.fileSize
+      ) {
+        fileItems.push({
+          id: formattedMessage.id,
+          name: formattedMessage.fileName,
+          size: formattedMessage.fileSize,
+          url: formattedMessage.mediaUrl,
+          type: formattedMessage.fileType || "unknown",
+        });
+      }
+    }
+  });
+
+  messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+  return { messages: messages, media: mediaItems, files: fileItems };
 };

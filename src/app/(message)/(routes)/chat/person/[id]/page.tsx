@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
@@ -34,67 +33,9 @@ interface ChatPartnerInfo {
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
-// Mock function for shared items (no API provided yet)
-async function fetchSharedItems(chatId: string): Promise<{
-  media: SharedMediaItem[];
-  files: SharedFileItem[];
-  links: SharedLinkItem[];
-}> {
-  await new Promise((res) => setTimeout(res, 400));
-  return {
-    media: [
-      {
-        id: "media-fixed-1",
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample.jpg",
-        type: "image",
-      },
-      {
-        id: "media-fixed-2",
-        url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-        type: "video",
-      },
-      {
-        id: "media-fixed-3",
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738830166/cld-sample-3.jpg",
-        type: "image",
-      },
-      {
-        id: "media-fixed-4",
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738273042/hobbies/njpufnhlajjpss384yuz.png",
-        type: "image",
-      },
-      {
-        id: "media-fixed-5",
-        url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-        type: "video",
-      },
-      {
-        id: "media-fixed-6",
-        url: "https://res.cloudinary.com/dos914bk9/image/upload/v1738270446/samples/breakfast.jpg",
-        type: "image",
-      },
-    ],
-    files: Array.from({ length: 5 }).map((_, i) => ({
-      id: `file-${i}`,
-      name: `Đề ôn thi cuối kỳ 24-25-${i}.pdf`,
-      size: 100 * 1024 + i * 1024,
-      url: `/mock-files/shared-${i}.pdf`,
-      type: "application/pdf",
-    })),
-    links: Array.from({ length: 5 }).map((_, i) => ({
-      id: `link-${i}`,
-      url:
-        i % 2 === 0
-          ? "https://www.tiktok.com/@eset.fang/video/7..."
-          : "https://www.facebook.com/groups/7628504...",
-      title: i % 2 === 0 ? "TikTok - Eser Fang" : "Java deve...",
-    })),
-  };
-}
-
 const PersonChatPage = () => {
   const params = useParams();
-  const chatId = params?.id as string; // Đây là topicId/chatId
+  const chatId = params?.id as string;
   const {
     user,
     loading: userContextLoading,
@@ -104,7 +45,7 @@ const PersonChatPage = () => {
     chats,
     loading: chatListLoading,
     error: chatListError,
-  } = useChatList(); // Lấy chats từ context
+  } = useChatList();
 
   const [partnerInfo, setPartnerInfo] = useState<ChatPartnerInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -124,16 +65,15 @@ const PersonChatPage = () => {
   const [mediaViewerStartIndex, setMediaViewerStartIndex] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatListRef = useRef<HTMLDivElement>(null); // Có thể bỏ nếu không dùng
+  const chatListRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  // Effect để tìm partnerInfo từ chatList
   useEffect(() => {
     if (chatListLoading || userContextLoading) {
-      setError(null); // Clear error while loading
+      setError(null);
       return;
     }
 
@@ -149,7 +89,7 @@ const PersonChatPage = () => {
 
     if (currentChatTopic) {
       setPartnerInfo({
-        id: currentChatTopic.id, // Đây là chatId, dùng làm ID đại diện cho cuộc trò chuyện
+        id: currentChatTopic.id,
         name: currentChatTopic.name,
         avatar: currentChatTopic.avatar,
         isOnline: currentChatTopic.isOnline,
@@ -168,10 +108,8 @@ const PersonChatPage = () => {
     userContextError,
   ]);
 
-  // Fetch messages and shared items
   useEffect(() => {
-    if (!partnerInfo || !user || !user.id) {
-      // Chờ partnerInfo và user có đủ
+    if (!user || !chatId || !partnerInfo) {
       setIsLoadingMessages(true);
       setIsLoadingShared(true);
       return;
@@ -184,17 +122,17 @@ const PersonChatPage = () => {
 
     const fetchChatContent = async () => {
       try {
-        const [chatMessages, sharedItems] = await Promise.all([
-          getListMessages(chatId), // Sử dụng chatId để fetch messages
-          fetchSharedItems(chatId), // Giữ mock cho shared items vì chưa có API
-        ]);
+        const {
+          messages: fetchedMessages,
+          media,
+          files,
+        } = await getListMessages(chatId);
 
         if (!isMounted) return;
 
-        setMessages(chatMessages);
-        setSharedMedia(sharedItems.media);
-        setSharedFiles(sharedItems.files);
-        setSharedLinks(sharedItems.links);
+        setMessages(fetchedMessages);
+        setSharedMedia(media);
+        setSharedFiles(files);
       } catch (err: any) {
         console.error("Failed to fetch chat content:", err);
         if (isMounted) setError(err.message || "Could not load chat content.");
@@ -211,7 +149,7 @@ const PersonChatPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [chatId, partnerInfo, user]); // Thêm partnerInfo và user vào dependencies
+  }, [chatId, user, partnerInfo]); // Add partnerInfo to dependencies
 
   useEffect(() => {
     if (!isLoadingMessages) {
@@ -222,7 +160,6 @@ const PersonChatPage = () => {
   const handleSendMessage = async (text: string, attachments?: any[]) => {
     if (!partnerInfo || !user) return;
     setIsSending(true);
-    console.log("Sending:", { text, attachments });
 
     const optimisticMessages: Message[] = [];
     const timestamp = new Date();
@@ -295,7 +232,8 @@ const PersonChatPage = () => {
     setMediaViewerOpen(false);
   };
 
-  if (chatListLoading || userContextLoading) {
+  if (chatListLoading || userContextLoading || isLoadingMessages) {
+    // Add isLoadingMessages here
     return (
       <div className="flex items-center justify-center h-full">
         <ClipLoader color="#FF69B4" size={40} />
@@ -303,10 +241,13 @@ const PersonChatPage = () => {
     );
   }
 
-  if (error || userContextError || !user) {
+  if (error || userContextError || chatListError || !user) {
     return (
       <div className="flex items-center justify-center h-full p-10 text-center text-red-500">
-        {error || userContextError || "User not logged in or data unavailable."}
+        {error ||
+          userContextError ||
+          chatListError ||
+          "User not logged in or data unavailable."}
       </div>
     );
   }
@@ -366,19 +307,28 @@ const PersonChatPage = () => {
           className="flex-1 overflow-y-auto p-4 flex flex-col-reverse"
         >
           <div ref={messagesEndRef} />
-          {[...messages].reverse().map((msg) => (
-            <ChatMessageItem
-              key={msg.id}
-              message={msg}
-              isSender={msg.senderId === user.id}
-              isGroup={false}
-              onMediaClick={() =>
-                msg.mediaUrl && (msg.type === "image" || msg.type === "video")
-                  ? handleMediaClick(msg.id)
-                  : undefined
-              }
-            />
-          ))}
+          {messages.length === 0 ? (
+            <div className="text-center text-gray-500 py-4 mb-16">
+              No messages yet.
+            </div>
+          ) : (
+            [...messages]
+              .reverse()
+              .map((msg) => (
+                <ChatMessageItem
+                  key={msg.id}
+                  message={msg}
+                  isSender={msg.senderId === user.id}
+                  isGroup={false}
+                  onMediaClick={() =>
+                    msg.mediaUrl &&
+                    (msg.type === "image" || msg.type === "video")
+                      ? handleMediaClick(msg.id)
+                      : undefined
+                  }
+                />
+              ))
+          )}
         </div>
 
         <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />
