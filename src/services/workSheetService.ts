@@ -298,3 +298,77 @@ export const createWorksheet = async (
 
   return formattedParentWorksheet;
 };
+
+export interface UpdateParentWorksheetRequestBody {
+  id: string;
+  name?: string | null;
+  fromdate?: string | null;
+  todate?: string | null;
+}
+
+export interface UpdateChildWorksheetRequestBody {
+  id: string;
+  content?: string | null;
+  fromdate?: string | null;
+  todate?: string | null;
+  workstatus?: number | null;
+  userids?: string | null;
+}
+
+interface UpdateWorksheetApiResponse {
+  object: null;
+  enumResponse: {
+    code: string;
+    message: string;
+  };
+}
+
+export const updateWorksheetParent = async (
+  data: UpdateParentWorksheetRequestBody
+): Promise<void> => {
+  const url = `${CHAT_API_BASE_URL}/chat/worksheet/parent`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(data),
+  };
+
+  const response = await apiClient<UpdateWorksheetApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_10_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to update parent worksheet"
+    );
+  }
+};
+
+export const updateWorksheetChild = async (
+  data: UpdateChildWorksheetRequestBody[]
+): Promise<void> => {
+  const url = `${CHAT_API_BASE_URL}/chat/worksheet/child`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(data),
+  };
+
+  const response = await apiClient<UpdateWorksheetApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_10_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to update child worksheet(s)"
+    );
+  }
+};

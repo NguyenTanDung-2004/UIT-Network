@@ -361,6 +361,7 @@ const PersonChatPage = () => {
           onToggleNotifications={() =>
             console.log("Toggle notifications action")
           }
+          groupId={chatId}
         />
       )}
 

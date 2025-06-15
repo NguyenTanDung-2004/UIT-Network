@@ -15,44 +15,17 @@ interface ChatListItemProps {
   onClick: (id: string, type: "person" | "group") => void;
 }
 
-const formatTimestamp = (date: Date): string => {
-  try {
-    const now = new Date();
-    const diffHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    if (diffHours < 24) {
-      return formatDistanceToNowStrict(date, { addSuffix: false })
-        .replace(" minutes", "m")
-        .replace(" minute", "m")
-        .replace(" hours", "h")
-        .replace(" hour", "h")
-        .replace(" seconds", "s")
-        .replace(" second", "s");
-    } else if (diffHours < 48) {
-      return "1d";
-    } else {
-      return date.toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "numeric",
-      });
-    }
-  } catch (e) {
-    console.error("Error formatting date:", e);
-    return "Invalid date";
-  }
-};
-
 const ChatListItem: React.FC<ChatListItemProps> = ({
   id,
   type,
   avatar,
   name,
-  lastMessage,
-  timestamp,
   unread,
   isActive,
   isOnline,
   onClick,
 }) => {
+  console.log("ChatListItem rendered:", { id, unread });
   return (
     <button
       onClick={() => onClick(id, type)}

@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Phone, Video, Info, UserPlus, CalendarPlus2 } from "lucide-react";
 import { ClipLoader } from "react-spinners";
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 import ChatMessageItem from "@/components/chat/person-chats/ChatMessageItem";
 import ChatInput from "@/components/chat/person-chats/ChatInput";
@@ -30,6 +31,10 @@ import {
   createWorksheet,
   BackendWorksheetItemWithFrontendFields,
   CreateWorksheetRequestBody,
+  updateWorksheetParent,
+  updateWorksheetChild,
+  UpdateParentWorksheetRequestBody,
+  UpdateChildWorksheetRequestBody,
 } from "@/services/workSheetService";
 
 interface MediaItem {
@@ -78,6 +83,7 @@ const GroupChat = () => {
     loading: chatListLoading,
     error: chatListError,
   } = useChatList();
+  const { toast } = useToast(); // Initialize useToast
 
   const [groupInfo, setGroupInfo] = useState<GroupChatInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -124,96 +130,72 @@ const GroupChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, []);
 
-  useEffect(() => {
-    if (!chatId) {
-      setError("Invalid chat ID.");
-      setIsLoading(false);
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoading(true);
-    setError(null);
-
-    const fetchData = async () => {
-      try {
-        if (userContextLoading || chatListLoading) {
-          return;
-        }
-        if (userContextError || chatListError) {
-          throw new Error(
-            userContextError ||
-              chatListError ||
-              "Authentication or chat list error."
-          );
-        }
-        if (!user || !user.id) {
-          throw new Error("User not authenticated.");
-        }
-
-        const currentChatTopic = chats.find(
-          (chat) => chat.id === chatId && chat.type === "group"
+  const fetchDataForChat = useCallback(async () => {
+    try {
+      if (userContextLoading || chatListLoading) {
+        return;
+      }
+      if (userContextError || chatListError) {
+        throw new Error(
+          userContextError ||
+            chatListError ||
+            "Authentication or chat list error."
         );
+      }
+      if (!user || !user.id) {
+        throw new Error("User not authenticated.");
+      }
 
-        if (!currentChatTopic) {
-          setError("Group chat not found for this conversation ID.");
-          setIsLoading(false);
-          return;
-        }
+      const currentChatTopic = chats.find(
+        (chat) => chat.id === chatId && chat.type === "group"
+      );
 
-        setGroupInfo({
-          id: currentChatTopic.id,
-          name: currentChatTopic.name,
-          avatar: currentChatTopic.avatar || DEFAULT_GROUP_AVATAR,
-        });
+      if (!currentChatTopic) {
+        setError("Group chat not found for this conversation ID.");
+        setIsLoading(false);
+        return;
+      }
 
-        const [
-          messagesResult,
-          membersData,
-          schedulesResult,
-          sharedLinksResult,
-        ] = await Promise.all([
+      setGroupInfo({
+        id: currentChatTopic.id,
+        name: currentChatTopic.name,
+        avatar: currentChatTopic.avatar || DEFAULT_GROUP_AVATAR,
+      });
+
+      const [messagesResult, membersData, schedulesResult, sharedLinksResult] =
+        await Promise.all([
           getListMessages(currentChatTopic.id),
           getGroupMembers(currentChatTopic.id),
           getGroupWorksheets(currentChatTopic.id),
           fetchSharedItems(currentChatTopic.id),
         ]);
 
-        if (!isMounted) return;
+      setMessages(messagesResult.messages);
+      setSharedMedia(messagesResult.media);
+      setSharedFiles(messagesResult.files);
+      setSharedLinks(sharedLinksResult.links);
 
-        setMessages(messagesResult.messages);
-        setSharedMedia(messagesResult.media);
-        setSharedFiles(messagesResult.files);
-        setSharedLinks(sharedLinksResult.links);
+      setGroupMembers(
+        membersData.map((m) => ({
+          id: m.id,
+          name: m.name,
+          avatar: m.avatar,
+          role: m.role,
+        }))
+      );
+      setSchedules(schedulesResult.worksheets);
+      setUserMap(schedulesResult.userMap);
 
-        setGroupMembers(
-          membersData.map((m) => ({
-            id: m.id,
-            name: m.name,
-            avatar: m.avatar,
-            role: m.role,
-          }))
-        );
-        setSchedules(schedulesResult.worksheets);
-        setUserMap(schedulesResult.userMap);
-
-        const currentMemberInfo = membersData.find(
-          (m: GroupMemberInfo) => m.id === user.id
-        );
-        setCurrentUserInfo(currentMemberInfo || null);
-      } catch (err: any) {
-        console.error("Failed to fetch group chat data:", err);
-        if (isMounted)
-          setError(err.message || "Could not load group chat data.");
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchData();
-    return () => {
-      isMounted = false;
-    };
+      const currentMemberInfo = membersData.find(
+        (m: GroupMemberInfo) => m.id === user.id
+      );
+      setCurrentUserInfo(currentMemberInfo || null);
+    } catch (err: any) {
+      console.error("Failed to fetch group chat data:", err);
+      setError(err.message || "Could not load group chat data.");
+    } finally {
+      setIsLoading(false);
+    }
   }, [
     chatId,
     user,
@@ -225,10 +207,19 @@ const GroupChat = () => {
   ]);
 
   useEffect(() => {
-    if (!isLoading) {
-      setTimeout(scrollToBottom, 100);
+    let isMounted = true;
+    setIsLoading(true);
+    setError(null);
+    if (chatId) {
+      fetchDataForChat().then(() => {
+        if (isMounted) setTimeout(scrollToBottom, 100);
+      });
     }
-  }, [messages, isLoading, scrollToBottom]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [chatId, fetchDataForChat, scrollToBottom]);
 
   const handleSendMessage = async (text: string, attachments?: any[]) => {
     if (!groupInfo || !user || !currentUserInfo) return;
@@ -306,19 +297,33 @@ const GroupChat = () => {
   const handleAddMember = () => setIsAddMemberModalOpen(true);
   const handleConfirmAddMembers = async (selectedIds: string[]) => {
     console.log("Adding members:", selectedIds);
-    await new Promise((r) => setTimeout(r, 500));
-    setGroupMembers((prev) => [
-      ...prev,
-      ...selectedIds.map(
-        (id) =>
-          ({
-            id,
-            name: `New Member ${id.slice(-2)}`,
-            avatar: DEFAULT_AVATAR,
-            role: "member",
-          } as GroupMemberInfo)
-      ),
-    ]);
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      setGroupMembers((prev) => [
+        ...prev,
+        ...selectedIds.map(
+          (id) =>
+            ({
+              id,
+              name: `New Member ${id.slice(-2)}`,
+              avatar: DEFAULT_AVATAR,
+              role: "member",
+            } as GroupMemberInfo)
+        ),
+      ]);
+      toast({
+        title: "Success",
+        description: "Members added successfully.",
+        variant: "default",
+      });
+    } catch (err: any) {
+      console.error("Failed to add members:", err);
+      toast({
+        title: "Failed",
+        description: err.message || "Failed to add members.",
+        variant: "destructive",
+      });
+    }
   };
   const handleChatMember = (memberId: string) => {
     if (memberId !== (user?.id || "")) router.push(`/chat/person/${memberId}`);
@@ -330,9 +335,23 @@ const GroupChat = () => {
       message: `Are you sure you want to remove ${memberName} from the group?`,
       onConfirm: async () => {
         console.log("Removing member:", memberId);
-        await new Promise((r) => setTimeout(r, 500));
-        setGroupMembers((prev) => prev.filter((m) => m.id !== memberId));
-        setIsConfirmationOpen(false);
+        try {
+          await new Promise((r) => setTimeout(r, 500));
+          setGroupMembers((prev) => prev.filter((m) => m.id !== memberId));
+          setIsConfirmationOpen(false);
+          toast({
+            title: "Success",
+            description: `${memberName} removed from group.`,
+            variant: "default",
+          });
+        } catch (err: any) {
+          console.error("Failed to remove member:", err);
+          toast({
+            title: "Failed",
+            description: err.message || "Failed to remove member.",
+            variant: "destructive",
+          });
+        }
       },
     });
     setIsConfirmationOpen(true);
@@ -344,9 +363,23 @@ const GroupChat = () => {
       message: "Are you sure you want to leave this group?",
       onConfirm: async () => {
         console.log("Leaving group");
-        await new Promise((r) => setTimeout(r, 500));
-        router.push("/chat");
-        setIsConfirmationOpen(false);
+        try {
+          await new Promise((r) => setTimeout(r, 500));
+          router.push("/chat");
+          setIsConfirmationOpen(false);
+          toast({
+            title: "Success",
+            description: "You have left the group.",
+            variant: "default",
+          });
+        } catch (err: any) {
+          console.error("Failed to leave group:", err);
+          toast({
+            title: "Failed",
+            description: err.message || "Failed to leave group.",
+            variant: "destructive",
+          });
+        }
       },
     });
     setIsConfirmationOpen(true);
@@ -364,25 +397,90 @@ const GroupChat = () => {
     setScheduleModalMode("view");
     setIsScheduleModalOpen(true);
   };
-  const handleSubmitSchedule = async (data: CreateWorksheetRequestBody) => {
+
+  const handleCreateWorksheetSubmit = async (
+    data: CreateWorksheetRequestBody
+  ) => {
     try {
-      const newWorksheetItem = await createWorksheet(data);
-      setSchedules((prev) =>
-        [...prev, newWorksheetItem].sort((a, b) => {
-          const dateA = a.fromdate
-            ? new Date(a.fromdate)
-            : new Date(a.createddate);
-          const dateB = b.fromdate
-            ? new Date(b.fromdate)
-            : new Date(b.createddate);
-          return dateA.getTime() - dateB.getTime();
-        })
-      );
-    } catch (error) {
+      await createWorksheet(data);
+      toast({
+        title: "Success",
+        description: "Worksheet created successfully.",
+        variant: "default",
+      });
+      await fetchDataForChat(); // Refresh all data to include new worksheet
+    } catch (error: any) {
       console.error("Failed to create worksheet:", error);
+      toast({
+        title: "Creation Failed",
+        description: error.message || "Could not create worksheet.",
+        variant: "destructive",
+      });
       throw error;
     }
   };
+
+  const handleUpdateWorksheetSubmit = async (
+    updatedParentData: {
+      id: string;
+      name: string | null;
+      fromdate: string | null;
+      todate: string | null;
+      content: string | null;
+      userids: string | null;
+      workstatus: number | null;
+    },
+    updatedChildrenData: BackendWorksheetItemWithFrontendFields[]
+  ) => {
+    try {
+      const parentPayload: UpdateParentWorksheetRequestBody = {
+        id: updatedParentData.id,
+        name: updatedParentData.name,
+        fromdate: updatedParentData.fromdate,
+        todate: updatedParentData.todate,
+      };
+
+      const childrenPayload: UpdateChildWorksheetRequestBody[] =
+        updatedChildrenData.map((child) => ({
+          id: child.id,
+          content: child.content || null,
+          fromdate: child.fromdate,
+          todate: child.todate,
+          workstatus:
+            typeof child.workstatus === "string"
+              ? child.workstatus === "Done"
+                ? 1
+                : child.workstatus === "Doing"
+                ? 2
+                : child.workstatus === "Todo"
+                ? 3
+                : null
+              : child.workstatus,
+          userids: child.userids || null,
+        }));
+
+      await updateWorksheetParent(parentPayload);
+      if (childrenPayload.length > 0) {
+        await updateWorksheetChild(childrenPayload);
+      }
+
+      toast({
+        title: "Success",
+        description: "Worksheet updated successfully.",
+        variant: "default",
+      });
+      await fetchDataForChat(); // Refresh all data after update
+    } catch (error: any) {
+      console.error("Failed to update worksheet:", error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "Could not update worksheet.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const handleDeleteSchedule = async (
     scheduleId: string,
     scheduleTitle: string
@@ -393,9 +491,23 @@ const GroupChat = () => {
       message: `Are you sure you want to delete the worksheet "${scheduleTitle}"?`,
       onConfirm: async () => {
         console.log("Deleting worksheet:", scheduleId);
-        await new Promise((r) => setTimeout(r, 500));
-        setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
-        setIsConfirmationOpen(false);
+        try {
+          await new Promise((r) => setTimeout(r, 500)); // Simulate API call
+          setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+          setIsConfirmationOpen(false);
+          toast({
+            title: "Success",
+            description: `Worksheet "${scheduleTitle}" deleted successfully.`,
+            variant: "default",
+          });
+        } catch (err: any) {
+          console.error("Failed to delete worksheet:", err);
+          toast({
+            title: "Failed",
+            description: err.message || "Could not delete worksheet.",
+            variant: "destructive",
+          });
+        }
       },
     });
     setIsConfirmationOpen(true);
@@ -586,7 +698,8 @@ const GroupChat = () => {
         onClose={() => setIsScheduleModalOpen(false)}
         mode={scheduleModalMode}
         initialData={selectedSchedule}
-        onSubmit={handleSubmitSchedule}
+        onCreateSubmit={handleCreateWorksheetSubmit}
+        onUpdateSubmit={handleUpdateWorksheetSubmit}
         onDelete={
           scheduleModalMode === "view" && selectedSchedule
             ? async (scheduleId: string, scheduleName: string) => {

@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   X,
   Trash2,
   Calendar,
   Users,
-  User,
-  CheckCircle,
-  Circle,
-  HardHat,
   Plus,
+  Edit, // Giữ lại Edit icon vì nó vẫn được dùng để chuyển đổi chế độ UI
 } from "lucide-react";
 import { ClipLoader } from "react-spinners";
 import { motion } from "framer-motion";
@@ -20,8 +17,9 @@ import {
   getWorkStatusString,
   CreateWorksheetRequestBody,
   BackendWorksheetTask,
+  // Removed UpdateParentWorksheetRequestBody, UpdateChildWorksheetRequestBody imports here
+  // as they are passed directly to onUpdateSubmit from GroupChat
 } from "@/services/workSheetService";
-import ScheduleListItem from "./ScheduleListItem";
 import { Friend } from "@/types/profile/FriendData";
 
 interface GroupMemberInfo {
@@ -38,7 +36,20 @@ interface ScheduleModalProps {
   onClose: () => void;
   mode: ScheduleModalMode;
   initialData?: BackendWorksheetItemWithFrontendFields | null;
-  onSubmit: (data: CreateWorksheetRequestBody) => Promise<void>;
+  onCreateSubmit: (data: CreateWorksheetRequestBody) => Promise<void>;
+  onUpdateSubmit?: (
+    // New prop for update submission
+    updatedParentData: {
+      id: string;
+      name: string | null;
+      fromdate: string | null;
+      todate: string | null;
+      content: string | null;
+      userids: string | null;
+      workstatus: number | null;
+    },
+    updatedChildrenData: BackendWorksheetItemWithFrontendFields[]
+  ) => Promise<void>;
   onDelete?: (scheduleId: string, scheduleTitle: string) => Promise<void>;
   groupMembers?: GroupMemberInfo[];
   groupId: string;
@@ -52,7 +63,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
   onClose,
   mode,
   initialData,
-  onSubmit,
+  onCreateSubmit,
+  onUpdateSubmit,
   onDelete,
   groupMembers = [],
   groupId,
@@ -69,60 +81,63 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     "Done" | "Doing" | "Todo" | "N/A"
   >("N/A");
 
-  const [subSchedules, setSubSchedules] = useState<
+  const [newSubTasks, setNewSubTasks] = useState<BackendWorksheetTask[]>([]); // For new subtasks in create mode
+  const [editableSubtasks, setEditableSubtasks] = useState<
+    // For existing subtasks in view/edit mode
     BackendWorksheetItemWithFrontendFields[]
   >([]);
-  const [newSubTasks, setNewSubTasks] = useState<BackendWorksheetTask[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailUserMap, setDetailUserMap] = useState<Map<string, Friend>>(
     new Map()
+  );
+  const [isEditing, setIsEditing] = useState(false); // Controls edit mode within "view" mode
+
+  const formatForDatetimeLocal = useCallback(
+    (isoString: string | null): string => {
+      if (!isoString) return "";
+      try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return "";
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      } catch {
+        return "";
+      }
+    },
+    []
+  );
+
+  const initializeFormData = useCallback(
+    (data?: BackendWorksheetItemWithFrontendFields | null) => {
+      setName(data?.name || "");
+      setContent(data?.content || "");
+
+      setFromDateInput(formatForDatetimeLocal(data?.fromdate ?? null));
+      setToDateInput(formatForDatetimeLocal(data?.todate ?? null));
+      setAttendeeSelection(data?.userids ? parseUserIds(data.userids) : "all");
+      setWorkStatus(getWorkStatusString(data?.workstatus ?? null));
+      setNewSubTasks([]); // Clear new subtasks when initializing
+      setEditableSubtasks(data?.subSchedules || []);
+    },
+    [formatForDatetimeLocal]
   );
 
   useEffect(() => {
     if (isOpen) {
       if (mode === "view" && initialData) {
-        setName(initialData.name || "");
-        setContent(initialData.content || "");
-
-        const formatForDatetimeLocal = (isoString: string | null): string => {
-          if (!isoString) return "";
-          try {
-            const date = new Date(isoString);
-            if (isNaN(date.getTime())) return "";
-            const year = date.getFullYear();
-            const month = (date.getMonth() + 1).toString().padStart(2, "0");
-            const day = date.getDate().toString().padStart(2, "0");
-            const hours = date.getHours().toString().padStart(2, "0");
-            const minutes = date.getMinutes().toString().padStart(2, "0");
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-          } catch {
-            return "";
-          }
-        };
-
-        setFromDateInput(formatForDatetimeLocal(initialData.fromdate));
-        setToDateInput(formatForDatetimeLocal(initialData.todate));
-
-        setAttendeeSelection(
-          initialData.userids ? parseUserIds(initialData.userids) : "all"
-        );
-        setWorkStatus(getWorkStatusString(initialData.workstatus));
+        initializeFormData(initialData);
+        setIsEditing(false); // Start in view mode
 
         setIsLoadingDetails(true);
         getWorksheetDetails(initialData.id)
           .then(({ worksheet: fullWorksheet, userMap }) => {
             if (fullWorksheet) {
-              setName(fullWorksheet.name || "");
-              setContent(fullWorksheet.content || "");
-              setFromDateInput(formatForDatetimeLocal(fullWorksheet.fromdate));
-              setToDateInput(formatForDatetimeLocal(fullWorksheet.todate));
-              setAttendeeSelection(
-                fullWorksheet.userids
-                  ? parseUserIds(fullWorksheet.userids)
-                  : "all"
-              );
-              setWorkStatus(getWorkStatusString(fullWorksheet.workstatus));
-              setSubSchedules(fullWorksheet.subSchedules || []);
+              initializeFormData(fullWorksheet); // Re-initialize with full details
+              setEditableSubtasks(fullWorksheet.subSchedules || []); // Set editable subtasks from full data
               setDetailUserMap(userMap);
             }
           })
@@ -131,30 +146,15 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
           )
           .finally(() => setIsLoadingDetails(false));
       } else if (mode === "create") {
-        setName("");
-        setContent("");
-        const now = new Date();
-        const future = new Date(now.getTime() + 60 * 60 * 1000);
-        const formatDefaultDatetime = (date: Date) => {
-          const year = date.getFullYear();
-          const month = (date.getMonth() + 1).toString().padStart(2, "0");
-          const day = date.getDate().toString().padStart(2, "0");
-          const hours = date.getHours().toString().padStart(2, "0");
-          const minutes = date.getMinutes().toString().padStart(2, "0");
-          return `${year}-${month}-${day}T${hours}:${minutes}`;
-        };
-        setFromDateInput(formatDefaultDatetime(now));
-        setToDateInput(formatDefaultDatetime(future));
-        setAttendeeSelection("all");
-        setWorkStatus("N/A");
-        setSubSchedules([]);
-        setNewSubTasks([]);
+        initializeFormData(null);
+        setIsEditing(true); // Always editable in create mode
       }
     } else {
       setIsProcessing(false);
       setIsLoadingDetails(false);
+      setIsEditing(false);
     }
-  }, [isOpen, mode, initialData]);
+  }, [isOpen, mode, initialData, initializeFormData]);
 
   const handleAddSubTask = () => {
     const now = new Date();
@@ -180,7 +180,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     ]);
   };
 
-  const handleUpdateSubTask = (index: number, field: string, value: any) => {
+  const handleUpdateNewSubTask = (index: number, field: string, value: any) => {
     setNewSubTasks((prev) =>
       prev.map((task, i) =>
         i === index
@@ -206,11 +206,42 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     );
   };
 
-  const handleRemoveSubTask = (index: number) => {
+  const handleRemoveNewSubTask = (index: number) => {
     setNewSubTasks((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUpdateExistingSubtask = (
+    index: number,
+    field: string,
+    value: any
+  ) => {
+    setEditableSubtasks((prev) =>
+      prev.map((task, i) => {
+        if (i === index) {
+          let updatedValue = value;
+          if (field === "userids") {
+            updatedValue = value === "all" ? null : JSON.stringify(value);
+          } else if (field === "workstatus") {
+            updatedValue =
+              value === "N/A"
+                ? null
+                : value === "Done"
+                ? 1
+                : value === "Doing"
+                ? 2
+                : 3;
+          }
+          return {
+            ...task,
+            [field]: updatedValue,
+          };
+        }
+        return task;
+      })
+    );
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mode !== "create") return;
 
@@ -227,8 +258,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
         groupid: groupId,
         name: name,
         content: content || null,
-        fromdate: new Date(fromDateInput).toISOString(),
-        todate: new Date(toDateInput).toISOString(),
+        fromdate: fromDateInput ? new Date(fromDateInput).toISOString() : null,
+        todate: toDateInput ? new Date(toDateInput).toISOString() : null,
         userids:
           attendeeSelection === "all"
             ? null
@@ -250,13 +281,69 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
           todate: task.todate ? new Date(task.todate).toISOString() : null,
         })),
       };
-      await onSubmit(scheduleData);
+      await onCreateSubmit(scheduleData);
       onClose();
     } catch (error) {
       console.error("Failed to create worksheet:", error);
       alert("Failed to create worksheet.");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleUpdateClick = async () => {
+    if (!initialData || !onUpdateSubmit) return; // Use onUpdateSubmit prop
+    setIsProcessing(true);
+    try {
+      const updatedParentData = {
+        id: initialData.id,
+        name: name,
+        fromdate: fromDateInput ? new Date(fromDateInput).toISOString() : null,
+        todate: toDateInput ? new Date(toDateInput).toISOString() : null,
+        content: content || null,
+        userids:
+          attendeeSelection === "all"
+            ? null
+            : JSON.stringify(attendeeSelection),
+        workstatus:
+          workStatus === "N/A"
+            ? null
+            : workStatus === "Done"
+            ? 1
+            : workStatus === "Doing"
+            ? 2
+            : 3,
+      };
+
+      await onUpdateSubmit(updatedParentData, editableSubtasks);
+      setIsEditing(false); // Exit edit mode after successful update
+      onClose();
+    } catch (error) {
+      console.error("Failed to update worksheet:", error);
+      alert("Failed to update worksheet.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    initializeFormData(initialData); // Revert changes
+    // Re-fetch details to ensure the data is fresh if initialData was incomplete
+    if (initialData) {
+      setIsLoadingDetails(true);
+      getWorksheetDetails(initialData.id)
+        .then(({ worksheet: fullWorksheet, userMap }) => {
+          if (fullWorksheet) {
+            initializeFormData(fullWorksheet);
+            setEditableSubtasks(fullWorksheet.subSchedules || []);
+            setDetailUserMap(userMap);
+          }
+        })
+        .catch((err) =>
+          console.error("Failed to re-fetch worksheet details:", err)
+        )
+        .finally(() => setIsLoadingDetails(false));
     }
   };
 
@@ -326,6 +413,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
   if (!isOpen) return null;
 
   const isViewMode = mode === "view";
+  const formDisabled = isViewMode && !isEditing;
 
   return (
     <motion.div
@@ -336,7 +424,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
       onClick={onClose}
     >
       <motion.form
-        onSubmit={handleSubmit}
+        onSubmit={isEditing ? (e) => e.preventDefault() : handleCreateSubmit}
         className="bg-white dark:bg-gray-800 rounded-lg p-1 min-w-[500px] max-w-md shadow-xl relative max-h-[600px] overflow-y-auto"
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -346,7 +434,11 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
       >
         <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            {isViewMode ? "Worksheet Details" : "Create a Worksheet"}
+            {isViewMode
+              ? isEditing
+                ? "Edit Worksheet"
+                : "Worksheet Details"
+              : "Create a Worksheet"}
           </h2>
           <button
             type="button"
@@ -376,11 +468,27 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required={!isViewMode}
-                disabled={isViewMode}
+                required={!formDisabled}
+                disabled={formDisabled}
                 className="w-full p-2 border rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
               />
             </div>
+            {/* <div>
+              <label
+                htmlFor="content"
+                className="block text-xs font-medium text-[#A09FB0] dark:text-gray-300 mb-1 uppercase"
+              >
+                Content
+              </label>
+              <textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={3}
+                disabled={formDisabled}
+                className="w-full p-2 border rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 resize-none disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+              />
+            </div> */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
@@ -395,8 +503,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                     id="fromdate"
                     value={fromDateInput}
                     onChange={(e) => setFromDateInput(e.target.value)}
-                    required={!isViewMode}
-                    disabled={isViewMode}
+                    required={!formDisabled}
+                    disabled={formDisabled}
                     className="w-full p-2 border rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
                   />
                   <Calendar
@@ -418,8 +526,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                     id="todate"
                     value={toDateInput}
                     onChange={(e) => setToDateInput(e.target.value)}
-                    required={!isViewMode}
-                    disabled={isViewMode}
+                    required={!formDisabled}
+                    disabled={formDisabled}
                     className="w-full p-2 border rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
                   />
                   <Calendar
@@ -437,7 +545,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                 Attendees
               </label>
               <div className="relative">
-                {renderAttendeesSelect(attendeeSelection, isViewMode, (val) =>
+                {renderAttendeesSelect(attendeeSelection, formDisabled, (val) =>
                   setAttendeeSelection(val)
                 )}
                 <Users
@@ -448,12 +556,13 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
               {attendeeSelection !== "all" &&
                 Array.isArray(attendeeSelection) &&
                 attendeeSelection.length === 0 &&
-                !isViewMode && (
+                !formDisabled && (
                   <p className="text-xs text-red-500 mt-1">
                     Select at least one member or choose "All members".
                   </p>
                 )}
               {isViewMode &&
+                !isEditing &&
                 initialData?.userids &&
                 initialData.userids !== null && (
                   <div className="mt-2 flex flex-wrap gap-1">
@@ -490,11 +599,12 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                     ? 2
                     : 3
                 ),
-                isViewMode,
+                formDisabled,
                 (val) => setWorkStatus(val)
               )}
             </div>
 
+            {/* Display/Edit existing Sub-Tasks */}
             {isViewMode && initialData && (
               <>
                 {initialData.createdbyuserid &&
@@ -524,24 +634,106 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                       </div>
                     </div>
                   )}
-                {subSchedules && subSchedules.length > 0 && (
+                {editableSubtasks && editableSubtasks.length > 0 && (
                   <div className="mt-4">
                     <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200 mb-2 uppercase">
-                      Sub-Tasks ({subSchedules.length})
+                      Sub-Tasks ({editableSubtasks.length})
                     </h4>
                     <div className="space-y-2">
-                      {subSchedules.map((sub) => (
-                        <ScheduleListItem
+                      {editableSubtasks.map((sub, index) => (
+                        <div
                           key={sub.id}
-                          schedule={sub}
-                          userMap={detailUserMap}
-                          onViewDetails={(s) => {
-                            console.log("Viewing sub-schedule details:", s);
-                          }}
-                          onDelete={(id, title) => {
-                            console.log("Deleting sub-schedule:", id);
-                          }}
-                        />
+                          className="border border-gray-200 dark:border-gray-700 rounded-md p-3 relative ml-6"
+                        >
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-xs font-medium text-[#A09FB0] dark:text-gray-300 mb-1">
+                                Content
+                              </label>
+                              <textarea
+                                value={sub.content || ""}
+                                onChange={(e) =>
+                                  handleUpdateExistingSubtask(
+                                    index,
+                                    "content",
+                                    e.target.value
+                                  )
+                                }
+                                rows={2}
+                                disabled={formDisabled}
+                                className="w-full p-2 border rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 resize-none disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-xs font-medium text-[#A09FB0] dark:text-gray-300 mb-1">
+                                  From
+                                </label>
+                                <input
+                                  type="datetime-local"
+                                  value={formatForDatetimeLocal(sub.fromdate)}
+                                  onChange={(e) =>
+                                    handleUpdateExistingSubtask(
+                                      index,
+                                      "fromdate",
+                                      e.target.value
+                                    )
+                                  }
+                                  disabled={formDisabled}
+                                  className="w-full p-2 border rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-[#A09FB0] dark:text-gray-300 mb-1">
+                                  To
+                                </label>
+                                <input
+                                  type="datetime-local"
+                                  value={formatForDatetimeLocal(sub.todate)}
+                                  onChange={(e) =>
+                                    handleUpdateExistingSubtask(
+                                      index,
+                                      "todate",
+                                      e.target.value
+                                    )
+                                  }
+                                  disabled={formDisabled}
+                                  className="w-full p-2 border rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-[#A09FB0] dark:text-gray-300 mb-1">
+                                Assigned To
+                              </label>
+                              {renderAttendeesSelect(
+                                sub.userids ? parseUserIds(sub.userids) : "all",
+                                formDisabled,
+                                (val) =>
+                                  handleUpdateExistingSubtask(
+                                    index,
+                                    "userids",
+                                    val
+                                  )
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-[#A09FB0] dark:text-gray-300 mb-1">
+                                Work Status
+                              </label>
+                              {renderWorkStatusSelect(
+                                getWorkStatusString(sub.workstatus),
+                                formDisabled,
+                                (val) =>
+                                  handleUpdateExistingSubtask(
+                                    index,
+                                    "workstatus",
+                                    val
+                                  )
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -549,6 +741,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
               </>
             )}
 
+            {/* Add new Sub-Tasks (only in create mode) */}
             {!isViewMode && (
               <div className="mt-4">
                 <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200 mb-2 uppercase">
@@ -570,7 +763,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                     >
                       <button
                         type="button"
-                        onClick={() => handleRemoveSubTask(index)}
+                        onClick={() => handleRemoveNewSubTask(index)}
                         className="absolute top-2 right-2 p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50"
                         title="Remove sub-task"
                       >
@@ -584,7 +777,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                           <textarea
                             value={task.content || ""}
                             onChange={(e) =>
-                              handleUpdateSubTask(
+                              handleUpdateNewSubTask(
                                 index,
                                 "content",
                                 e.target.value
@@ -603,7 +796,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                               type="datetime-local"
                               value={task.fromdate || ""}
                               onChange={(e) =>
-                                handleUpdateSubTask(
+                                handleUpdateNewSubTask(
                                   index,
                                   "fromdate",
                                   e.target.value
@@ -620,7 +813,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                               type="datetime-local"
                               value={task.todate || ""}
                               onChange={(e) =>
-                                handleUpdateSubTask(
+                                handleUpdateNewSubTask(
                                   index,
                                   "todate",
                                   e.target.value
@@ -637,7 +830,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                           {renderAttendeesSelect(
                             task.userids ? parseUserIds(task.userids) : "all",
                             false,
-                            (val) => handleUpdateSubTask(index, "userids", val)
+                            (val) =>
+                              handleUpdateNewSubTask(index, "userids", val)
                           )}
                         </div>
                         <div>
@@ -648,7 +842,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                             getWorkStatusString(task.workstatus),
                             false,
                             (val) =>
-                              handleUpdateSubTask(index, "workstatus", val)
+                              handleUpdateNewSubTask(index, "workstatus", val)
                           )}
                         </div>
                       </div>
@@ -661,51 +855,85 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
         )}
 
         <div className="p-4 border-t dark:border-gray-700 flex justify-end space-x-3">
-          {!isViewMode && (
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isProcessing}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          )}
-          {isViewMode && onDelete && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isProcessing}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 flex items-center"
-            >
-              {isProcessing ? (
-                <ClipLoader size={16} color="#FF69B4" className="mr-2" />
+          {isViewMode ? (
+            <>
+              {isEditing ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    disabled={isProcessing}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleUpdateClick}
+                    disabled={isProcessing}
+                    className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-60 flex items-center"
+                  >
+                    {isProcessing && (
+                      <ClipLoader size={16} color="#FF69B4" className="mr-2" />
+                    )}
+                    Save
+                  </button>
+                </>
               ) : (
-                <Trash2 size={16} className="mr-1.5" />
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    disabled={isProcessing}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 flex items-center"
+                  >
+                    <Edit size={16} className="mr-1.5" />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isProcessing}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 flex items-center"
+                  >
+                    {isProcessing ? (
+                      <ClipLoader size={16} color="#FF69B4" className="mr-2" />
+                    ) : (
+                      <Trash2 size={16} className="mr-1.5" />
+                    )}
+                    Delete
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                  >
+                    Close
+                  </button>
+                </>
               )}
-              Delete
-            </button>
-          )}
-          {!isViewMode && (
-            <button
-              type="submit"
-              disabled={isProcessing}
-              className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-60 flex items-center"
-            >
-              {isProcessing && (
-                <ClipLoader size={16} color="#FF69B4" className="mr-2" />
-              )}
-              Create
-            </button>
-          )}
-          {isViewMode && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-            >
-              Close
-            </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isProcessing}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-60 flex items-center"
+              >
+                {isProcessing && (
+                  <ClipLoader size={16} color="#FF69B4" className="mr-2" />
+                )}
+                Create
+              </button>
+            </>
           )}
         </div>
       </motion.form>

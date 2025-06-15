@@ -54,7 +54,7 @@ interface ChatDetailProps {
   ) => void;
   onDeleteSchedule: (scheduleId: string, scheduleTitle: string) => void;
   groupId: string;
-  userMap: Map<string, Friend>;
+  userMap?: Map<string, Friend>;
 }
 
 type DetailView =
@@ -268,7 +268,7 @@ const ChatDetail: React.FC<ChatDetailProps> = ({
             <ScheduleListItem
               key={schedule.id}
               schedule={schedule}
-              userMap={userMap}
+              userMap={userMap ?? new Map<string, Friend>()}
               onViewDetails={onViewScheduleDetails}
               onDelete={onDeleteSchedule}
             />

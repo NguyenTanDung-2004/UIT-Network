@@ -390,3 +390,176 @@ export const getChatGroupMembers = async (
 
   return groupMembers;
 };
+
+interface BackendSendMessageRequestBodyItem {
+  receiverid: string | null;
+  message: string;
+  tags: string[] | null;
+  messagetype: number;
+  grouptype: 1 | 2;
+  groupid: string | null;
+}
+
+interface AIMessageRequestBody {
+  groupid: string;
+  question: string;
+  tags: string[] | null;
+  messagetype: 5;
+  grouptype: 1;
+}
+
+const mapFrontendMessageTypeToBackendTypeId = (
+  type: Message["type"]
+): number => {
+  switch (type) {
+    case "image":
+      return 2;
+    case "video":
+      return 3;
+    case "file":
+      return 4;
+    case "text":
+      return 1;
+    default:
+      return 1;
+  }
+};
+
+const formatMessageToRequestBodyContent = (message: Message): string => {
+  let contentJson: { content: string; media?: BackendMessageMedia[] } = {
+    content: message.content,
+  };
+
+  if (message.mediaUrl) {
+    const mediaItem: BackendMessageMedia = {
+      typeId: mapFrontendMessageTypeToBackendTypeId(message.type),
+      url: message.mediaUrl,
+    };
+    if (message.type === "file") {
+      mediaItem.name = message.fileName;
+      mediaItem.sizeValue = message.fileSize;
+    }
+    contentJson.media = [mediaItem];
+  }
+  return JSON.stringify(contentJson);
+};
+
+export const sendMessageToPerson = async (
+  message: Message,
+  receiverId: string
+): Promise<Message> => {
+  const requestBodyItem: BackendSendMessageRequestBodyItem = {
+    receiverid: receiverId,
+    message: formatMessageToRequestBodyContent(message),
+    tags: null,
+    messagetype: 1,
+    grouptype: 2,
+    groupid: null,
+  };
+
+  const url = `${CHAT_API_BASE_URL}/chat/message`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify([requestBodyItem]),
+  };
+
+  const response = await apiFetch<GetListMessageApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_01_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to send person message"
+    );
+  }
+
+  if (!response.object || response.object.length === 0) {
+    throw new Error("No message object returned from API.");
+  }
+  return formatBackendMessageToMessage(response.object[0]);
+};
+
+export const sendMessageToGroup = async (
+  message: Message,
+  groupId: string
+): Promise<Message> => {
+  const requestBodyItem: BackendSendMessageRequestBodyItem = {
+    receiverid: null,
+    message: formatMessageToRequestBodyContent(message),
+    tags: null,
+    messagetype: 1,
+    grouptype: 1,
+    groupid: groupId,
+  };
+
+  const url = `${CHAT_API_BASE_URL}/chat/message`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify([requestBodyItem]),
+  };
+
+  const response = await apiFetch<GetListMessageApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_01_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to send group message"
+    );
+  }
+
+  if (!response.object || response.object.length === 0) {
+    throw new Error("No message object returned from API.");
+  }
+  return formatBackendMessageToMessage(response.object[0]);
+};
+
+export const sendMessageToAI = async (
+  question: string,
+  groupId: string
+): Promise<Message[]> => {
+  const requestBody: AIMessageRequestBody = {
+    groupid: groupId,
+    question: question,
+    tags: null,
+    messagetype: 5,
+    grouptype: 1,
+  };
+
+  const url = `${CHAT_API_BASE_URL}/chat/message/AI`;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+
+  const options: RequestInit = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(requestBody),
+  };
+
+  const response = await apiFetch<GetListMessageApiResponse>(url, options);
+
+  if (response.enumResponse.code !== "s_01_chat") {
+    throw new Error(
+      response.enumResponse.message || "Failed to send message to AI"
+    );
+  }
+
+  if (!response.object || response.object.length === 0) {
+    throw new Error("No message object returned from AI API.");
+  }
+
+  return response.object.map(formatBackendMessageToMessage);
+};
