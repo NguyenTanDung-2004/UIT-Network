@@ -65,7 +65,7 @@
 
 <script>
     let stompClient = new StompJs.Client({
-        webSocketFactory: () => new SockJS('http://localhost:8081/gs-guide-websocket'),
+        webSocketFactory: () => new SockJS('http://localhost:8085/chat-socket'),
         debug: (str) => console.log(str)
     });
 
