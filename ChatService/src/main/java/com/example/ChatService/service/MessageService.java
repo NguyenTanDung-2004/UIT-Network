@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.ChatService.dto.ExternalUserInfo;
@@ -62,6 +63,10 @@ public class MessageService {
 
     @Autowired
     private GeminiAPI geminiAPI;
+
+    
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
 
     private String getUserId(String authorizationHeader) {
@@ -133,6 +138,8 @@ public class MessageService {
             message = messageRepository.save(message);
             listMessage.add(message);
         }
+
+        this.messagingTemplate.convertAndSend("/topic/chat/message/" + groupId, listMessage);
 
         // create response
         ApiResponse response = ApiResponse.builder()
