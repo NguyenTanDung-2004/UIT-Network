@@ -29,7 +29,7 @@ public class UserGroupService {
                     .modifieddate(new Date())
                     .build();
             // save userGroup to database
-            this.userGroupRepository.save(userGroup);
+            userGroup = this.userGroupRepository.save(userGroup);
         }
     }
 
