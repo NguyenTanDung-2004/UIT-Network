@@ -15,7 +15,7 @@ import {
   Client,
   IMessage as StompMessage,
   StompSubscription,
-} from "@stomp/stompjs"; // Import StompSubscription
+} from "@stomp/stompjs";
 
 interface BackendChatItem {
   id: string;
@@ -44,16 +44,166 @@ const DEFAULT_AVATAR =
 
 const CHAT_API_BASE_URL = process.env.CHAT_API_URL || "http://localhost:8085";
 const WEBSOCKET_URL =
-  process.env.WEBSOCKET_URL || "http://localhost:8085/chat-websocket";
+  process.env.WEBSOCKET_URL || "http://localhost:8085/chat-socket";
 
 let stompClient: Client | null = null;
 let activeSubscriptions: Map<
   string,
   {
-    callbacks: Set<(message: Message) => void>; // Use a Set to store multiple callbacks
+    callbacks: Set<(message: Message) => void>;
     subscription: StompSubscription | null;
   }
 > = new Map();
+
+interface WebSocketRawMessage {
+  id: string;
+  parentid: string | null;
+  senderid: string;
+  message: string;
+  tags: string[] | null;
+  type: number;
+  createddate: string;
+  modifieddate: string;
+  status: string;
+  groupid: string | null;
+  pin: 0 | 1;
+}
+
+const formatWebSocketRawMessageToMessage = async (
+  rawMessage: WebSocketRawMessage
+): Promise<Message> => {
+  const { content: parsedContent, media } = parseMessageContentAndMedia(
+    rawMessage.message
+  );
+  let messageContent: string = parsedContent;
+  let messageType: Message["type"] = "text";
+  let mediaUrl: string | undefined = undefined;
+  let fileName: string | undefined = undefined;
+  let fileSize: number | undefined = undefined;
+  let fileType: string | undefined = undefined;
+
+  let timestamp: Date;
+  try {
+    timestamp = new Date(rawMessage.createddate);
+    if (isNaN(timestamp.getTime())) {
+      console.warn(
+        "Invalid createddate from raw WebSocket message:",
+        rawMessage.createddate
+      );
+      timestamp = new Date();
+    }
+  } catch (e) {
+    console.error(
+      "Error parsing createddate from raw WebSocket message:",
+      rawMessage.createddate,
+      e
+    );
+    timestamp = new Date();
+  }
+
+  if (media && media.length > 0) {
+    const firstMedia = media[0];
+    mediaUrl = firstMedia.url;
+    switch (firstMedia.typeId) {
+      case 1:
+      case 4:
+        messageType = "file";
+        fileName = firstMedia.name;
+        fileSize = firstMedia.sizeValue;
+        fileType =
+          firstMedia.name?.split(".").pop()?.toLowerCase() || "unknown";
+        break;
+      case 2:
+        messageType = "image";
+        break;
+      case 3:
+        messageType = "video";
+        break;
+      default:
+        mediaUrl = undefined;
+        fileName = undefined;
+        fileSize = undefined;
+        fileType = undefined;
+        messageType = "text";
+        break;
+    }
+  } else {
+    if (rawMessage.type === 5) {
+      messageType = "text";
+      messageContent = "@AIAssist " + parsedContent;
+    } else {
+      messageType = "text";
+    }
+  }
+
+  let senderName: string = "Unknown";
+  let senderAvatar: string = DEFAULT_AVATAR;
+  try {
+    const senderInfoArray = await getUserInfoCardsByIds([rawMessage.senderid]);
+    if (senderInfoArray && senderInfoArray.length > 0) {
+      senderName = senderInfoArray[0].name;
+      senderAvatar = senderInfoArray[0].avatar || DEFAULT_AVATAR;
+    }
+  } catch (e) {
+    console.error(
+      `Failed to fetch sender info for ID: ${rawMessage.senderid} from WebSocket message`,
+      e
+    );
+  }
+
+  return {
+    id: rawMessage.id,
+    senderId: rawMessage.senderid,
+    content: messageContent,
+    timestamp: timestamp,
+    type: messageType,
+    mediaUrl: mediaUrl,
+    fileName: fileName,
+    fileSize: fileSize,
+    fileType: fileType,
+    senderName: senderName,
+    senderAvatar: senderAvatar,
+  };
+};
+
+const handleStompMessage = async (message: StompMessage, topic: string) => {
+  try {
+    const rawData = JSON.parse(message.body);
+    console.log(`Raw WebSocket Message Payload for topic ${topic}:`, rawData);
+
+    let messagesToProcess: WebSocketRawMessage[] = [];
+
+    // Kiểm tra nếu rawData là một mảng
+    if (Array.isArray(rawData)) {
+      messagesToProcess = rawData;
+    } else if (typeof rawData === "object" && rawData !== null) {
+      // Nếu rawData đã là một object đơn lẻ
+      messagesToProcess = [rawData];
+    } else {
+      console.error(
+        `Invalid message format received from WebSocket for topic ${topic}:`,
+        rawData
+      );
+      return;
+    }
+
+    // Xử lý tất cả các tin nhắn trong mảng (hoặc object đơn đã được bọc trong mảng)
+    for (const msg of messagesToProcess) {
+      const formattedMessage = await formatWebSocketRawMessageToMessage(
+        msg as WebSocketRawMessage
+      );
+      const subEntry = activeSubscriptions.get(topic);
+      if (subEntry) {
+        subEntry.callbacks.forEach((callback) => {
+          callback(formattedMessage);
+        });
+      }
+    }
+  } catch (error) {
+    console.error(`Error processing STOMP message for topic ${topic}:`, error);
+    console.error("Message body that caused error:", message.body);
+  }
+};
 
 export const initializeStompClient = (token: string | null) => {
   if (stompClient && stompClient.active) {
@@ -83,17 +233,9 @@ export const initializeStompClient = (token: string | null) => {
   stompClient.onConnect = (frame) => {
     activeSubscriptions.forEach((subEntry, topic) => {
       if (!subEntry.subscription) {
-        // If no subscription object (means not active or just reconnected)
-        const newSubscription = stompClient?.subscribe(topic, (message) => {
-          const data = JSON.parse(message.body);
-          const formattedMessage = formatBackendMessageToMessage(
-            data as BackendMessageItem
-          );
-          // Invoke all registered callbacks for this topic
-          subEntry.callbacks.forEach((callback) => {
-            callback(formattedMessage);
-          });
-        });
+        const newSubscription = stompClient?.subscribe(topic, (message) =>
+          handleStompMessage(message, topic)
+        );
         if (newSubscription) {
           activeSubscriptions.set(topic, {
             ...subEntry,
@@ -127,7 +269,7 @@ export const disconnectStompClient = () => {
     stompClient.deactivate();
   }
   stompClient = null;
-  activeSubscriptions.clear(); // Clear all registered subscriptions
+  activeSubscriptions.clear();
 };
 
 export const subscribeToChatMessages = (
@@ -136,49 +278,31 @@ export const subscribeToChatMessages = (
 ): (() => void) => {
   const topic = `/topic/chat/message/${chatId}`;
 
-  // Get existing entry or create a new one
   let subEntry = activeSubscriptions.get(topic);
   if (!subEntry) {
     subEntry = { callbacks: new Set(), subscription: null };
     activeSubscriptions.set(topic, subEntry);
   }
-  subEntry.callbacks.add(callback); // Add the new callback to the Set
+  subEntry.callbacks.add(callback);
 
-  // Try to subscribe immediately if the client is connected and not already subscribed to this topic
   if (stompClient && stompClient.connected && !subEntry.subscription) {
-    const subscription = stompClient.subscribe(
-      topic,
-      (message: StompMessage) => {
-        const data = JSON.parse(message.body);
-        const formattedMessage = formatBackendMessageToMessage(
-          data as BackendMessageItem
-        );
-        // Invoke all callbacks registered for this topic
-        subEntry?.callbacks.forEach((cb) => cb(formattedMessage));
-      }
+    const subscription = stompClient.subscribe(topic, (message) =>
+      handleStompMessage(message, topic)
     );
     subEntry.subscription = subscription;
-    // console.log(`Subscribed to ${topic} immediately.`);
-  } else if (!stompClient || !stompClient.connected) {
-    // If not connected, the onConnect handler will pick it up when it connects.
-    // The callback is already stored in activeSubscriptions.
-    // console.warn(`STOMP client not connected. Subscription for ${topic} pending.`);
   }
 
-  // Return an unsubscribe function specific to this topic and callback
   return () => {
     const currentSubEntry = activeSubscriptions.get(topic);
     if (currentSubEntry) {
-      currentSubEntry.callbacks.delete(callback); // Remove only this specific callback
+      currentSubEntry.callbacks.delete(callback);
 
-      // If no more callbacks for this topic, unsubscribe from STOMP
       if (
         currentSubEntry.callbacks.size === 0 &&
         currentSubEntry.subscription
       ) {
         currentSubEntry.subscription.unsubscribe();
-        activeSubscriptions.delete(topic); // Remove from our management map
-        // console.log(`Unsubscribed from ${topic}. Removed STOMP subscription.`);
+        activeSubscriptions.delete(topic);
       }
     }
   };
@@ -263,27 +387,12 @@ export const getTopicsForChatPage = async (): Promise<ChatData[]> => {
 
   const chatTopics = response.object.map(formatBackendChatItemToChatData);
 
-  // Initialize STOMP client here when topics are fetched and token is available
   initializeStompClient(token);
 
-  // Register a global callback for each chat topic immediately.
-  // This callback is intended to update the chat list summary (last message, unread status).
-  // The actual state management for your chat list (e.g., in a React Context or component state)
-  // would be listening to these updates.
-  const globalChatListUpdateCallback = (message: Message) => {
-    // This is where you would process messages that affect the chat list overview
-    // (e.g., update `lastMessage`, `timestamp`, `unread` status for the relevant chat item).
-    // You might need to find the chat in your existing chat list state using `message.groupid`
-    // or `message.senderId` and then update its properties.
-    // For example:
-    // console.log(`Received real-time update for chat ${message.groupid || message.senderId}:`, message.content);
-    // You would then dispatch an action or update a global state here to reflect this.
-    // Example: updateChatListItem(message.groupid || message.senderId, { lastMessage: message.content, unread: true, timestamp: message.timestamp });
-  };
+  const globalChatListUpdateCallback = (message: Message) => {};
 
   chatTopics.forEach((chat) => {
     if (chat.type === "group" || chat.type === "person") {
-      // Subscribe each chat ID with the global callback
       subscribeToChatMessages(chat.id, globalChatListUpdateCallback);
     }
   });
@@ -354,13 +463,32 @@ const formatBackendMessageToMessage = (
   let fileSize: number | undefined = undefined;
   let fileType: string | undefined = undefined;
 
+  let timestamp: Date;
+  try {
+    timestamp = new Date(backendMessage.createddate);
+    if (isNaN(timestamp.getTime())) {
+      console.warn(
+        "Invalid createddate from backend (API):",
+        backendMessage.createddate
+      );
+      timestamp = new Date();
+    }
+  } catch (e) {
+    console.error(
+      "Error parsing createddate from backend (API):",
+      backendMessage.createddate,
+      e
+    );
+    timestamp = new Date();
+  }
+
   if (media && media.length > 0) {
     const firstMedia = media[0];
     mediaUrl = firstMedia.url;
 
     switch (firstMedia.typeId) {
-      case 1: // File typeId as per user's example
-      case 4: // File typeId as per existing code (assuming both mean file)
+      case 1:
+      case 4:
         messageType = "file";
         fileName = firstMedia.name;
         fileSize = firstMedia.sizeValue;
@@ -368,15 +496,13 @@ const formatBackendMessageToMessage = (
           ? firstMedia.name.split(".").pop()?.toLowerCase()
           : "unknown";
         break;
-      case 2: // Image
+      case 2:
         messageType = "image";
         break;
-      case 3: // Video
+      case 3:
         messageType = "video";
         break;
       default:
-        // If typeId is unknown or not explicitly handled, treat as text with no media.
-        // This ensures frontend 'type' matches media presence.
         mediaUrl = undefined;
         fileName = undefined;
         fileSize = undefined;
@@ -385,13 +511,10 @@ const formatBackendMessageToMessage = (
         break;
     }
   } else {
-    // If no media array in the parsed message, determine type based on backendMessage.type
     if (backendMessage.type === 5) {
-      // AI message
       messageType = "text";
       messageContent = "@AIAssist " + parsedContent;
     } else {
-      // Normal message (type 1) or any other type not indicating special media
       messageType = "text";
     }
   }
@@ -400,7 +523,7 @@ const formatBackendMessageToMessage = (
     id: backendMessage.id,
     senderId: backendMessage.senderid,
     content: messageContent,
-    timestamp: new Date(backendMessage.createddate),
+    timestamp: timestamp,
     type: messageType,
     mediaUrl: mediaUrl,
     fileName: fileName,
@@ -586,7 +709,7 @@ const mapFrontendMessageTypeToBackendTypeId = (
     case "video":
       return 3;
     case "file":
-      return 1; // Assuming typeId 1 for files when sending, as per example
+      return 1;
     case "text":
       return 1;
     default:

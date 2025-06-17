@@ -25,7 +25,6 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
   isOnline,
   onClick,
 }) => {
-  console.log("ChatListItem rendered:", { id, unread });
   return (
     <button
       onClick={() => onClick(id, type)}

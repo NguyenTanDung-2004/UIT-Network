@@ -232,28 +232,15 @@ const GroupChat = () => {
 
     const onStompMessageReceived = (newMessage: Message) => {
       setMessages((prevMessages) => {
-        if (newMessage.senderId === user.id) {
-          const optimisticIndex = prevMessages.findIndex(
-            (msg) =>
-              msg.senderId === user.id &&
-              msg.content === newMessage.content &&
-              Math.abs(
-                msg.timestamp.getTime() - newMessage.timestamp.getTime()
-              ) < 2000 &&
-              msg.id.startsWith("temp-")
-          );
-
-          if (optimisticIndex !== -1) {
-            const newMessages = [...prevMessages];
-            newMessages[optimisticIndex] = newMessage;
-            return newMessages.sort(
-              (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-            );
-          }
+        // Kiểm tra xem tin nhắn đã tồn tại chưa bằng ID để tránh trùng lặp
+        if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+          return prevMessages;
         }
-        return [...prevMessages, newMessage].sort(
+        // Thêm tin nhắn mới và sắp xếp
+        const newMessages = [...prevMessages, newMessage].sort(
           (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
         );
+        return newMessages;
       });
       scrollToBottom();
     };
@@ -269,8 +256,9 @@ const GroupChat = () => {
     if (!groupInfo || !user || !currentUserInfo) return;
     setIsSending(true);
 
-    const optimisticMessage: Message = {
-      id: `temp-${Date.now()}`,
+    const messageToSend: Message = {
+      // ID tạm thời không cần thiết nếu bạn chỉ thêm từ API response
+      id: `temp-${Date.now()}`, // Giữ lại ID tạm thời chỉ để truyền vào service call
       senderId: currentUserInfo.id,
       senderName: currentUserInfo.name,
       senderAvatar: currentUserInfo.avatar,
@@ -294,7 +282,7 @@ const GroupChat = () => {
     };
 
     if (attachments && attachments.length > 0) {
-      optimisticMessage.type =
+      messageToSend.type =
         attachments[0].type === "image"
           ? "image"
           : attachments[0].type === "video"
@@ -302,10 +290,10 @@ const GroupChat = () => {
           : "file";
     }
 
-    setMessages((prev) => [...prev, optimisticMessage]);
-
     try {
-      await sendMessageToGroup(optimisticMessage, chatId);
+      // Gọi API gửi tin nhắn. Kết quả trả về chứa ID thật từ server
+      // TIN NHẮN SẼ CHỈ ĐƯỢC HIỂN THỊ KHI NHẬN LẠI TỪ WEBSOCKET
+      await sendMessageToGroup(messageToSend, chatId);
     } catch (error: any) {
       console.error("Failed to send group message:", error);
       toast({
@@ -313,7 +301,6 @@ const GroupChat = () => {
         description: error.message || "Could not send message.",
         variant: "destructive",
       });
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
     } finally {
       setIsSending(false);
       setTimeout(scrollToBottom, 100);
@@ -324,8 +311,8 @@ const GroupChat = () => {
     if (!groupInfo || !user || !currentUserInfo) return;
     setIsSending(true);
 
-    const optimisticAIMessage: Message = {
-      id: `temp-ai-${Date.now()}`,
+    const messageToSend: Message = {
+      id: `temp-ai-${Date.now()}`, // Giữ lại ID tạm thời
       senderId: currentUserInfo.id,
       senderName: currentUserInfo.name,
       senderAvatar: currentUserInfo.avatar,
@@ -334,9 +321,9 @@ const GroupChat = () => {
       type: "text",
     };
 
-    setMessages((prev) => [...prev, optimisticAIMessage]);
-
     try {
+      // Gọi API gửi tin nhắn AI. Kết quả trả về chứa ID thật từ server
+      // CÁC TIN NHẮN (câu hỏi và câu trả lời AI) SẼ CHỈ ĐƯỢC HIỂN THỊ KHI NHẬN LẠI TỪ WEBSOCKET
       await sendMessageToAI(question, chatId);
     } catch (error: any) {
       console.error("Failed to send AI message:", error);
@@ -345,9 +332,6 @@ const GroupChat = () => {
         description: error.message || "Could not send AI message.",
         variant: "destructive",
       });
-      setMessages((prev) =>
-        prev.filter((m) => m.id !== optimisticAIMessage.id)
-      );
     } finally {
       setIsSending(false);
       setTimeout(scrollToBottom, 100);
@@ -692,8 +676,11 @@ const GroupChat = () => {
         >
           <div ref={messagesEndRef} />
           {messages.length === 0 ? (
-            <div className="text-center text-gray-500 py-4 mb-16">
-              No messages yet
+            <div
+              key="no-messages-placeholder"
+              className="text-center text-gray-500 py-4 mb-16"
+            >
+              No messages yet.
             </div>
           ) : (
             [...messages]

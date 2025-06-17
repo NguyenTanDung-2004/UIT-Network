@@ -582,27 +582,6 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                   </div>
                 )}
             </div>
-            <div>
-              <label
-                htmlFor="workstatus"
-                className="block text-xs font-medium text-[#A09FB0] dark:text-gray-300 mb-1 uppercase"
-              >
-                Work Status
-              </label>
-              {renderWorkStatusSelect(
-                getWorkStatusString(
-                  workStatus === "N/A"
-                    ? null
-                    : workStatus === "Done"
-                    ? 1
-                    : workStatus === "Doing"
-                    ? 2
-                    : 3
-                ),
-                formDisabled,
-                (val) => setWorkStatus(val)
-              )}
-            </div>
 
             {/* Display/Edit existing Sub-Tasks */}
             {isViewMode && initialData && (

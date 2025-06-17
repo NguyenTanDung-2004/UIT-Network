@@ -13,9 +13,15 @@ interface ChatMessageItemProps {
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
-const formatTime = (date: Date): string => {
+const formatDateTime = (date: Date): string => {
+  if (date.toString() === "Invalid Date") {
+    return "Invalid Date"; // Trả về "Invalid Date" nếu đối tượng ngày không hợp lệ
+  }
   return date
-    .toLocaleTimeString("en-US", {
+    .toLocaleString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -38,7 +44,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
     : "rounded-r-lg rounded-bl-lg";
 
   const renderContentText = (text: string) => {
-    const parts = text.split(/(@AIAssist)/g); // Tách chuỗi theo "@AIAssist"
+    const parts = text.split(/(@AIAssist)/g);
     return (
       <p className="text-sm break-words whitespace-pre-wrap">
         {parts.map((part, index) =>
@@ -172,7 +178,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
           isSender ? "mr-1 text-right" : "ml-1 text-left"
         } text-gray-400 dark:text-gray-500`}
       >
-        {formatTime(message.timestamp)}
+        {formatDateTime(message.timestamp)}
       </span>
     </div>
   );

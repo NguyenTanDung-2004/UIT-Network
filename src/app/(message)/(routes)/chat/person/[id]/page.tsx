@@ -15,13 +15,13 @@ import {
   SharedMediaItem,
   SharedFileItem,
   SharedLinkItem,
-  GroupMemberInfo, // Keep GroupMemberInfo for ChatDetail's currentUserInfo
+  GroupMemberInfo,
 } from "@/types/chats/ChatData";
 import {
   getListMessages,
-  sendMessageToPerson, // Import for person messages
-  sendMessageToAI, // Import for AI messages
-  subscribeToChatMessages, // Import for WebSocket messages
+  sendMessageToPerson,
+  sendMessageToAI,
+  subscribeToChatMessages,
 } from "@/services/chatService";
 import { useUser } from "@/contexts/UserContext";
 import { useChatList } from "../../ChatListContext";
@@ -42,7 +42,7 @@ const DEFAULT_AVATAR =
 
 const PersonChatPage = () => {
   const params = useParams();
-  const chatId = params?.id as string; // Here chatId refers to the conversationId with the person
+  const chatId = params?.id as string;
   const {
     user,
     loading: userContextLoading,
@@ -156,34 +156,18 @@ const PersonChatPage = () => {
     };
   }, [chatId, fetchDataForChat, scrollToBottom]);
 
-  // STOMP WebSocket message handling for current chat
   useEffect(() => {
     if (!chatId || !user?.id) return;
 
     const onStompMessageReceived = (newMessage: Message) => {
+      console.log("Formatted Message received by component:", newMessage);
       setMessages((prevMessages) => {
-        // Find and replace optimistic message if it's our own message
-        if (newMessage.senderId === user.id) {
-          const optimisticIndex = prevMessages.findIndex(
-            (msg) =>
-              msg.senderId === user.id &&
-              msg.content === newMessage.content &&
-              Math.abs(
-                msg.timestamp.getTime() - newMessage.timestamp.getTime()
-              ) < 2000 && // Allow small timestamp diff for optimistic
-              msg.id.startsWith("temp-") // Identify optimistic messages by temp ID
-          );
-
-          if (optimisticIndex !== -1) {
-            // Replace optimistic message with the real one from server
-            const newMessages = [...prevMessages];
-            newMessages[optimisticIndex] = newMessage;
-            return newMessages.sort(
-              (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-            );
-          }
+        // Kiểm tra xem tin nhắn đã tồn tại chưa để tránh trùng lặp
+        // Sử dụng msg.id thay vì optimistic ID
+        if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+          return prevMessages; // Nếu đã có, không thêm nữa
         }
-        // If not our message, or no matching optimistic message, just add it
+        // Thêm tin nhắn mới và sắp xếp
         return [...prevMessages, newMessage].sort(
           (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
         );
@@ -191,11 +175,9 @@ const PersonChatPage = () => {
       scrollToBottom();
     };
 
-    // Subscribe to messages for the current chat ID
     const unsubscribe = subscribeToChatMessages(chatId, onStompMessageReceived);
 
     return () => {
-      // Unsubscribe when component unmounts or chatId changes
       unsubscribe();
     };
   }, [chatId, user?.id, scrollToBottom]);
@@ -204,12 +186,13 @@ const PersonChatPage = () => {
     if (!partnerInfo || !user) return;
     setIsSending(true);
 
-    const optimisticMessage: Message = {
-      id: `temp-${Date.now()}`, // Temporary ID for optimistic update
+    const messageToSend: Message = {
+      // ID tạm thời không cần thiết nếu bạn thêm từ API response
+      id: `temp-${Date.now()}`, // Vẫn giữ để hàm sendMessageToPerson có data, nhưng sẽ bị server ID override
       senderId: user.id,
       content: text,
       timestamp: new Date(),
-      type: "text", // Default optimistic type
+      type: "text",
       mediaUrl:
         attachments && attachments.length > 0 ? attachments[0].url : undefined,
       fileName:
@@ -227,7 +210,7 @@ const PersonChatPage = () => {
     };
 
     if (attachments && attachments.length > 0) {
-      optimisticMessage.type =
+      messageToSend.type =
         attachments[0].type === "image"
           ? "image"
           : attachments[0].type === "video"
@@ -235,12 +218,16 @@ const PersonChatPage = () => {
           : "file";
     }
 
-    setMessages((prev) => [...prev, optimisticMessage]);
-
     try {
-      await sendMessageToPerson(
-        optimisticMessage,
+      const sentMessage = await sendMessageToPerson(
+        messageToSend,
         currentChatTopic?.otheruserid || partnerInfo.id
+      );
+      // Cập nhật state messages với tin nhắn TRẢ VỀ từ API
+      setMessages((prev) =>
+        [...prev, sentMessage].sort(
+          (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+        )
       );
     } catch (sendError: any) {
       console.error("Failed to send message:", sendError);
@@ -249,7 +236,6 @@ const PersonChatPage = () => {
         description: sendError.message || "Could not send message.",
         variant: "destructive",
       });
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
     } finally {
       setIsSending(false);
       setTimeout(scrollToBottom, 100);
@@ -260,18 +246,22 @@ const PersonChatPage = () => {
     if (!partnerInfo || !user) return;
     setIsSending(true);
 
-    const optimisticAIMessage: Message = {
-      id: `temp-ai-${Date.now()}`,
+    const messageToSend: Message = {
+      id: `temp-ai-${Date.now()}`, // ID tạm thời
       senderId: user.id,
-      content: question, // Content is the question
+      content: question,
       timestamp: new Date(),
-      type: "text", // AI question is always text
+      type: "text",
     };
 
-    setMessages((prev) => [...prev, optimisticAIMessage]);
-
     try {
-      await sendMessageToAI(question, chatId);
+      const sentAIMessages = await sendMessageToAI(question, chatId);
+      // Cập nhật state messages với CÁC tin nhắn TRẢ VỀ từ API (câu hỏi và câu trả lời AI)
+      setMessages((prev) =>
+        [...prev, ...sentAIMessages].sort(
+          (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+        )
+      );
     } catch (error: any) {
       console.error("Failed to send AI message:", error);
       toast({
@@ -279,9 +269,6 @@ const PersonChatPage = () => {
         description: error.message || "Could not send AI message.",
         variant: "destructive",
       });
-      setMessages((prev) =>
-        prev.filter((m) => m.id !== optimisticAIMessage.id)
-      );
     } finally {
       setIsSending(false);
       setTimeout(scrollToBottom, 100);
@@ -344,7 +331,7 @@ const PersonChatPage = () => {
     id: user.id,
     name: user.name,
     avatar: user.avtURL || DEFAULT_AVATAR,
-    role: "member", // Default role for display, can be more specific if needed
+    role: "member",
   };
 
   return (
@@ -393,34 +380,34 @@ const PersonChatPage = () => {
           ref={chatListRef}
           className="flex-1 overflow-y-auto p-4 flex flex-col-reverse"
         >
-          <div ref={messagesEndRef} />
+          <div key="messages-scroll-bottom" ref={messagesEndRef} />
           {messages.length === 0 ? (
-            <div className="text-center text-gray-500 py-4 mb-16">
+            <div
+              key="no-messages-placeholder"
+              className="text-center text-gray-500 py-4 mb-16"
+            >
               No messages yet.
             </div>
           ) : (
-            [...messages]
-              .reverse()
-              .map((msg) => (
-                <ChatMessageItem
-                  key={msg.id}
-                  message={msg}
-                  isSender={msg.senderId === user.id}
-                  isGroup={false}
-                  onMediaClick={() =>
-                    msg.mediaUrl &&
-                    (msg.type === "image" || msg.type === "video")
-                      ? handleMediaClick(msg.id)
-                      : undefined
-                  }
-                />
-              ))
+            [...messages].reverse().map((msg) => (
+              <ChatMessageItem
+                key={msg.id} // Đảm bảo key là duy nhất và ổn định
+                message={msg}
+                isSender={msg.senderId === user.id}
+                isGroup={false}
+                onMediaClick={() =>
+                  msg.mediaUrl && (msg.type === "image" || msg.type === "video")
+                    ? handleMediaClick(msg.id)
+                    : undefined
+                }
+              />
+            ))
           )}
         </div>
 
         <ChatInput
           onSendMessage={handleSendMessage}
-          onSendAIMessage={handleSendAIMessage} // Pass AI message handler
+          onSendAIMessage={handleSendAIMessage}
           isSending={isSending}
         />
       </div>
@@ -434,9 +421,9 @@ const PersonChatPage = () => {
           sharedFiles={sharedFiles}
           sharedLinks={sharedLinks}
           onClose={() => setShowDetails(false)}
-          schedules={[]} // Personal chats don't have schedules
-          currentUserInfo={currentUserGroupInfo} // Pass current user info
-          groupMembers={undefined} // Personal chats don't have group members
+          schedules={[]}
+          currentUserInfo={currentUserGroupInfo}
+          groupMembers={undefined}
           onAddMember={() => {}}
           onChatMember={() => {}}
           onRemoveMember={() => {}}
@@ -447,7 +434,7 @@ const PersonChatPage = () => {
           onToggleNotifications={() =>
             console.log("Toggle notifications action")
           }
-          groupId={chatId} // Pass chatId as groupId for consistency, though not a group
+          groupId={chatId}
         />
       )}
 
