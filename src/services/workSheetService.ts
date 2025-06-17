@@ -135,7 +135,7 @@ export const getWorksheetsByGroupId = async (
 }> => {
   const url = `${CHAT_API_BASE_URL}/chat/worksheet/${groupId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -181,7 +181,7 @@ export const getWorksheetDetails = async (
 }> => {
   const url = `${CHAT_API_BASE_URL}/chat/worksheet/${worksheetId}/detail`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -246,7 +246,7 @@ export const createWorksheet = async (
 ): Promise<BackendWorksheetItemWithFrontendFields> => {
   const url = `${CHAT_API_BASE_URL}/chat/worksheet`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "POST",
@@ -328,7 +328,7 @@ export const updateWorksheetParent = async (
 ): Promise<void> => {
   const url = `${CHAT_API_BASE_URL}/chat/worksheet/parent`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "PUT",
@@ -353,7 +353,7 @@ export const updateWorksheetChild = async (
 ): Promise<void> => {
   const url = `${CHAT_API_BASE_URL}/chat/worksheet/child`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "PUT",

@@ -39,7 +39,7 @@ export const getNotifications = async (
   const baseUrl = process.env.NOTI_API_URL || "http://localhost:8081";
   const url = `${baseUrl}/notify/${userId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",

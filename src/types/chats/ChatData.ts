@@ -16,6 +16,7 @@ export interface ChatData {
   timestamp: Date;
   unread: boolean;
   isOnline: boolean | false;
+  otheruserid?: string | null;
 }
 
 export interface ChatPartnerInfo {

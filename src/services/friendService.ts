@@ -25,7 +25,7 @@ export const getListFriendIds = async (userId: string): Promise<string[]> => {
   const baseUrl = process.env.FRIEND_API_URL || "http://localhost:8082";
   const url = `${baseUrl}/friend/notexternal/list/${userId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -107,7 +107,7 @@ export const sendFriendRequest = async (
 ): Promise<void> => {
   const url = `${FRIEND_API_BASE_URL}/friend/${senderId}/request/${receiverId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "POST",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -128,7 +128,7 @@ export const acceptFriendRequest = async (
 ): Promise<void> => {
   const url = `${FRIEND_API_BASE_URL}/friend/${userAId}/friend/${userBId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "POST",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -149,7 +149,7 @@ export const cancelFriendRequest = async (
 ): Promise<void> => {
   const url = `${FRIEND_API_BASE_URL}/friend/${userBId}/request/${userAId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "DELETE",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -170,7 +170,7 @@ export const removeFriend = async (
 ): Promise<void> => {
   const url = `${FRIEND_API_BASE_URL}/friend/${userAId}/friend/${userBId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "DELETE",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -189,7 +189,7 @@ export const getFriendshipStatus = async (
 ): Promise<FriendshipStatus> => {
   const url = `${FRIEND_API_BASE_URL}/friend/friend-status/${currentUserId}/${otherUserId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },

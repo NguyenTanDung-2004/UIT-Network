@@ -78,7 +78,7 @@ export const getFanpageInfo = async (
 ): Promise<{ header: PageHeaderData; about: PageAboutData }> => {
   const url = `${FANPAGE_API_BASE_URL}/fanpage/${pageId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -169,7 +169,7 @@ export const checkFanpageIsFollowing = async (
 ): Promise<boolean> => {
   const url = `${FANPAGE_API_BASE_URL}/fanpage/isliked/${fanpageId}/${userId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",

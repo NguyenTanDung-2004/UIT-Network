@@ -121,7 +121,7 @@ export const getUserInfo = async (): Promise<ProfileAboutData> => {
   const baseUrl = process.env.USER_API_URL || "http://localhost:8080";
   const url = `${baseUrl}/user/get-user-info`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -160,7 +160,7 @@ export const getListUserInfoByIds = async (
   const idsString = ids.join(",");
   const url = `${baseUrl}/user/list-user-info/${idsString}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",

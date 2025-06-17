@@ -325,6 +325,16 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
   // ).length;
   // const unreadMessagesCount = dummyMessages.filter((m) => !m.read).length;
 
+  const handleLogout = () => {
+    // Xóa JWT token khỏi sesionStorage
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("jwt");
+    }
+
+    // Điều hướng người dùng về trang chủ hoặc trang đăng nhập
+    router.push("/");
+  };
+
   return (
     <div className="flex items-center justify-between px-10 py-2.5 bg-white border-b dark:bg-gray-800 dark:border-gray-700">
       {/* Logo */}
@@ -537,15 +547,14 @@ const NavBar: React.FC<NavBarProps> = ({ user }) => {
                   Help & Support
                 </Link>
               </div>
-
               <div className="py-2 border-t dark:border-gray-700">
-                <Link
-                  href="/"
-                  className="px-6 py-2 text-gray-800 hover:bg-gray-100 transition-colors duration-200 flex items-center dark:text-gray-300 dark:hover:bg-gray-700"
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-6 py-2 text-gray-800 hover:bg-gray-100 transition-colors duration-200 flex items-center dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   <i className="fas fa-sign-out-alt mr-3"></i>
                   Logout
-                </Link>
+                </button>
               </div>
 
               <div className="px-6 py-3 border-t flex items-center justify-between dark:border-gray-700">

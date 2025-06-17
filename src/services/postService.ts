@@ -295,7 +295,7 @@ export const createPost = async (
 ): Promise<PostDataType> => {
   const url = `${POST_API_BASE_URL}/post/create`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const requestBody: CreatePostRequestBody = {
     caption,
@@ -350,7 +350,7 @@ export const createPost = async (
 export const getNumberOfLikes = async (postId: string): Promise<number> => {
   const url = `${POST_API_BASE_URL}/post/number-of-like/${postId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -372,7 +372,7 @@ export const getIsLiked = async (
 ): Promise<boolean> => {
   const url = `${POST_API_BASE_URL}/post/is-liked/${postId}/${userId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -391,7 +391,7 @@ export const getIsLiked = async (
 export const likePost = async (postId: string): Promise<void> => {
   const url = `${POST_API_BASE_URL}/post/like?postId=${postId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -431,7 +431,7 @@ export const getPostsByUserId = async (
 ): Promise<PostDataType[]> => {
   const url = `${POST_API_BASE_URL}/post/list/user/${userId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -474,7 +474,7 @@ export const getPostsByUserId = async (
 export const getHomePosts = async (): Promise<PostDataType[]> => {
   const url = `${POST_API_BASE_URL}/post/list/home`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -633,7 +633,7 @@ export const getCommentsByPostId = async (
 ): Promise<CommentType[]> => {
   const url = `${POST_API_BASE_URL}/comments/${postId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -697,7 +697,7 @@ export const createComment = async (
   // Hàm này giờ trả về CommentType
   const url = `${POST_API_BASE_URL}/comments`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const requestBody: CreateCommentRequestBody = {
     postId,
@@ -767,7 +767,7 @@ export const getPostsByFanpageId = async (
 ): Promise<PostDataType[]> => {
   const url = `${POST_API_BASE_URL}/post/list/fanpage/${fanpageId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -836,7 +836,7 @@ export const getPostsByGroupId = async (
     process.env.POST_API_URL || "http://localhost:8083"
   }/post/list/group/${groupId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -899,7 +899,7 @@ export const getPendingPostsByGroupId = async (
     process.env.POST_API_URL || "http://localhost:8083"
   }/post/list/group/pending/${groupId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -964,7 +964,7 @@ export const createPostInGroup = async (
 ): Promise<PostDataType> => {
   const url = `${POST_API_BASE_URL}/post/create`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const requestBody: CreatePostInGroupRequestBody = {
     caption,
@@ -1053,7 +1053,7 @@ export const approveGroupPost = async (
 ): Promise<PostDataType> => {
   const url = `${POST_API_BASE_URL}/post/group/approve-post/${postId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "POST",
@@ -1134,7 +1134,7 @@ export const approveGroupPost = async (
 export const deletePost = async (postId: string): Promise<void> => {
   const url = `${POST_API_BASE_URL}/post/delete?postId=${postId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "DELETE",

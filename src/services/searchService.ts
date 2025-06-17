@@ -117,7 +117,7 @@ export const searchPeople = async (text: string): Promise<PersonData[]> => {
     text
   )}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -140,7 +140,7 @@ export const searchFanpages = async (text: string): Promise<PageData[]> => {
     text
   )}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -164,7 +164,7 @@ export const searchGroups = async (text: string): Promise<GroupData[]> => {
     text
   )}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },

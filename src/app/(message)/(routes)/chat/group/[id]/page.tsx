@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Phone, Video, Info, UserPlus, CalendarPlus2 } from "lucide-react";
 import { ClipLoader } from "react-spinners";
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useToast } from "@/hooks/use-toast";
 
 import ChatMessageItem from "@/components/chat/person-chats/ChatMessageItem";
 import ChatInput from "@/components/chat/person-chats/ChatInput";
@@ -22,10 +22,16 @@ import ScheduleModal from "@/components/chat/group-chats/ScheduleModal";
 import ConfirmationModal from "@/components/chat/group-chats/ConfirmationModal";
 import { Friend } from "@/types/profile/FriendData";
 
-import { getListMessages } from "@/services/chatService";
+import {
+  getListMessages,
+  getChatGroupMembers as getGroupMembers,
+  subscribeToChatMessages,
+  disconnectStompClient,
+  sendMessageToGroup,
+  sendMessageToAI,
+} from "@/services/chatService";
 import { useUser } from "@/contexts/UserContext";
 import { useChatList } from "../../ChatListContext";
-import { getChatGroupMembers as getGroupMembers } from "@/services/chatService";
 import {
   getWorksheetsByGroupId as getGroupWorksheets,
   createWorksheet,
@@ -83,7 +89,7 @@ const GroupChat = () => {
     loading: chatListLoading,
     error: chatListError,
   } = useChatList();
-  const { toast } = useToast(); // Initialize useToast
+  const { toast } = useToast();
 
   const [groupInfo, setGroupInfo] = useState<GroupChatInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -221,54 +227,127 @@ const GroupChat = () => {
     };
   }, [chatId, fetchDataForChat, scrollToBottom]);
 
+  useEffect(() => {
+    if (!chatId || !user?.id) return;
+
+    const onStompMessageReceived = (newMessage: Message) => {
+      setMessages((prevMessages) => {
+        if (newMessage.senderId === user.id) {
+          const optimisticIndex = prevMessages.findIndex(
+            (msg) =>
+              msg.senderId === user.id &&
+              msg.content === newMessage.content &&
+              Math.abs(
+                msg.timestamp.getTime() - newMessage.timestamp.getTime()
+              ) < 2000 &&
+              msg.id.startsWith("temp-")
+          );
+
+          if (optimisticIndex !== -1) {
+            const newMessages = [...prevMessages];
+            newMessages[optimisticIndex] = newMessage;
+            return newMessages.sort(
+              (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+            );
+          }
+        }
+        return [...prevMessages, newMessage].sort(
+          (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+        );
+      });
+      scrollToBottom();
+    };
+
+    const unsubscribe = subscribeToChatMessages(chatId, onStompMessageReceived);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [chatId, user?.id, scrollToBottom]);
+
   const handleSendMessage = async (text: string, attachments?: any[]) => {
     if (!groupInfo || !user || !currentUserInfo) return;
     setIsSending(true);
 
-    const optimisticMessages: Message[] = [];
-    const timestamp = new Date();
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      senderId: currentUserInfo.id,
+      senderName: currentUserInfo.name,
+      senderAvatar: currentUserInfo.avatar,
+      content: text,
+      timestamp: new Date(),
+      type: "text",
+      mediaUrl:
+        attachments && attachments.length > 0 ? attachments[0].url : undefined,
+      fileName:
+        attachments && attachments.length > 0 && attachments[0].type === "file"
+          ? attachments[0].name
+          : undefined,
+      fileSize:
+        attachments && attachments.length > 0 && attachments[0].type === "file"
+          ? attachments[0].size
+          : undefined,
+      fileType:
+        attachments && attachments.length > 0 && attachments[0].type === "file"
+          ? attachments[0].type
+          : undefined,
+    };
 
     if (attachments && attachments.length > 0) {
-      attachments.forEach((att, index) => {
-        const msgType =
-          att.type === "image" || att.type === "video" ? att.type : "file";
-        optimisticMessages.push({
-          id: `temp-${Date.now()}-${index}`,
-          senderId: currentUserInfo.id,
-          senderName: currentUserInfo.name,
-          senderAvatar: currentUserInfo.avatar,
-          content: index === attachments.length - 1 ? text : "",
-          timestamp: timestamp,
-          type: msgType,
-          mediaUrl: att.url,
-          fileName: msgType === "file" ? att.name : undefined,
-          fileSize: msgType === "file" ? att.size : undefined,
-          fileType: msgType === "file" ? att.type : undefined,
-        });
-      });
-    } else if (text) {
-      optimisticMessages.push({
-        id: `temp-${Date.now()}`,
-        senderId: currentUserInfo.id,
-        senderName: currentUserInfo.name,
-        senderAvatar: currentUserInfo.avatar,
-        content: text,
-        timestamp: timestamp,
-        type: "text",
-      });
+      optimisticMessage.type =
+        attachments[0].type === "image"
+          ? "image"
+          : attachments[0].type === "video"
+          ? "video"
+          : "file";
     }
 
-    if (optimisticMessages.length > 0) {
-      setMessages((prev) => [...prev, ...optimisticMessages]);
-    }
+    setMessages((prev) => [...prev, optimisticMessage]);
 
     try {
-      await new Promise((res) => setTimeout(res, 700));
-      console.log("Group message supposedly sent.");
-    } catch (error) {
+      await sendMessageToGroup(optimisticMessage, chatId);
+    } catch (error: any) {
       console.error("Failed to send group message:", error);
-      setError("Failed to send message.");
-      setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
+      toast({
+        title: "Send Failed",
+        description: error.message || "Could not send message.",
+        variant: "destructive",
+      });
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
+    } finally {
+      setIsSending(false);
+      setTimeout(scrollToBottom, 100);
+    }
+  };
+
+  const handleSendAIMessage = async (question: string) => {
+    if (!groupInfo || !user || !currentUserInfo) return;
+    setIsSending(true);
+
+    const optimisticAIMessage: Message = {
+      id: `temp-ai-${Date.now()}`,
+      senderId: currentUserInfo.id,
+      senderName: currentUserInfo.name,
+      senderAvatar: currentUserInfo.avatar,
+      content: question,
+      timestamp: new Date(),
+      type: "text",
+    };
+
+    setMessages((prev) => [...prev, optimisticAIMessage]);
+
+    try {
+      await sendMessageToAI(question, groupInfo.id);
+    } catch (error: any) {
+      console.error("Failed to send AI message:", error);
+      toast({
+        title: "AI Message Failed",
+        description: error.message || "Could not send AI message.",
+        variant: "destructive",
+      });
+      setMessages((prev) =>
+        prev.filter((m) => m.id !== optimisticAIMessage.id)
+      );
     } finally {
       setIsSending(false);
       setTimeout(scrollToBottom, 100);
@@ -637,7 +716,11 @@ const GroupChat = () => {
         </div>
 
         <div className="flex-shrink-0 mt-auto">
-          <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            onSendAIMessage={handleSendAIMessage}
+            isSending={isSending}
+          />
         </div>
       </div>
 

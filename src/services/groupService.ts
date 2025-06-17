@@ -73,7 +73,7 @@ export const getGroupInfo = async (
 ): Promise<{ data: GroupHeaderData }> => {
   const url = `${FANPAGE_API_BASE_URL}/group/${groupId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -128,7 +128,7 @@ export const getListMediaAndFilesByGroupId = async (
 ): Promise<{ media: MediaItem[]; files: UploadedFile[] }> => {
   const url = `${POST_API_BASE_URL}/post/media/group/${groupId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -175,7 +175,7 @@ export const getGroupMembers = async (
 ): Promise<GroupMember[]> => {
   const url = `${FANPAGE_API_BASE_URL}/group/members/${groupId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -240,7 +240,7 @@ interface GetGroupsListApiResponse {
 export const getListGroups = async (): Promise<GroupHeaderData[]> => {
   const url = `${FANPAGE_API_BASE_URL}/group/list`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -287,7 +287,7 @@ export const getGroupInfoForManager = async (
 ): Promise<{ header: GroupHeaderData; details: BackendGroupInfo }> => {
   const url = `${FANPAGE_API_BASE_URL}/group/${groupId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -328,7 +328,7 @@ export const getGroupJoinRequests = async (
 ): Promise<GroupMember[]> => {
   const url = `${FANPAGE_API_BASE_URL}/group/${groupId}/join-requests`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -383,7 +383,7 @@ export const acceptGroupJoinRequest = async (
 ): Promise<void> => {
   const url = `${FANPAGE_API_BASE_URL}/group/${groupId}/join-requests`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const requestBody: ManageJoinRequestRequestBody = { userId };
 
@@ -411,7 +411,7 @@ export const deleteGroupJoinRequest = async (
 ): Promise<void> => {
   const url = `${FANPAGE_API_BASE_URL}/group/${groupId}/join-requests`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const requestBody: ManageJoinRequestRequestBody = { userId };
 

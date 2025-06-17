@@ -71,7 +71,7 @@ const formatBackendUserToPerson = (
 export const getRecommendedByMutualFriend = async (): Promise<Person[]> => {
   const url = `${USER_API_BASE_URL}/user/list/mutual-friend`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -94,7 +94,7 @@ export const getRecommendedByMutualFriend = async (): Promise<Person[]> => {
 export const getRecommendedByLocation = async (): Promise<Person[]> => {
   const url = `${USER_API_BASE_URL}/user/list/location`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -116,7 +116,7 @@ export const getRecommendedByLocation = async (): Promise<Person[]> => {
 export const getRecommendedBySchedule = async (): Promise<Person[]> => {
   const url = `${USER_API_BASE_URL}/user/list/schedule`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -138,7 +138,7 @@ export const getRecommendedBySchedule = async (): Promise<Person[]> => {
 export const getRecommendedByHobby = async (): Promise<Person[]> => {
   const url = `${USER_API_BASE_URL}/user/list/recommend-hobby`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },

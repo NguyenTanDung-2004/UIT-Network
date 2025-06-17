@@ -5,6 +5,7 @@ import {
   Smile,
   SendHorizontal,
   X,
+  HardHat, // Import HardHat icon for AI mode
 } from "lucide-react";
 import EmojiPicker from "@/components/post/create/EmojiPicker";
 import { useToast } from "@/hooks/use-toast";
@@ -29,23 +30,39 @@ interface ChatInputProps {
     text: string,
     attachments?: UploadedFileInfo[]
   ) => Promise<void>;
+  onSendAIMessage: (question: string) => Promise<void>; // New prop for AI messages
   isSending: boolean;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
+const ChatInput: React.FC<ChatInputProps> = ({
+  onSendMessage,
+  onSendAIMessage,
+  isSending,
+}) => {
   const [inputText, setInputText] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<SelectedPreview[]>([]);
-  const [isUploading, setIsUploading] = useState(false); // Track upload state
+  const [isUploading, setIsUploading] = useState(false);
+  const [isAIAssistMode, setIsAIAssistMode] = useState(false); // New state for AI mode
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const AI_PREFIX = "@AIAssist ";
+
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputText(event.target.value);
-    // Auto-resize textarea (optional)
+    const text = event.target.value;
+    setInputText(text);
+
+    // Check for AI assist mode activation
+    if (text.startsWith(AI_PREFIX)) {
+      setIsAIAssistMode(true);
+    } else {
+      setIsAIAssistMode(false);
+    }
+
     event.target.style.height = "auto";
     event.target.style.height = `${event.target.scrollHeight}px`;
   };
@@ -54,7 +71,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
     setInputText((prev) => prev + emoji);
   };
 
-  // Close Emoji Picker on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -71,7 +87,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showEmojiPicker]);
 
-  // Generic file selection handler
   const handleFileSelection = (
     event: React.ChangeEvent<HTMLInputElement>,
     allowedType: "media" | "file"
@@ -79,9 +94,20 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
+    // If in AI assist mode, do not allow file attachments
+    if (isAIAssistMode) {
+      toast({
+        title: "AI Assist Mode",
+        description: "Attachments are not allowed in AI Assist mode.",
+        variant: "destructive",
+      });
+      event.target.value = ""; // Reset input value
+      return;
+    }
+
     const newPreviews: SelectedPreview[] = [];
-    const fileLimit = 5; // Example limit
-    const sizeLimit = 10 * 1024 * 1024; // 10MB example limit
+    const fileLimit = 5;
+    const sizeLimit = 10 * 1024 * 1024;
 
     for (
       let i = 0;
@@ -109,7 +135,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
             description: `Media uploader only accepts images and videos.`,
             variant: "destructive",
           });
-          continue; // Skip non-media files if using media input
+          continue;
         }
       }
 
@@ -123,7 +149,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
     }
 
     setSelectedFiles((prev) => [...prev, ...newPreviews]);
-    event.target.value = ""; // Reset input value
+    event.target.value = "";
   };
 
   const handleImageVideoSelect = (
@@ -164,12 +190,10 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
         if (!data.url)
           throw new Error(`API response missing URL for ${selected.file.name}`);
 
-        // Return structured info
         return {
           url: data.url,
           name: selected.file.name,
           size: selected.file.size,
-          // Use specific type for media, mime type for files
           type: selected.type === "file" ? selected.file.type : selected.type,
         };
       } catch (error) {
@@ -185,21 +209,50 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
 
     try {
       const results = await Promise.all(uploadPromises);
-      return results; // Array of UploadedFileInfo
+      return results;
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleSend = async () => {
+    const trimmedInputText = inputText.trim();
+
     if (
-      (!inputText.trim() && selectedFiles.length === 0) ||
+      (!trimmedInputText && selectedFiles.length === 0) ||
       isSending ||
       isUploading
     ) {
       return;
     }
 
+    // Handle AI assist mode
+    if (isAIAssistMode) {
+      const question = trimmedInputText.startsWith(AI_PREFIX)
+        ? trimmedInputText.substring(AI_PREFIX.length).trim()
+        : trimmedInputText;
+      if (!question) return;
+
+      try {
+        await onSendAIMessage(question);
+        setInputText("");
+        setIsAIAssistMode(false); // Exit AI mode after sending
+        const textarea = document.getElementById(
+          "chat-textarea"
+        ) as HTMLTextAreaElement;
+        if (textarea) textarea.style.height = "auto";
+      } catch (error) {
+        console.error("Error sending AI message:", error);
+        toast({
+          title: "AI Message Failed",
+          description: "Could not send message to AI.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Normal message sending
     let uploadedAttachments: UploadedFileInfo[] | undefined = undefined;
 
     if (selectedFiles.length > 0) {
@@ -208,15 +261,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
         selectedFiles.forEach((f) => URL.revokeObjectURL(f.previewUrl));
         setSelectedFiles([]);
       } catch (error) {
-        // Error handled in uploadFiles (toast shown)
-        return; // Don't send message if upload failed
+        return;
       }
     }
 
     try {
-      await onSendMessage(inputText.trim(), uploadedAttachments);
-      setInputText(""); // Clear text input on successful send
-      // Manually reset textarea height if needed
+      await onSendMessage(trimmedInputText, uploadedAttachments);
+      setInputText("");
       const textarea = document.getElementById(
         "chat-textarea"
       ) as HTMLTextAreaElement;
@@ -228,14 +279,12 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
         description: "Could not send the message.",
         variant: "destructive",
       });
-      // Optionally: Restore selected files if sending failed after upload? Complex.
     }
   };
 
-  // Handle Enter key press (Shift+Enter for newline)
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault(); // Prevent default newline behavior
+      event.preventDefault();
       handleSend();
     }
   };
@@ -250,7 +299,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
 
   return (
     <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4">
-      {/* File Previews */}
       {selectedFiles.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2 p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 max-h-32 overflow-y-auto scrollbar-thin">
           {selectedFiles.map((f) => (
@@ -294,9 +342,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
         </div>
       )}
 
-      {/* Input Area */}
       <div className="flex items-end gap-2 justify-center">
-        {/* Attachment Buttons */}
         <div className="flex items-center gap-1">
           <input
             type="file"
@@ -316,43 +362,50 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
 
           <button
             onClick={() => imageInputRef.current?.click()}
-            disabled={isUploading || isSending}
+            disabled={isUploading || isSending || isAIAssistMode} // Disable attachments in AI mode
             className="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary-light rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none disabled:opacity-50"
           >
             <ImageIcon size={20} />
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading || isSending}
+            disabled={isUploading || isSending || isAIAssistMode} // Disable attachments in AI mode
             className="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary-light rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none disabled:opacity-50"
           >
             <Paperclip size={20} />
           </button>
         </div>
 
-        {/* Text Input */}
-        <div className="flex-1 relative ">
+        <div className="flex-1 relative">
           <textarea
             id="chat-textarea"
             rows={1}
             value={inputText}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Aa ..."
+            placeholder={isAIAssistMode ? "Ask AI something..." : "Aa ..."}
             className="w-full -mb-[6px] max-h-[120px] min-h-full border border-gray-300 rounded-3xl py-2 px-4 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-600 dark:border-gray-500 dark:text-gray-200 dark:placeholder-gray-400 resize-none overflow-y-hidden scrollbar-thin"
             disabled={isUploading || isSending}
           />
-          {/* Emoji Button */}
+          {isAIAssistMode && (
+            <HardHat
+              size={18}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-500"
+            />
+          )}
           <button
             ref={emojiButtonRef}
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             disabled={isUploading || isSending}
             type="button"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full disabled:opacity-50"
+            className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-full disabled:opacity-50 ${
+              isAIAssistMode
+                ? "text-gray-400 cursor-not-allowed" // Disable emoji picker in AI mode
+                : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            }`}
           >
             <Smile size={20} />
           </button>
-          {/* Emoji Picker */}
           {showEmojiPicker && (
             <div
               ref={emojiPickerRef}
@@ -363,7 +416,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
           )}
         </div>
 
-        {/* Send Button */}
         <button
           onClick={handleSend}
           disabled={
@@ -373,8 +425,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isSending }) => {
           }
           className="p-2 text-white bg-primary rounded-full hover:bg-opacity-80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
         >
-          {isUploading ? (
-            <ClipLoader size={20} color="#ffffff" />
+          {isUploading || isSending ? (
+            <ClipLoader size={20} color="#FF70D9" />
           ) : (
             <SendHorizontal size={20} />
           )}

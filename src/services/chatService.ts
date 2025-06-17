@@ -1,4 +1,4 @@
-import apiFetch from "./apiClient";
+import apiClient from "./apiClient";
 import {
   ChatItem,
   ChatData,
@@ -9,8 +9,13 @@ import {
   GroupMemberInfo,
 } from "@/types/chats/ChatData";
 import { getUserInfoCardsByIds } from "@/services/friendService";
-
 import { Friend } from "@/types/profile/FriendData";
+import SockJS from "sockjs-client";
+import {
+  Client,
+  IMessage as StompMessage,
+  StompSubscription,
+} from "@stomp/stompjs"; // Import StompSubscription
 
 interface BackendChatItem {
   id: string;
@@ -38,6 +43,120 @@ const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dos914bk9/image/upload/v1738333283/avt/kazlexgmzhz3izraigsv.jpg";
 
 const CHAT_API_BASE_URL = process.env.CHAT_API_URL || "http://localhost:8085";
+const WEBSOCKET_URL =
+  process.env.WEBSOCKET_URL || "http://localhost:8085/chat-websocket";
+
+let stompClient: Client | null = null;
+let activeSubscriptions: Map<
+  string,
+  {
+    callback: (message: Message) => void;
+    subscription: StompSubscription | null;
+  }
+> = new Map();
+
+export const initializeStompClient = (token: string | null) => {
+  if (stompClient && stompClient.active) {
+    return;
+  }
+  if (stompClient && !stompClient.active && stompClient.webSocket) {
+    stompClient.activate();
+    return;
+  }
+
+  stompClient = new Client({
+    webSocketFactory: () => {
+      const sock = new SockJS(WEBSOCKET_URL);
+      return sock;
+    },
+    connectHeaders: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    debug: (str) => {
+      // console.log("STOMP Debug:", str);
+    },
+    reconnectDelay: 5000,
+    heartbeatIncoming: 4000,
+    heartbeatOutgoing: 4000,
+  });
+
+  stompClient.onConnect = (frame) => {
+    // console.log('STOMP Connected:', frame);
+    activeSubscriptions.forEach((subEntry, topic) => {
+      if (!subEntry.subscription) {
+        const newSubscription = stompClient?.subscribe(topic, (message) => {
+          const data = JSON.parse(message.body);
+          const formattedMessage = formatBackendMessageToMessage(
+            data as BackendMessageItem
+          );
+          if (activeSubscriptions.has(topic)) {
+            activeSubscriptions.get(topic)!.callback(formattedMessage);
+          }
+        });
+        if (newSubscription) {
+          activeSubscriptions.set(topic, {
+            ...subEntry,
+            subscription: newSubscription,
+          });
+        }
+      }
+    });
+  };
+
+  stompClient.onStompError = (frame) => {
+    console.error("STOMP Broker reported error:", frame.headers["message"]);
+    console.error("STOMP Additional details:", frame.body);
+  };
+
+  stompClient.onWebSocketError = (event) => {
+    console.error("STOMP WebSocket error:", event);
+  };
+
+  stompClient.onDisconnect = () => {
+    // console.log('STOMP Disconnected');
+    activeSubscriptions.forEach((subEntry, topic) => {
+      activeSubscriptions.set(topic, { ...subEntry, subscription: null });
+    });
+  };
+
+  stompClient.activate();
+};
+
+export const disconnectStompClient = () => {
+  if (stompClient && stompClient.active) {
+    stompClient.deactivate();
+  }
+  stompClient = null;
+  activeSubscriptions.clear();
+};
+
+export const subscribeToChatMessages = (
+  chatId: string,
+  callback: (message: Message) => void
+): (() => void) => {
+  const topic = `/topic/chat/message/${chatId}`;
+
+  activeSubscriptions.set(topic, { callback, subscription: null });
+
+  if (stompClient && stompClient.connected) {
+    const subscription = stompClient.subscribe(
+      topic,
+      (message: StompMessage) => {
+        const data = JSON.parse(message.body);
+        callback(formatBackendMessageToMessage(data as BackendMessageItem));
+      }
+    );
+    activeSubscriptions.set(topic, { callback, subscription: subscription });
+  }
+
+  return () => {
+    const currentSubEntry = activeSubscriptions.get(topic);
+    if (currentSubEntry && currentSubEntry.subscription) {
+      currentSubEntry.subscription.unsubscribe();
+    }
+    activeSubscriptions.delete(topic);
+  };
+};
 
 const formatBackendChatItemToChatItem = (
   backendChat: BackendChatItem
@@ -75,7 +194,7 @@ const formatBackendChatItemToChatData = (
 export const getChatTopics = async (): Promise<ChatItem[]> => {
   const url = `${CHAT_API_BASE_URL}/chat/group/list`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -84,7 +203,7 @@ export const getChatTopics = async (): Promise<ChatItem[]> => {
     },
   };
 
-  const response = await apiFetch<GetChatTopicsApiResponse>(url, options);
+  const response = await apiClient<GetChatTopicsApiResponse>(url, options);
 
   if (response.enumResponse.code !== "s_07_chat") {
     throw new Error(
@@ -98,7 +217,7 @@ export const getChatTopics = async (): Promise<ChatItem[]> => {
 export const getTopicsForChatPage = async (): Promise<ChatData[]> => {
   const url = `${CHAT_API_BASE_URL}/chat/group/list`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -107,7 +226,7 @@ export const getTopicsForChatPage = async (): Promise<ChatData[]> => {
     },
   };
 
-  const response = await apiFetch<GetChatTopicsApiResponse>(url, options);
+  const response = await apiClient<GetChatTopicsApiResponse>(url, options);
 
   if (response.enumResponse.code !== "s_07_chat") {
     throw new Error(
@@ -115,16 +234,26 @@ export const getTopicsForChatPage = async (): Promise<ChatData[]> => {
     );
   }
 
-  return response.object.map(formatBackendChatItemToChatData);
+  const chatTopics = response.object.map(formatBackendChatItemToChatData);
+
+  // initializeStompClient(token);
+
+  // chatTopics.forEach((chat) => {
+  //   if (chat.type === "group" || chat.type === "person") {
+  //     subscribeToChatMessages(chat.id, (message) => {});
+  //   }
+  // });
+
+  return chatTopics;
 };
 
 interface BackendMessageItem {
   id: string;
   parentid: string | null;
   senderid: string;
-  message: string; // Có thể là JSON string
+  message: string;
   tags: string[] | null;
-  type: number; // 1: text, 2: image, 3: video, 4: file, 5: AI question/rich text
+  type: number;
   createddate: string;
   modifieddate: string;
   status: string;
@@ -137,13 +266,12 @@ interface BackendMessageItem {
 interface BackendMessageMedia {
   typeId: number;
   url: string;
-  name?: string; // Dành cho file
-  sizeValue?: number; // Dành cho file
-  unit?: string; // Dành cho file
+  name?: string;
+  sizeValue?: number;
+  unit?: string;
 }
 
 interface ParsedMessageContent {
-  // Cấu trúc JSON bên trong trường 'message'
   content?: string;
   media?: BackendMessageMedia[];
 }
@@ -161,11 +289,11 @@ const parseMessageContentAndMedia = (
 ): { content: string; media?: BackendMessageMedia[] } => {
   try {
     const parsed: ParsedMessageContent = JSON.parse(messageString);
-    let content = parsed.content || messageString; // Nếu không có content field, dùng nguyên chuỗi
-    let media = parsed.media;
+    const content = parsed.content == null ? "" : parsed.content;
+    const media = parsed.media;
     return { content, media };
   } catch (e) {
-    return { content: messageString }; // Nếu không phải JSON, trả về nguyên chuỗi
+    return { content: messageString };
   }
 };
 
@@ -175,7 +303,7 @@ const formatBackendMessageToMessage = (
   const { content: parsedContent, media } = parseMessageContentAndMedia(
     backendMessage.message
   );
-  let messageContent: string = parsedContent; // Dùng biến tạm để có thể thay đổi
+  let messageContent: string = parsedContent;
   let messageType: Message["type"] = "text";
   let mediaUrl: string | undefined = undefined;
   let fileName: string | undefined = undefined;
@@ -184,48 +312,43 @@ const formatBackendMessageToMessage = (
 
   if (media && media.length > 0) {
     const firstMedia = media[0];
+    mediaUrl = firstMedia.url;
+
     switch (firstMedia.typeId) {
-      case 2:
-        messageType = "image";
-        mediaUrl = firstMedia.url;
-        break;
-      case 3:
-        messageType = "video";
-        mediaUrl = firstMedia.url;
-        break;
-      case 4:
+      case 1: // File typeId as per user's example
+      case 4: // File typeId as per existing code (assuming both mean file)
         messageType = "file";
-        mediaUrl = firstMedia.url;
         fileName = firstMedia.name;
         fileSize = firstMedia.sizeValue;
         fileType = firstMedia.name
           ? firstMedia.name.split(".").pop()?.toLowerCase()
           : "unknown";
         break;
-      default:
-        messageType = "text";
-    }
-  } else {
-    switch (backendMessage.type) {
-      case 1:
-        messageType = "text";
-        break;
-      case 5:
-        messageType = "text";
-        messageContent = "@AIAssist " + parsedContent;
-        break;
-      case 2:
+      case 2: // Image
         messageType = "image";
         break;
-      case 3:
+      case 3: // Video
         messageType = "video";
         break;
-      case 4:
-        messageType = "file";
-        break;
       default:
+        // If typeId is unknown or not explicitly handled, treat as text with no media.
+        // This ensures frontend 'type' matches media presence.
+        mediaUrl = undefined;
+        fileName = undefined;
+        fileSize = undefined;
+        fileType = undefined;
         messageType = "text";
         break;
+    }
+  } else {
+    // If no media array in the parsed message, determine type based on backendMessage.type
+    if (backendMessage.type === 5) {
+      // AI message
+      messageType = "text";
+      messageContent = "@AIAssist " + parsedContent;
+    } else {
+      // Normal message (type 1) or any other type not indicating special media
+      messageType = "text";
     }
   }
 
@@ -253,7 +376,7 @@ export const getListMessages = async (
 }> => {
   const url = `${CHAT_API_BASE_URL}/chat/message/${chatId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
@@ -262,7 +385,7 @@ export const getListMessages = async (
     },
   };
 
-  const response = await apiFetch<GetListMessageApiResponse>(url, options);
+  const response = await apiClient<GetListMessageApiResponse>(url, options);
 
   if (response.enumResponse.code !== "s_08_chat") {
     throw new Error(
@@ -322,7 +445,7 @@ interface SeenMessageApiResponse {
 export const seenMessage = async (chatId: string): Promise<void> => {
   const url = `${CHAT_API_BASE_URL}/chat/group/seen/${chatId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "PUT",
@@ -331,7 +454,7 @@ export const seenMessage = async (chatId: string): Promise<void> => {
     },
   };
 
-  const response = await apiFetch<SeenMessageApiResponse>(url, options);
+  const response = await apiClient<SeenMessageApiResponse>(url, options);
 
   if (response.enumResponse.code !== "s_06_chat") {
     throw new Error(
@@ -341,7 +464,7 @@ export const seenMessage = async (chatId: string): Promise<void> => {
 };
 
 interface GetChatGroupMembersApiResponse {
-  object: string[]; // Mảng các userId
+  object: string[];
   enumResponse: {
     code: string;
     message: string;
@@ -353,14 +476,17 @@ export const getChatGroupMembers = async (
 ): Promise<GroupMemberInfo[]> => {
   const url = `${CHAT_API_BASE_URL}/chat/group/members/${groupId}`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "GET",
     headers: { Authorization: token ? `Bearer ${token}` : "" },
   };
 
-  const response = await apiFetch<GetChatGroupMembersApiResponse>(url, options);
+  const response = await apiClient<GetChatGroupMembersApiResponse>(
+    url,
+    options
+  );
 
   if (response.enumResponse.code !== "s_00_chat") {
     throw new Error(
@@ -374,7 +500,6 @@ export const getChatGroupMembers = async (
     return [];
   }
 
-  // Gọi getUserInfoCardsByIds để lấy thông tin chi tiết (name, avatar)
   const memberInfos: Friend[] = await getUserInfoCardsByIds(memberIds);
 
   const groupMembers: GroupMemberInfo[] = memberIds.map((userId) => {
@@ -417,7 +542,7 @@ const mapFrontendMessageTypeToBackendTypeId = (
     case "video":
       return 3;
     case "file":
-      return 4;
+      return 1; // Assuming typeId 1 for files when sending, as per example
     case "text":
       return 1;
     default:
@@ -459,7 +584,7 @@ export const sendMessageToPerson = async (
 
   const url = `${CHAT_API_BASE_URL}/chat/message`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "POST",
@@ -470,7 +595,7 @@ export const sendMessageToPerson = async (
     body: JSON.stringify([requestBodyItem]),
   };
 
-  const response = await apiFetch<GetListMessageApiResponse>(url, options);
+  const response = await apiClient<GetListMessageApiResponse>(url, options);
 
   if (response.enumResponse.code !== "s_01_chat") {
     throw new Error(
@@ -499,7 +624,7 @@ export const sendMessageToGroup = async (
 
   const url = `${CHAT_API_BASE_URL}/chat/message`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "POST",
@@ -510,7 +635,7 @@ export const sendMessageToGroup = async (
     body: JSON.stringify([requestBodyItem]),
   };
 
-  const response = await apiFetch<GetListMessageApiResponse>(url, options);
+  const response = await apiClient<GetListMessageApiResponse>(url, options);
 
   if (response.enumResponse.code !== "s_01_chat") {
     throw new Error(
@@ -538,7 +663,7 @@ export const sendMessageToAI = async (
 
   const url = `${CHAT_API_BASE_URL}/chat/message/AI`;
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
 
   const options: RequestInit = {
     method: "POST",
@@ -549,7 +674,7 @@ export const sendMessageToAI = async (
     body: JSON.stringify(requestBody),
   };
 
-  const response = await apiFetch<GetListMessageApiResponse>(url, options);
+  const response = await apiClient<GetListMessageApiResponse>(url, options);
 
   if (response.enumResponse.code !== "s_01_chat") {
     throw new Error(
@@ -562,4 +687,29 @@ export const sendMessageToAI = async (
   }
 
   return response.object.map(formatBackendMessageToMessage);
+};
+
+export const createGroup1on1 = async (
+  currentUserId: string,
+  memberIds: string[]
+): Promise<void> => {
+  const url = `${CHAT_API_BASE_URL}/chat/group/create-group-1-1/${currentUserId}`;
+  const token =
+    typeof window !== "undefined" ? sessionStorage.getItem("jwt") : null;
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const rawResponse = await fetch(url, {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify(memberIds),
+  });
+
+  if (!rawResponse.ok) {
+  }
 };

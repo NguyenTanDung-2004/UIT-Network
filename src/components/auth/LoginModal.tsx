@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import ForgotPasswordModals from "./ForgotPasswordModals";
 import { login } from "@/services/authService";
+import { useUser } from "@/contexts/UserContext";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -11,6 +12,8 @@ interface LoginModalProps {
 
 const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
   const router = useRouter();
+  const { refetchUser } = useUser(); // Lấy hàm refetchUser từ context
+
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const togglePasswordVisibility = () => {
@@ -28,12 +31,21 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
     try {
       const response = await login(email, password);
       if (response.enumResponse.code === "s_02") {
+        // Đăng nhập thành công, gọi refetchUser để UserContext cập nhật thông tin
+        await refetchUser(); // Quan trọng: Đợi hàm này hoàn tất
         router.push("/home");
         onClose();
+      } else {
+        // Xử lý các mã lỗi khác từ API login
+        setError(response.enumResponse.message || "Login failed.");
       }
     } catch (err: any) {
       console.error("Login error:", err);
-      setError("Login failed. Please check your login information again.");
+      // Kiểm tra nếu lỗi là từ phản hồi của API Fetch (không phải network error)
+      setError(
+        err.message ||
+          "Login failed. Please check your login information again."
+      );
     }
   };
 

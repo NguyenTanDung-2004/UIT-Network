@@ -30,9 +30,9 @@ export const login = async (
 
   const response = await apiFetch<LoginResponse>(url, options);
 
-  // Lưu JWT vào localStorage
+  // Thay đổi từ localStorage sang sessionStorage
   if (typeof window !== "undefined" && response.object?.jwt) {
-    localStorage.setItem("jwt", response.object.jwt);
+    sessionStorage.setItem("jwt", response.object.jwt);
   }
 
   return response;

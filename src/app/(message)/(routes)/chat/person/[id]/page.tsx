@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import { Phone, Video, Info } from "lucide-react";
 import { ClipLoader } from "react-spinners";
+import { useToast } from "@/hooks/use-toast";
 
 import ChatMessageItem from "@/components/chat/person-chats/ChatMessageItem";
 import ChatInput from "@/components/chat/person-chats/ChatInput";
@@ -14,8 +15,14 @@ import {
   SharedMediaItem,
   SharedFileItem,
   SharedLinkItem,
+  GroupMemberInfo, // Keep GroupMemberInfo for ChatDetail's currentUserInfo
 } from "@/types/chats/ChatData";
-import { getListMessages } from "@/services/chatService";
+import {
+  getListMessages,
+  sendMessageToPerson, // Import for person messages
+  sendMessageToAI, // Import for AI messages
+  subscribeToChatMessages, // Import for WebSocket messages
+} from "@/services/chatService";
 import { useUser } from "@/contexts/UserContext";
 import { useChatList } from "../../ChatListContext";
 
@@ -35,7 +42,7 @@ const DEFAULT_AVATAR =
 
 const PersonChatPage = () => {
   const params = useParams();
-  const chatId = params?.id as string;
+  const chatId = params?.id as string; // Here chatId refers to the conversationId with the person
   const {
     user,
     loading: userContextLoading,
@@ -46,6 +53,7 @@ const PersonChatPage = () => {
     loading: chatListLoading,
     error: chatListError,
   } = useChatList();
+  const { toast } = useToast();
 
   const [partnerInfo, setPartnerInfo] = useState<ChatPartnerInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -71,136 +79,206 @@ const PersonChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  useEffect(() => {
-    if (chatListLoading || userContextLoading) {
-      setError(null);
-      return;
-    }
+  const fetchDataForChat = useCallback(async () => {
+    try {
+      if (chatListLoading || userContextLoading) {
+        return;
+      }
 
-    if (chatListError || userContextError) {
-      setError(chatListError || userContextError);
-      setPartnerInfo(null);
-      return;
-    }
+      if (chatListError || userContextError) {
+        throw new Error(chatListError || userContextError || "Unknown error");
+      }
 
-    const currentChatTopic = chats.find(
-      (chat) => chat.id === chatId && chat.type === "person"
-    );
+      if (!user) {
+        throw new Error("User not authenticated.");
+      }
 
-    if (currentChatTopic) {
+      const currentChatTopic = chats.find(
+        (chat) => chat.id === chatId && chat.type === "person"
+      );
+
+      if (!currentChatTopic) {
+        setError("Chat partner not found for this conversation ID.");
+        setPartnerInfo(null);
+        setIsLoadingMessages(false);
+        setIsLoadingShared(false);
+        return;
+      }
+
       setPartnerInfo({
-        id: currentChatTopic.id,
+        id: currentChatTopic.otheruserid ? currentChatTopic.otheruserid : "",
         name: currentChatTopic.name,
         avatar: currentChatTopic.avatar,
         isOnline: currentChatTopic.isOnline,
       });
       setError(null);
-    } else {
-      setError("Chat partner not found for this conversation ID.");
-      setPartnerInfo(null);
+
+      const {
+        messages: fetchedMessages,
+        media,
+        files,
+      } = await getListMessages(currentChatTopic.id);
+
+      setMessages(fetchedMessages);
+      setSharedMedia(media);
+      setSharedFiles(files);
+    } catch (err: any) {
+      console.error("Failed to fetch chat content:", err);
+      setError(err.message || "Could not load chat content.");
+    } finally {
+      setIsLoadingMessages(false);
+      setIsLoadingShared(false);
     }
   }, [
     chatId,
+    user,
     chats,
     chatListLoading,
-    chatListError,
     userContextLoading,
+    chatListError,
     userContextError,
   ]);
 
   useEffect(() => {
-    if (!user || !chatId || !partnerInfo) {
-      setIsLoadingMessages(true);
-      setIsLoadingShared(true);
-      return;
-    }
-
     let isMounted = true;
     setIsLoadingMessages(true);
     setIsLoadingShared(true);
     setError(null);
 
-    const fetchChatContent = async () => {
-      try {
-        const {
-          messages: fetchedMessages,
-          media,
-          files,
-        } = await getListMessages(chatId);
-
-        if (!isMounted) return;
-
-        setMessages(fetchedMessages);
-        setSharedMedia(media);
-        setSharedFiles(files);
-      } catch (err: any) {
-        console.error("Failed to fetch chat content:", err);
-        if (isMounted) setError(err.message || "Could not load chat content.");
-      } finally {
-        if (isMounted) {
-          setIsLoadingMessages(false);
-          setIsLoadingShared(false);
-        }
-      }
-    };
-
-    fetchChatContent();
+    if (chatId) {
+      fetchDataForChat().then(() => {
+        if (isMounted) setTimeout(scrollToBottom, 100);
+      });
+    }
 
     return () => {
       isMounted = false;
     };
-  }, [chatId, user, partnerInfo]); // Add partnerInfo to dependencies
+  }, [chatId, fetchDataForChat, scrollToBottom]);
 
+  // STOMP WebSocket message handling for current chat
   useEffect(() => {
-    if (!isLoadingMessages) {
-      setTimeout(scrollToBottom, 100);
-    }
-  }, [messages, isLoadingMessages, scrollToBottom]);
+    if (!chatId || !user?.id) return;
+
+    const onStompMessageReceived = (newMessage: Message) => {
+      setMessages((prevMessages) => {
+        // Find and replace optimistic message if it's our own message
+        if (newMessage.senderId === user.id) {
+          const optimisticIndex = prevMessages.findIndex(
+            (msg) =>
+              msg.senderId === user.id &&
+              msg.content === newMessage.content &&
+              Math.abs(
+                msg.timestamp.getTime() - newMessage.timestamp.getTime()
+              ) < 2000 && // Allow small timestamp diff for optimistic
+              msg.id.startsWith("temp-") // Identify optimistic messages by temp ID
+          );
+
+          if (optimisticIndex !== -1) {
+            // Replace optimistic message with the real one from server
+            const newMessages = [...prevMessages];
+            newMessages[optimisticIndex] = newMessage;
+            return newMessages.sort(
+              (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+            );
+          }
+        }
+        // If not our message, or no matching optimistic message, just add it
+        return [...prevMessages, newMessage].sort(
+          (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+        );
+      });
+      scrollToBottom();
+    };
+
+    // Subscribe to messages for the current chat ID
+    const unsubscribe = subscribeToChatMessages(chatId, onStompMessageReceived);
+
+    return () => {
+      // Unsubscribe when component unmounts or chatId changes
+      unsubscribe();
+    };
+  }, [chatId, user?.id, scrollToBottom]);
 
   const handleSendMessage = async (text: string, attachments?: any[]) => {
     if (!partnerInfo || !user) return;
     setIsSending(true);
 
-    const optimisticMessages: Message[] = [];
-    const timestamp = new Date();
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`, // Temporary ID for optimistic update
+      senderId: user.id,
+      content: text,
+      timestamp: new Date(),
+      type: "text", // Default optimistic type
+      mediaUrl:
+        attachments && attachments.length > 0 ? attachments[0].url : undefined,
+      fileName:
+        attachments && attachments.length > 0 && attachments[0].type === "file"
+          ? attachments[0].name
+          : undefined,
+      fileSize:
+        attachments && attachments.length > 0 && attachments[0].type === "file"
+          ? attachments[0].size
+          : undefined,
+      fileType:
+        attachments && attachments.length > 0 && attachments[0].type === "file"
+          ? attachments[0].type
+          : undefined,
+    };
 
     if (attachments && attachments.length > 0) {
-      attachments.forEach((att, index) => {
-        const msgType =
-          att.type === "image" || att.type === "video" ? att.type : "file";
-        optimisticMessages.push({
-          id: `temp-${Date.now()}-${index}`,
-          senderId: user.id,
-          content: index === attachments.length - 1 ? text : "",
-          timestamp: timestamp,
-          type: msgType,
-          mediaUrl: att.url,
-          fileName: msgType === "file" ? att.name : undefined,
-          fileSize: msgType === "file" ? att.size : undefined,
-          fileType: msgType === "file" ? att.type : undefined,
-        });
-      });
-    } else if (text) {
-      optimisticMessages.push({
-        id: `temp-${Date.now()}`,
-        senderId: user.id,
-        content: text,
-        timestamp: timestamp,
-        type: "text",
-      });
+      optimisticMessage.type =
+        attachments[0].type === "image"
+          ? "image"
+          : attachments[0].type === "video"
+          ? "video"
+          : "file";
     }
 
-    if (optimisticMessages.length > 0) {
-      setMessages((prev) => [...prev, ...optimisticMessages]);
-    }
+    setMessages((prev) => [...prev, optimisticMessage]);
 
     try {
-      await new Promise((res) => setTimeout(res, 700));
-      console.log("Message supposedly sent.");
-    } catch (sendError) {
+      await sendMessageToPerson(optimisticMessage, partnerInfo.id);
+    } catch (sendError: any) {
       console.error("Failed to send message:", sendError);
-      setError("Failed to send message.");
-      setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
+      toast({
+        title: "Send Failed",
+        description: sendError.message || "Could not send message.",
+        variant: "destructive",
+      });
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
+    } finally {
+      setIsSending(false);
+      setTimeout(scrollToBottom, 100);
+    }
+  };
+
+  const handleSendAIMessage = async (question: string) => {
+    if (!partnerInfo || !user) return;
+    setIsSending(true);
+
+    const optimisticAIMessage: Message = {
+      id: `temp-ai-${Date.now()}`,
+      senderId: user.id,
+      content: question, // Content is the question
+      timestamp: new Date(),
+      type: "text", // AI question is always text
+    };
+
+    setMessages((prev) => [...prev, optimisticAIMessage]);
+
+    try {
+      await sendMessageToAI(question, partnerInfo.id);
+    } catch (error: any) {
+      console.error("Failed to send AI message:", error);
+      toast({
+        title: "AI Message Failed",
+        description: error.message || "Could not send AI message.",
+        variant: "destructive",
+      });
+      setMessages((prev) =>
+        prev.filter((m) => m.id !== optimisticAIMessage.id)
+      );
     } finally {
       setIsSending(false);
       setTimeout(scrollToBottom, 100);
@@ -233,7 +311,6 @@ const PersonChatPage = () => {
   };
 
   if (chatListLoading || userContextLoading || isLoadingMessages) {
-    // Add isLoadingMessages here
     return (
       <div className="flex items-center justify-center h-full">
         <ClipLoader color="#FF69B4" size={40} />
@@ -259,6 +336,13 @@ const PersonChatPage = () => {
       </div>
     );
   }
+
+  const currentUserGroupInfo: GroupMemberInfo = {
+    id: user.id,
+    name: user.name,
+    avatar: user.avtURL || DEFAULT_AVATAR,
+    role: "member", // Default role for display, can be more specific if needed
+  };
 
   return (
     <div className="flex h-full">
@@ -331,7 +415,11 @@ const PersonChatPage = () => {
           )}
         </div>
 
-        <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          onSendAIMessage={handleSendAIMessage} // Pass AI message handler
+          isSending={isSending}
+        />
       </div>
 
       {showDetails && partnerInfo && (
@@ -343,14 +431,9 @@ const PersonChatPage = () => {
           sharedFiles={sharedFiles}
           sharedLinks={sharedLinks}
           onClose={() => setShowDetails(false)}
-          schedules={[]}
-          currentUserInfo={{
-            id: user.id,
-            name: user.name,
-            avatar: user.avtURL || DEFAULT_AVATAR,
-            role: "member",
-          }}
-          groupMembers={undefined}
+          schedules={[]} // Personal chats don't have schedules
+          currentUserInfo={currentUserGroupInfo} // Pass current user info
+          groupMembers={undefined} // Personal chats don't have group members
           onAddMember={() => {}}
           onChatMember={() => {}}
           onRemoveMember={() => {}}
@@ -361,7 +444,7 @@ const PersonChatPage = () => {
           onToggleNotifications={() =>
             console.log("Toggle notifications action")
           }
-          groupId={chatId}
+          groupId={chatId} // Pass chatId as groupId for consistency, though not a group
         />
       )}
 
