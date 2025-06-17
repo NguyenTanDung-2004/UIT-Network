@@ -271,10 +271,7 @@ const PersonChatPage = () => {
     setMessages((prev) => [...prev, optimisticAIMessage]);
 
     try {
-      await sendMessageToAI(
-        question,
-        currentChatTopic?.otheruserid || partnerInfo.id
-      );
+      await sendMessageToAI(question, chatId);
     } catch (error: any) {
       console.error("Failed to send AI message:", error);
       toast({

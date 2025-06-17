@@ -924,7 +924,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                 Cancel
               </button>
               <button
-                type="submit"
+                onClick={handleCreateSubmit}
+                // type="submit"
                 disabled={isProcessing}
                 className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-60 flex items-center"
               >

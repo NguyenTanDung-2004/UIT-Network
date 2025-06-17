@@ -50,7 +50,7 @@ let stompClient: Client | null = null;
 let activeSubscriptions: Map<
   string,
   {
-    callback: (message: Message) => void;
+    callbacks: Set<(message: Message) => void>; // Use a Set to store multiple callbacks
     subscription: StompSubscription | null;
   }
 > = new Map();
@@ -81,17 +81,18 @@ export const initializeStompClient = (token: string | null) => {
   });
 
   stompClient.onConnect = (frame) => {
-    // console.log('STOMP Connected:', frame);
     activeSubscriptions.forEach((subEntry, topic) => {
       if (!subEntry.subscription) {
+        // If no subscription object (means not active or just reconnected)
         const newSubscription = stompClient?.subscribe(topic, (message) => {
           const data = JSON.parse(message.body);
           const formattedMessage = formatBackendMessageToMessage(
             data as BackendMessageItem
           );
-          if (activeSubscriptions.has(topic)) {
-            activeSubscriptions.get(topic)!.callback(formattedMessage);
-          }
+          // Invoke all registered callbacks for this topic
+          subEntry.callbacks.forEach((callback) => {
+            callback(formattedMessage);
+          });
         });
         if (newSubscription) {
           activeSubscriptions.set(topic, {
@@ -113,7 +114,6 @@ export const initializeStompClient = (token: string | null) => {
   };
 
   stompClient.onDisconnect = () => {
-    // console.log('STOMP Disconnected');
     activeSubscriptions.forEach((subEntry, topic) => {
       activeSubscriptions.set(topic, { ...subEntry, subscription: null });
     });
@@ -127,7 +127,7 @@ export const disconnectStompClient = () => {
     stompClient.deactivate();
   }
   stompClient = null;
-  activeSubscriptions.clear();
+  activeSubscriptions.clear(); // Clear all registered subscriptions
 };
 
 export const subscribeToChatMessages = (
@@ -136,25 +136,51 @@ export const subscribeToChatMessages = (
 ): (() => void) => {
   const topic = `/topic/chat/message/${chatId}`;
 
-  activeSubscriptions.set(topic, { callback, subscription: null });
+  // Get existing entry or create a new one
+  let subEntry = activeSubscriptions.get(topic);
+  if (!subEntry) {
+    subEntry = { callbacks: new Set(), subscription: null };
+    activeSubscriptions.set(topic, subEntry);
+  }
+  subEntry.callbacks.add(callback); // Add the new callback to the Set
 
-  if (stompClient && stompClient.connected) {
+  // Try to subscribe immediately if the client is connected and not already subscribed to this topic
+  if (stompClient && stompClient.connected && !subEntry.subscription) {
     const subscription = stompClient.subscribe(
       topic,
       (message: StompMessage) => {
         const data = JSON.parse(message.body);
-        callback(formatBackendMessageToMessage(data as BackendMessageItem));
+        const formattedMessage = formatBackendMessageToMessage(
+          data as BackendMessageItem
+        );
+        // Invoke all callbacks registered for this topic
+        subEntry?.callbacks.forEach((cb) => cb(formattedMessage));
       }
     );
-    activeSubscriptions.set(topic, { callback, subscription: subscription });
+    subEntry.subscription = subscription;
+    // console.log(`Subscribed to ${topic} immediately.`);
+  } else if (!stompClient || !stompClient.connected) {
+    // If not connected, the onConnect handler will pick it up when it connects.
+    // The callback is already stored in activeSubscriptions.
+    // console.warn(`STOMP client not connected. Subscription for ${topic} pending.`);
   }
 
+  // Return an unsubscribe function specific to this topic and callback
   return () => {
     const currentSubEntry = activeSubscriptions.get(topic);
-    if (currentSubEntry && currentSubEntry.subscription) {
-      currentSubEntry.subscription.unsubscribe();
+    if (currentSubEntry) {
+      currentSubEntry.callbacks.delete(callback); // Remove only this specific callback
+
+      // If no more callbacks for this topic, unsubscribe from STOMP
+      if (
+        currentSubEntry.callbacks.size === 0 &&
+        currentSubEntry.subscription
+      ) {
+        currentSubEntry.subscription.unsubscribe();
+        activeSubscriptions.delete(topic); // Remove from our management map
+        // console.log(`Unsubscribed from ${topic}. Removed STOMP subscription.`);
+      }
     }
-    activeSubscriptions.delete(topic);
   };
 };
 
@@ -237,13 +263,30 @@ export const getTopicsForChatPage = async (): Promise<ChatData[]> => {
 
   const chatTopics = response.object.map(formatBackendChatItemToChatData);
 
-  // initializeStompClient(token);
+  // Initialize STOMP client here when topics are fetched and token is available
+  initializeStompClient(token);
 
-  // chatTopics.forEach((chat) => {
-  //   if (chat.type === "group" || chat.type === "person") {
-  //     subscribeToChatMessages(chat.id, (message) => {});
-  //   }
-  // });
+  // Register a global callback for each chat topic immediately.
+  // This callback is intended to update the chat list summary (last message, unread status).
+  // The actual state management for your chat list (e.g., in a React Context or component state)
+  // would be listening to these updates.
+  const globalChatListUpdateCallback = (message: Message) => {
+    // This is where you would process messages that affect the chat list overview
+    // (e.g., update `lastMessage`, `timestamp`, `unread` status for the relevant chat item).
+    // You might need to find the chat in your existing chat list state using `message.groupid`
+    // or `message.senderId` and then update its properties.
+    // For example:
+    // console.log(`Received real-time update for chat ${message.groupid || message.senderId}:`, message.content);
+    // You would then dispatch an action or update a global state here to reflect this.
+    // Example: updateChatListItem(message.groupid || message.senderId, { lastMessage: message.content, unread: true, timestamp: message.timestamp });
+  };
+
+  chatTopics.forEach((chat) => {
+    if (chat.type === "group" || chat.type === "person") {
+      // Subscribe each chat ID with the global callback
+      subscribeToChatMessages(chat.id, globalChatListUpdateCallback);
+    }
+  });
 
   return chatTopics;
 };
