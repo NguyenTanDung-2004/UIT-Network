@@ -79,6 +79,10 @@ const PersonChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  const currentChatTopic = chats.find(
+    (chat) => chat.id === chatId && chat.type === "person"
+  );
+
   const fetchDataForChat = useCallback(async () => {
     try {
       if (chatListLoading || userContextLoading) {
@@ -92,10 +96,6 @@ const PersonChatPage = () => {
       if (!user) {
         throw new Error("User not authenticated.");
       }
-
-      const currentChatTopic = chats.find(
-        (chat) => chat.id === chatId && chat.type === "person"
-      );
 
       if (!currentChatTopic) {
         setError("Chat partner not found for this conversation ID.");
@@ -238,7 +238,10 @@ const PersonChatPage = () => {
     setMessages((prev) => [...prev, optimisticMessage]);
 
     try {
-      await sendMessageToPerson(optimisticMessage, partnerInfo.id);
+      await sendMessageToPerson(
+        optimisticMessage,
+        currentChatTopic?.otheruserid || partnerInfo.id
+      );
     } catch (sendError: any) {
       console.error("Failed to send message:", sendError);
       toast({
@@ -268,7 +271,10 @@ const PersonChatPage = () => {
     setMessages((prev) => [...prev, optimisticAIMessage]);
 
     try {
-      await sendMessageToAI(question, partnerInfo.id);
+      await sendMessageToAI(
+        question,
+        currentChatTopic?.otheruserid || partnerInfo.id
+      );
     } catch (error: any) {
       console.error("Failed to send AI message:", error);
       toast({

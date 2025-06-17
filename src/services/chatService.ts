@@ -188,6 +188,7 @@ const formatBackendChatItemToChatData = (
     timestamp: timestamp,
     unread: backendChat.isseen === 0,
     isOnline: chatType === "person" ? backendChat.status === "ACTIVE" : false,
+    otheruserid: backendChat.otheruserid || null,
   };
 };
 
