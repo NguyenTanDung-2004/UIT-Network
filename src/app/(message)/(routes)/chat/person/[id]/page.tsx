@@ -361,12 +361,12 @@ const PersonChatPage = () => {
             </div>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <button className="p-2 text-primary dark:text-primary-light rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+            {/* <button className="p-2 text-primary dark:text-primary-light rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
               <Phone size={20} />
             </button>
             <button className="p-2 text-primary dark:text-primary-light rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
               <Video size={20} />
-            </button>
+            </button> */}
             <button
               onClick={() => setShowDetails(!showDetails)}
               className="p-2 text-gray-500 dark:text-gray-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"

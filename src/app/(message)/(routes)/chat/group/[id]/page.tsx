@@ -644,7 +644,7 @@ const GroupChat = () => {
             >
               <UserPlus size={18} />
             </button>
-            <button
+            {/* <button
               className="p-2 text-primary dark:text-primary-light rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
               title="Group Call (Not Implemented)"
             >
@@ -655,7 +655,7 @@ const GroupChat = () => {
               title="Group Video Call (Not Implemented)"
             >
               <Video size={18} />
-            </button>
+            </button> */}
             <button
               onClick={() => setShowDetails(!showDetails)}
               className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none ${

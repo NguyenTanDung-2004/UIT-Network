@@ -83,9 +83,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({ pageData }) => {
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 break-words">
               {pageData.name}
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {pageData.followerCount} followers
-            </p>
           </div>
           <div className="flex-shrink-0 w-full md:w-auto flex justify-center md:justify-end">
             {renderActionButtons()}
